@@ -36,7 +36,7 @@
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 
     <script src="https://www.paypal.com/sdk/js?client-id=BAA_OdUNqQ1kMiEU8IuN0BxEhGvBkVlvCaWn9TqjIEFFzQuGUH1tSRYMCnzzEp4BMDMPZA12qKDjDwbL6Q&currency=USD"></script>
 
@@ -2121,7 +2121,7 @@
                     window.crearIframeAdSandbox = function(srcdocHtml, cssTexto) {
                         var ifr = document.createElement('iframe');
                         ifr.title = 'Publicidad';
-                        ifr.setAttribute('sandbox', 'allow-popups allow-scripts allow-same-origin allow-popups-to-escape-sandbox allow-forms');
+                        ifr.setAttribute('sandbox', 'allow-popups allow-scripts allow-popups-to-escape-sandbox allow-forms');
                         ifr.setAttribute('frameborder', '0');
                         ifr.setAttribute('scrolling', 'no');
                         ifr.style.cssText = cssTexto;
@@ -2332,7 +2332,10 @@
             }
 
             toast.className = `flex items-center gap-3 p-4 rounded-r-xl shadow-2xl text-sm font-semibold text-white pointer-events-auto toast-enter ${bgClass}`;
-            toast.innerHTML = `${icon} <span>${mensaje}</span>`;
+            toast.innerHTML = icon;
+            const textoToast = document.createElement('span');
+            textoToast.textContent = mensaje;
+            toast.append(' ', textoToast);
             
             container.appendChild(toast);
             
@@ -3159,10 +3162,10 @@
                     options: { data: { username, referred_by: refCodeGuardado || null }, emailRedirectTo: null }
                 });
                 btn.disabled = false; btn.innerText = "Registrarse";
-                
-                if (error) { 
-                    mostrarNotificacion(`Error: ${error.message}`, "error"); 
-                    return; 
+
+                if (error) {
+                    mostrarNotificacion(`Error: ${error.message}`, "error");
+                    return;
                 }
 
                 if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
@@ -3484,10 +3487,10 @@
             return `¡Únete a NetGamer MX y gana dinero real viendo videos, Jugando, leyendo noticias y completando tareas! Usa mi enlace y ambos recibimos 6,000 NetCoins de regalo 🎮💰 ${enlace}`;
         }
 
-        function compartirWhatsApp() { window.open(`https://wa.me/?text=${encodeURIComponent(obtenerMensajeCompartir())}`, '_blank'); }
-        function compartirTelegram() { window.open(`https://t.me/share/url?url=${encodeURIComponent(document.getElementById("referral-link-input").value)}&text=${encodeURIComponent("¡Únete a NetGamer MX y gana dinero real! 🎮💰")}`, '_blank'); }
-        function compartirFacebook() { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(document.getElementById("referral-link-input").value)}`, '_blank'); }
-        function compartirTwitter() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(obtenerMensajeCompartir())}`, '_blank'); }
+        function compartirWhatsApp() { window.open(`https://wa.me/?text=${encodeURIComponent(obtenerMensajeCompartir())}`, '_blank', 'noopener'); }
+        function compartirTelegram() { window.open(`https://t.me/share/url?url=${encodeURIComponent(document.getElementById("referral-link-input").value)}&text=${encodeURIComponent("¡Únete a NetGamer MX y gana dinero real! 🎮💰")}`, '_blank', 'noopener'); }
+        function compartirFacebook() { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(document.getElementById("referral-link-input").value)}`, '_blank', 'noopener'); }
+        function compartirTwitter() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(obtenerMensajeCompartir())}`, '_blank', 'noopener'); }
 
         async function suscribirseCambiosEnVivo(user) {
             try { await _supabase.removeChannel(_supabase.channel('cambios-saldo')); } catch (e) {}
@@ -4181,9 +4184,9 @@
                 const horaStr  = fecha.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
                 return `<div class="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 hover:border-slate-600 transition">
                     <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-9 h-9 bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0 text-base">${g.concepto.split(' ')[0]}</div>
+                        <div class="w-9 h-9 bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0 text-base">${escapeHtml(String(g.concepto || '').split(' ')[0])}</div>
                         <div class="min-w-0">
-                            <p class="text-sm font-semibold text-white truncate">${g.concepto.replace(/^.\s/, '')}</p>
+                            <p class="text-sm font-semibold text-white truncate">${escapeHtml(String(g.concepto || '').replace(/^.\s/, ''))}</p>
                             <p class="text-xs text-slate-500">${fechaStr} · ${horaStr}</p>
                         </div>
                     </div>
@@ -4230,15 +4233,15 @@
                                 <i class="fa-solid fa-gift text-purple-400 text-sm"></i>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-sm font-semibold text-white truncate">${c.tipo_premio}</p>
+                                <p class="text-sm font-semibold text-white truncate">${escapeHtml(c.tipo_premio)}</p>
                                 <p class="text-xs text-slate-500">${fechaStr} · ${horaStr}</p>
                             </div>
                         </div>
-                        <span class="${est.color} ${est.bg} ${est.border} border text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ml-2">${est.icono} ${c.estatus}</span>
+                        <span class="${est.color} ${est.bg} ${est.border} border text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ml-2">${est.icono} ${escapeHtml(c.estatus)}</span>
                     </div>
                     <div class="flex items-center justify-between mt-1 pt-2 border-t border-slate-700/50">
                         <span class="text-xs text-slate-500">NetCoins descontadas</span>
-                        <span class="text-rose-400 font-bold text-sm">-${c.netcoins_deducidos.toLocaleString()} NC</span>
+                        <span class="text-rose-400 font-bold text-sm">-${Number(c.netcoins_deducidos).toLocaleString()} NC</span>
                     </div>
                 </div>`;
             }).join('');
@@ -4425,7 +4428,7 @@
             }
             const urlNoticias = "https://pulsomx1.github.io/PulsoMX/"; 
             
-            window.open(`${urlNoticias}?uid=${currentUser.id}`, '_blank');
+            window.open(`${urlNoticias}?uid=${currentUser.id}`, '_blank', 'noopener');
         }
 
         function irAKdramas() {
@@ -4435,7 +4438,7 @@
             }
             const urlKdramas = "https://pulsomx1.github.io/Pulso-Play/";
 
-            window.open(`${urlKdramas}?uid=${currentUser.id}`, '_blank');
+            window.open(`${urlKdramas}?uid=${currentUser.id}`, '_blank', 'noopener');
         }
 
 
@@ -5309,7 +5312,7 @@
                 if (esMobil) {
                     window.location.href = urlPago;
                 } else {
-                    window.open(urlPago, '_blank');
+                    window.open(urlPago, '_blank', 'noopener');
                 }
             } catch (err) {
                 mostrarNotificacion('Error: ' + err.message, 'error');
@@ -5631,9 +5634,9 @@ function renderMensajeSoporte(msg) {
     wrapper.className = `flex ${esAdmin ? 'gap-2.5 items-end' : 'justify-end'} mb-3`;
     wrapper.dataset.msgId = msg.id;
 
-    const imagenes = tieneImagenes ? msg.images.map(url => `
-        <a href="${url}" target="_blank" class="block">
-            <img src="${url}" class="w-28 h-28 object-cover rounded-2xl border border-slate-700 hover:opacity-90 transition cursor-zoom-in shadow-md" />
+    const imagenes = tieneImagenes ? msg.images.map(urlSegura).filter(Boolean).map(url => `
+        <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="block">
+            <img src="${escapeHtml(url)}" class="w-28 h-28 object-cover rounded-2xl border border-slate-700 hover:opacity-90 transition cursor-zoom-in shadow-md" />
         </a>`).join('') : '';
 
     if (esAdmin) {
@@ -5701,11 +5704,12 @@ async function enviarMensajeSoporte() {
     let imageUrls = [];
     if (supportFilesSelected.length > 0) {
         for (const file of supportFilesSelected) {
-            const ext = file.name.split('.').pop();
+            const ext = TIPOS_IMAGEN_SOPORTE[file.type];
+            if (!ext) continue;
             const path = `support/${supportTicketId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
             const { data: uploadData, error: uploadError } = await _supabase.storage
                 .from('support-images')
-                .upload(path, file, { cacheControl: '3600', upsert: false });
+                .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
             if (!uploadError && uploadData) {
                 const { data: { publicUrl } } = _supabase.storage.from('support-images').getPublicUrl(path);
                 imageUrls.push(publicUrl);
@@ -5743,6 +5747,9 @@ function handleSupportFiles(input) {
     for (const file of files) {
         if (supportFilesSelected.length >= maxFiles) {
             mostrarNotificacion(`Máximo ${maxFiles} imágenes por mensaje.`, "error"); break;
+        }
+        if (!TIPOS_IMAGEN_SOPORTE[file.type]) {
+            mostrarNotificacion(`${file.name} no es una imagen válida (JPG, PNG, WEBP o GIF).`, "error"); continue;
         }
         if (file.size > maxSize) {
             mostrarNotificacion(`${file.name} supera los 5MB.`, "error"); continue;
@@ -5802,8 +5809,19 @@ function autoResizeTextarea(el) {
 }
 
 function escapeHtml(text) {
-    if (!text) return '';
-    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    if (text === null || text === undefined) return '';
+    return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/\n/g,'<br>');
+}
+
+const TIPOS_IMAGEN_SOPORTE = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+
+function urlSegura(url) {
+    try {
+        const u = new URL(String(url), window.location.href);
+        return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : '';
+    } catch (e) {
+        return '';
+    }
 }
 </script>
 
@@ -5815,7 +5833,7 @@ function escapeHtml(text) {
         <i class="fa-solid fa-clock text-amber-400"></i>
         <span id="anuncio-countdown-num">10</span>s
     </div>
-    <a id="anuncio-link" href="#" target="_blank" rel="noopener" onclick="registrarClicAnuncio()" class="w-full h-full flex items-center justify-center cursor-pointer">
+    <a id="anuncio-link" href="#" target="_blank" rel="noopener noreferrer" onclick="registrarClicAnuncio()" class="w-full h-full flex items-center justify-center cursor-pointer">
         <img id="anuncio-imagen" src="" alt="Anuncio" class="max-w-full max-h-full object-contain hidden" />
         <video id="anuncio-video" class="max-w-full max-h-full object-contain hidden" autoplay playsinline disablePictureInPicture></video>
     </a>
@@ -5969,7 +5987,7 @@ function mostrarAnuncioPersonalizado(anuncio, opciones = {}) {
     const vidEl = document.getElementById('anuncio-video');
     
     const tipo = anuncio.tipo || (anuncio.media_url ? 'video' : 'imagen');
-    const mediaUrl = anuncio.media_url || anuncio.imagen_url;
+    const mediaUrl = urlSegura(anuncio.media_url || anuncio.imagen_url);
 
     const inicioTimestamp = inicioOriginal || Date.now();
 
@@ -6036,7 +6054,7 @@ function mostrarAnuncioPersonalizado(anuncio, opciones = {}) {
         iniciarCountdown(10);
     }
     
-    document.getElementById('anuncio-link').href = anuncio.link_destino;
+    document.getElementById('anuncio-link').href = urlSegura(anuncio.link_destino) || '#';
     document.getElementById('modal-anuncio-personalizado').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
@@ -6189,7 +6207,7 @@ function mostrarBannerActual() {
     const banner = todosLosBanners[bannerIndiceActual];
     const modal = document.getElementById('modal-banner-fullscreen');
     
-    document.getElementById('banner-imagen-modal').src = banner.url_imagen;
+    document.getElementById('banner-imagen-modal').src = urlSegura(banner.url_imagen);
     
     if (modal) {
         modal.classList.remove('hidden');
