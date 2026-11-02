@@ -6,7 +6,7 @@
     <title>Admin – Soporte NetGamer MX</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { background: #0f172a; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
@@ -27,7 +27,6 @@
             #sidebar-panel .ticket-email { font-size: 10px; }
             #sidebar-panel .ticket-date { display: none; }
             #sidebar-panel .ticket-id { display: none; }
-            #btn-back-mobile { display: none !important; }
         }
     </style>
 </head>
@@ -49,6 +48,7 @@
             <div>
                 <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Email</label>
                 <input id="login-email" type="email" placeholder="admin@ejemplo.com"
+                    onkeydown="if(event.key==='Enter') iniciarSesionAdmin()"
                     class="w-full bg-slate-900 border border-slate-700 focus:border-purple-500 rounded-xl px-4 py-3 text-sm text-white outline-none transition placeholder-slate-600">
             </div>
             <div>
@@ -489,7 +489,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Descripción (opcional)</label>
-                        <textarea id="input-pelicula-descripcion" rows="2" placeholder="De qué trata la película..."
+                        <textarea id="input-pelicula-descripcion" rows="2" placeholder="De qué trata el video..."
                             class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-purple-500 transition resize-none"></textarea>
                     </div>
 
@@ -689,6 +689,8 @@
 const SUPABASE_URL = "https://meiwuluwrdjszxeyoqtt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gZgGIamNJqf8ir8vvt1OTw_bJ-rosi4";
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const ADMIN_EMAIL = 'ed8108868@gmail.com';
+const MINUTOS_EN_LINEA = 6;
 
 let adminUser = null;
 let todosLosTickets = [];
@@ -712,8 +714,6 @@ async function iniciarSesionAdmin() {
     btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-2"></i>Entrando...';
     errorEl.classList.add('hidden');
 
-    const ADMIN_EMAIL = 'ed8108868@gmail.com';
-
     const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
 
     if (error || !data.user) {
@@ -731,7 +731,11 @@ async function iniciarSesionAdmin() {
         return;
     }
 
-    adminUser = data.user;
+    await entrarAlPanel(data.user);
+}
+
+async function entrarAlPanel(user) {
+    adminUser = user;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-screen').style.display = 'flex';
     document.getElementById('admin-email-label').textContent = adminUser.email;
@@ -739,14 +743,14 @@ async function iniciarSesionAdmin() {
     await cargarTickets();
     suscribirTicketsRealtime();
     suscribirAnunciosRealtime();
-    suscribirsePresenciaUsuarios();
+    iniciarContadorEnLinea();
 }
 
 function suscribirAnunciosRealtime() {
     _supabase
         .channel('admin-anuncios-stats')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'anuncios_personalizados' }, async () => {
-            await cargarAnuncios();
+            if (moduloActivo === 'anuncios') await cargarAnuncios();
         })
         .subscribe();
 }
@@ -827,7 +831,7 @@ function renderTicketsList() {
                 </div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-1">
-                        <p class="ticket-email text-xs sm:text-sm font-semibold text-white truncate">${emailCorto}</p>
+                        <p class="ticket-email text-xs sm:text-sm font-semibold text-white truncate">${escapeHtml(emailCorto)}</p>
                         <span class="ticket-date text-xs text-slate-500 flex-shrink-0">${fecha}</span>
                     </div>
                     <div class="flex items-center justify-between mt-0.5">
@@ -849,8 +853,6 @@ function setFiltro(f) {
     });
     renderTicketsList();
 }
-
-function filtrarTickets() { renderTicketsList(); }
 
 function suscribirTicketsRealtime() {
     ticketsRealtimeChannel = _supabase
@@ -957,9 +959,9 @@ function renderMensajeAdmin(msg) {
     div.dataset.msgId = msg.id;
     div.className = `flex ${esAdmin ? 'justify-end' : 'gap-2.5 items-end'} mb-2`;
 
-    const imagenes = tieneImagenes ? msg.images.map(url => `
-        <a href="${url}" target="_blank">
-            <img src="${url}" class="w-28 h-28 object-cover rounded-2xl border border-slate-700 hover:opacity-90 transition cursor-zoom-in shadow-lg" />
+    const imagenes = tieneImagenes ? msg.images.map(urlSegura).filter(Boolean).map(url => `
+        <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
+            <img src="${escapeHtml(url)}" class="w-28 h-28 object-cover rounded-2xl border border-slate-700 hover:opacity-90 transition cursor-zoom-in shadow-lg" />
         </a>`).join('') : '';
 
     if (esAdmin) {
@@ -1002,11 +1004,10 @@ async function enviarRespuestaAdmin() {
     let imageUrls = [];
     if (adminFilesSelected.length > 0) {
         for (const file of adminFilesSelected) {
-            const ext = file.name.split('.').pop();
-            const path = `support/${ticketActivoId}/admin_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+            const path = `support/${ticketActivoId}/admin_${Date.now()}_${Math.random().toString(36).slice(2)}.${extensionSegura(file)}`;
             const { data: uploadData, error: uploadError } = await _supabase.storage
                 .from('support-images')
-                .upload(path, file, { cacheControl: '3600', upsert: false });
+                .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
             if (!uploadError && uploadData) {
                 const { data: { publicUrl } } = _supabase.storage.from('support-images').getPublicUrl(path);
                 imageUrls.push(publicUrl);
@@ -1014,7 +1015,7 @@ async function enviarRespuestaAdmin() {
         }
     }
 
-    await _supabase.from('support_messages').insert({
+    const { error: errorEnvio } = await _supabase.from('support_messages').insert({
         ticket_id: ticketActivoId,
         sender: 'admin',
         user_id: adminUser.id,
@@ -1022,10 +1023,17 @@ async function enviarRespuestaAdmin() {
         images: imageUrls.length > 0 ? imageUrls : null
     });
 
-    await _supabase.from('support_tickets').update({ updated_at: new Date().toISOString() }).eq('id', ticketActivoId);
+    if (errorEnvio) {
+        mostrarToast('No se pudo enviar el mensaje. Intenta de nuevo.', 'error');
+        btn.disabled = false;
+        return;
+    }
 
     const { data: t } = await _supabase.from('support_tickets').select('unread_user').eq('id', ticketActivoId).single();
-    await _supabase.from('support_tickets').update({ unread_user: (t?.unread_user || 0) + 1 }).eq('id', ticketActivoId);
+    await _supabase.from('support_tickets').update({
+        updated_at: new Date().toISOString(),
+        unread_user: (t?.unread_user || 0) + 1
+    }).eq('id', ticketActivoId);
 
     input.value = '';
     input.style.height = 'auto';
@@ -1112,11 +1120,8 @@ function handleAdminFiles(input) {
     const files = Array.from(input.files);
     for (const file of files) {
         if (adminFilesSelected.length >= 4) { mostrarToast('Máximo 4 imágenes', 'error'); break; }
-        if (file.type.startsWith('video/')) {
-            validarDuracionVideo(file);
-        } else {
-            adminFilesSelected.push(file);
-        }
+        if (!file.type.startsWith('image/')) { mostrarToast(`${file.name} no es una imagen`, 'error'); continue; }
+        adminFilesSelected.push(file);
     }
     renderAdminPreview();
     input.value = '';
@@ -1164,78 +1169,10 @@ function seleccionarTipoMedia(tipo) {
     }
     
     anuncioImagenFile = null;
+    document.getElementById('anuncio-imagen-url-existente').value = '';
     document.getElementById('preview-anuncio-imagen-container').classList.add('hidden');
     document.getElementById('preview-anuncio-video-container').classList.add('hidden');
     inputFile.value = '';
-}
-
-function validarDuracionVideo(file) {
-    const video = document.createElement('video');
-    const url = URL.createObjectURL(file);
-    
-    video.onloadedmetadata = function() {
-        if (video.duration > 30) {
-            mostrarToast(`Video supera 30 segundos (${Math.round(video.duration)}s)`, 'error');
-            URL.revokeObjectURL(url);
-            return;
-        }
-        adminFilesSelected.push(file);
-        URL.revokeObjectURL(url);
-    };
-    
-    video.onerror = function() {
-        mostrarToast('Error al procesar el video', 'error');
-        URL.revokeObjectURL(url);
-    };
-    
-    video.src = url;
-}
-
-function validarDuracionVideoAnuncio(file) {
-    const video = document.createElement('video');
-    const url = URL.createObjectURL(file);
-    
-    video.onloadedmetadata = function() {
-        if (video.duration > 30) {
-            mostrarToast(`Video supera 30 segundos (${Math.round(video.duration)}s)`, 'error');
-            URL.revokeObjectURL(url);
-            return;
-        }
-        anuncioImagenFile = file;
-        const videoUrl = URL.createObjectURL(file);
-        const preview = document.getElementById('preview-anuncio-imagen');
-        preview.src = videoUrl;
-        preview.style.display = 'none'; 
-        
-        const videoPreview = document.createElement('video');
-        videoPreview.src = videoUrl;
-        videoPreview.controls = false;
-        videoPreview.autoplay = false;
-        videoPreview.style.maxWidth = '100%';
-        videoPreview.style.maxHeight = '200px';
-        videoPreview.style.borderRadius = '0.5rem';
-        videoPreview.style.border = '1px solid rgb(71, 85, 105)';
-        
-        const container = document.getElementById('preview-anuncio-imagen-container');
-        container.innerHTML = '';
-        container.appendChild(videoPreview);
-        container.classList.remove('hidden');
-        
-        URL.revokeObjectURL(url);
-    };
-    
-    video.onerror = function() {
-        mostrarToast('Error al procesar el video', 'error');
-        URL.revokeObjectURL(url);
-    };
-    
-    video.src = url;
-}
-
-+
-
-function volverSidebar() {
-    document.getElementById('chat-panel').classList.remove('mobile-visible');
 }
 
 function scrollChatAbajo() {
@@ -1249,8 +1186,32 @@ function autoResizeAdmin(el) {
 }
 
 function escapeHtml(text) {
-    if (!text) return '';
-    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    if (text === null || text === undefined) return '';
+    return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/\n/g,'<br>');
+}
+
+function urlSegura(url) {
+    try {
+        const u = new URL(String(url), window.location.href);
+        return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : '';
+    } catch (e) {
+        return '';
+    }
+}
+
+function extensionSegura(file) {
+    const ext = (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return ext.slice(0, 5) || 'bin';
+}
+
+function rutaEnBucket(url, bucket) {
+    const match = String(url || '').match(new RegExp(`/object/public/${bucket}/(.+)$`));
+    return match ? decodeURIComponent(match[1]) : null;
+}
+
+async function borrarArchivoDeBucket(url, bucket) {
+    const ruta = rutaEnBucket(url, bucket);
+    if (ruta) await _supabase.storage.from(bucket).remove([ruta]);
 }
 
 function formatFecha(iso) {
@@ -1276,14 +1237,8 @@ function mostrarToast(msg, tipo) {
 
 (async () => {
     const { data: { session } } = await _supabase.auth.getSession();
-    if (session?.user && session.user.email === 'ed8108868@gmail.com') {
-        adminUser = session.user;
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app-screen').style.display = 'flex';
-        document.getElementById('admin-email-label').textContent = adminUser.email;
-        await cargarTickets();
-        suscribirTicketsRealtime();
-        suscribirsePresenciaUsuarios();
+    if (session?.user && session.user.email === ADMIN_EMAIL) {
+        await entrarAlPanel(session.user);
     } else if (session?.user) {
         await _supabase.auth.signOut();
     }
@@ -1503,19 +1458,19 @@ function renderListaAnuncios() {
         const ctr = a.impresiones > 0 ? ((a.clics / a.impresiones) * 100).toFixed(1) : '0.0';
         return `<div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex gap-4">
             ${a.imagen_url
-                ? `<img src="${a.imagen_url}" class="w-20 h-28 object-cover rounded-xl border border-slate-700 flex-shrink-0" />`
+                ? `<img src="${escapeHtml(urlSegura(a.imagen_url))}" class="w-20 h-28 object-cover rounded-xl border border-slate-700 flex-shrink-0" />`
                 : `<div class="w-20 h-28 rounded-xl border border-slate-700 bg-slate-900 flex-shrink-0 flex items-center justify-center">
                        <i class="fa-solid fa-video text-slate-600 text-lg"></i>
                    </div>`
             }
             <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between gap-2 mb-1">
-                    <p class="font-bold text-white text-sm truncate">${a.anunciante_nombre || 'Sin nombre'}</p>
+                    <p class="font-bold text-white text-sm truncate">${escapeHtml(a.anunciante_nombre || 'Sin nombre')}</p>
                     <span class="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${a.activo ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-slate-700 text-slate-400 border border-slate-600'}">
                         ${a.activo ? '● Activo' : '○ Pausado'}
                     </span>
                 </div>
-                <p class="text-xs text-slate-500 truncate mb-2"><i class="fa-solid fa-link mr-1"></i>${a.link_destino}</p>
+                <p class="text-xs text-slate-500 truncate mb-2"><i class="fa-solid fa-link mr-1"></i>${escapeHtml(a.link_destino)}</p>
                 <div class="flex items-center gap-3 text-xs text-slate-400 mb-3">
                     <span><i class="fa-solid fa-eye mr-1 text-slate-500"></i>${(a.impresiones || 0).toLocaleString()}</span>
                     <span><i class="fa-solid fa-arrow-pointer mr-1 text-slate-500"></i>${(a.clics || 0).toLocaleString()}</span>
@@ -1543,8 +1498,7 @@ function abrirFormNuevoAnuncio() {
     document.getElementById('input-anunciante-nombre').value = '';
     document.getElementById('input-anuncio-link').value = '';
     document.getElementById('anuncio-imagen-url-existente').value = '';
-    document.getElementById('preview-anuncio-imagen-container').classList.add('hidden');
-    anuncioImagenFile = null;
+    seleccionarTipoMedia('imagen');
     document.getElementById('form-anuncio-container').classList.remove('hidden');
     document.getElementById('form-anuncio-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1560,10 +1514,15 @@ function editarAnuncio(id) {
     document.getElementById('anuncio-edit-id').value = a.id;
     document.getElementById('input-anunciante-nombre').value = a.anunciante_nombre || '';
     document.getElementById('input-anuncio-link').value = a.link_destino || '';
-    document.getElementById('anuncio-imagen-url-existente').value = a.imagen_url || '';
-    anuncioImagenFile = null;
-    if (a.imagen_url) {
-        document.getElementById('preview-anuncio-imagen').src = a.imagen_url;
+    const esVideo = (a.tipo || (a.media_url ? 'video' : 'imagen')) === 'video';
+    seleccionarTipoMedia(esVideo ? 'video' : 'imagen');
+    const mediaExistente = esVideo ? (a.media_url || '') : (a.imagen_url || '');
+    document.getElementById('anuncio-imagen-url-existente').value = mediaExistente;
+    if (mediaExistente && esVideo) {
+        document.getElementById('preview-anuncio-video').src = mediaExistente;
+        document.getElementById('preview-anuncio-video-container').classList.remove('hidden');
+    } else if (mediaExistente) {
+        document.getElementById('preview-anuncio-imagen').src = mediaExistente;
         document.getElementById('preview-anuncio-imagen-container').classList.remove('hidden');
     }
     document.getElementById('form-anuncio-container').classList.remove('hidden');
@@ -1620,7 +1579,8 @@ async function guardarAnuncio() {
     const tipo = document.getElementById('anuncio-tipo-media').value;
 
     if (!link) { mostrarToast('Falta el link de destino', 'error'); return; }
-    if (!anuncioImagenFile && !imagenExistente) { mostrarToast('Falta la imagen del anuncio', 'error'); return; }
+    if (!/^https?:\/\//i.test(link) || !urlSegura(link)) { mostrarToast('El link debe empezar con https://', 'error'); return; }
+    if (!anuncioImagenFile && !imagenExistente) { mostrarToast(tipo === 'video' ? 'Falta el video del anuncio' : 'Falta la imagen del anuncio', 'error'); return; }
 
     const btn = document.getElementById('btn-guardar-anuncio');
     btn.disabled = true;
@@ -1629,15 +1589,14 @@ async function guardarAnuncio() {
     let imagenUrl = imagenExistente;
 
     if (anuncioImagenFile) {
-        const ext = anuncioImagenFile.name.split('.').pop();
         const bucketName = tipo === 'video' ? 'anuncios-videos' : 'anuncios-imagenes';
-        const path = `anuncios/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        
-        const { data: uploadData, error: uploadError } = await _supabase.storage
+        const path = `anuncios/${Date.now()}_${Math.random().toString(36).slice(2)}.${extensionSegura(anuncioImagenFile)}`;
+
+        const { error: uploadError } = await _supabase.storage
             .from(bucketName)
-            .upload(path, anuncioImagenFile, { cacheControl: '3600', upsert: false });
+            .upload(path, anuncioImagenFile, { cacheControl: '3600', upsert: false, contentType: anuncioImagenFile.type });
         if (uploadError) {
-            mostrarToast('Error al subir la imagen', 'error');
+            mostrarToast(tipo === 'video' ? 'Error al subir el video' : 'Error al subir la imagen', 'error');
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Anuncio';
             return;
@@ -1670,6 +1629,11 @@ async function guardarAnuncio() {
         return;
     }
 
+    if (id && anuncioImagenFile && imagenExistente && imagenExistente !== imagenUrl) {
+        await borrarArchivoDeBucket(imagenExistente, 'anuncios-imagenes');
+        await borrarArchivoDeBucket(imagenExistente, 'anuncios-videos');
+    }
+
     mostrarToast(id ? 'Anuncio actualizado' : 'Anuncio creado', 'success');
     cerrarFormAnuncio();
     cargarAnuncios();
@@ -1686,14 +1650,11 @@ async function eliminarAnuncio(id) {
 
     const anuncio = todosLosAnuncios.find(a => a.id === id);
 
-    if (anuncio?.imagen_url) {
-        const match = anuncio.imagen_url.match(/\/object\/public\/anuncios-imagenes\/(.+)$/);
-        if (match) {
-            await _supabase.storage.from('anuncios-imagenes').remove([decodeURIComponent(match[1])]);
-        }
-    }
+    const { error } = await _supabase.from('anuncios_personalizados').delete().eq('id', id);
+    if (error) { mostrarToast('No se pudo eliminar el anuncio', 'error'); return; }
 
-    await _supabase.from('anuncios_personalizados').delete().eq('id', id);
+    await borrarArchivoDeBucket(anuncio?.imagen_url, 'anuncios-imagenes');
+    await borrarArchivoDeBucket(anuncio?.media_url, 'anuncios-videos');
     mostrarToast('Anuncio eliminado', 'success');
     cargarAnuncios();
 }
@@ -1736,7 +1697,7 @@ function renderListaPeliculas() {
     if (todasLasPeliculas.length === 0) {
         container.innerHTML = `<div class="flex flex-col items-center justify-center py-16 text-center">
             <i class="fa-solid fa-clapperboard text-slate-700 text-3xl mb-3"></i>
-            <p class="text-sm text-slate-500">Aún no tienes películas subidas</p>
+            <p class="text-sm text-slate-500">Aún no tienes videos subidos</p>
         </div>`;
         return;
     }
@@ -1744,19 +1705,19 @@ function renderListaPeliculas() {
     container.innerHTML = todasLasPeliculas.map(p => {
         return `<div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex gap-4">
             ${p.miniatura_url
-                ? `<img src="${p.miniatura_url}" class="w-20 h-28 object-cover rounded-xl border border-slate-700 flex-shrink-0" />`
+                ? `<img src="${escapeHtml(urlSegura(p.miniatura_url))}" class="w-20 h-28 object-cover rounded-xl border border-slate-700 flex-shrink-0" />`
                 : `<div class="w-20 h-28 rounded-xl border border-slate-700 bg-slate-900 flex-shrink-0 flex items-center justify-center">
                        <i class="fa-solid fa-clapperboard text-slate-600 text-lg"></i>
                    </div>`
             }
             <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between gap-2 mb-1">
-                    <p class="font-bold text-white text-sm truncate">${p.titulo}</p>
+                    <p class="font-bold text-white text-sm truncate">${escapeHtml(p.titulo)}</p>
                     <span class="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${p.activo ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-slate-700 text-slate-400 border border-slate-600'}">
-                        ${p.activo ? '● Activa' : '○ Pausada'}
+                        ${p.activo ? '● Activo' : '○ Pausado'}
                     </span>
                 </div>
-                <p class="text-xs text-slate-500 truncate mb-2">${p.descripcion || 'Sin descripción'}</p>
+                <p class="text-xs text-slate-500 truncate mb-2">${escapeHtml(p.descripcion || 'Sin descripción')}</p>
                 <div class="flex items-center gap-3 text-xs text-slate-400 mb-3">
                     <span><i class="fa-solid fa-clock mr-1 text-slate-500"></i>${formatearDuracion(p.duracion_segundos)}</span>
                     <span><i class="fa-solid fa-coins mr-1 text-amber-400"></i>${p.netcoins_recompensa} NC</span>
@@ -1779,7 +1740,7 @@ function renderListaPeliculas() {
 }
 
 function abrirFormNuevaPelicula() {
-    document.getElementById('form-pelicula-titulo').textContent = 'Nueva Película';
+    document.getElementById('form-pelicula-titulo').textContent = 'Nuevo Video';
     document.getElementById('pelicula-edit-id').value = '';
     document.getElementById('input-pelicula-titulo').value = '';
     document.getElementById('input-pelicula-descripcion').value = '';
@@ -1805,7 +1766,7 @@ function cerrarFormPelicula() {
 function editarPelicula(id) {
     const p = todasLasPeliculas.find(x => x.id === id);
     if (!p) return;
-    document.getElementById('form-pelicula-titulo').textContent = 'Editar Película';
+    document.getElementById('form-pelicula-titulo').textContent = 'Editar Video';
     document.getElementById('pelicula-edit-id').value = p.id;
     document.getElementById('input-pelicula-titulo').value = p.titulo || '';
     document.getElementById('input-pelicula-descripcion').value = p.descripcion || '';
@@ -1880,7 +1841,7 @@ async function guardarPelicula() {
     let duracion = parseInt(document.getElementById('pelicula-duracion-segundos').value) || 0;
 
     if (!titulo) { mostrarToast('Falta el título', 'error'); return; }
-    if (!peliculaVideoFile && !videoExistente) { mostrarToast('Falta el video de la película', 'error'); return; }
+    if (!peliculaVideoFile && !videoExistente) { mostrarToast('Falta el video', 'error'); return; }
     if (!duracion) { mostrarToast('No se detectó la duración del video, vuelve a seleccionarlo', 'error'); return; }
 
     const btn = document.getElementById('btn-guardar-pelicula');
@@ -1891,15 +1852,14 @@ async function guardarPelicula() {
     let miniaturaUrl = miniaturaExistente;
 
     if (peliculaVideoFile) {
-        const ext = peliculaVideoFile.name.split('.').pop();
-        const path = `peliculas/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const path = `peliculas/${Date.now()}_${Math.random().toString(36).slice(2)}.${extensionSegura(peliculaVideoFile)}`;
         const { error: uploadError } = await _supabase.storage
             .from('peliculas-videos')
-            .upload(path, peliculaVideoFile, { cacheControl: '3600', upsert: false });
+            .upload(path, peliculaVideoFile, { cacheControl: '3600', upsert: false, contentType: peliculaVideoFile.type });
         if (uploadError) {
             mostrarToast('Error al subir el video', 'error');
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Película';
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Video';
             return;
         }
         const { data: { publicUrl } } = _supabase.storage.from('peliculas-videos').getPublicUrl(path);
@@ -1907,14 +1867,15 @@ async function guardarPelicula() {
     }
 
     if (peliculaMiniaturaFile) {
-        const ext = peliculaMiniaturaFile.name.split('.').pop();
-        const path = `miniaturas/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const path = `miniaturas/${Date.now()}_${Math.random().toString(36).slice(2)}.${extensionSegura(peliculaMiniaturaFile)}`;
         const { error: uploadError } = await _supabase.storage
             .from('peliculas-miniaturas')
-            .upload(path, peliculaMiniaturaFile, { cacheControl: '3600', upsert: false });
+            .upload(path, peliculaMiniaturaFile, { cacheControl: '3600', upsert: false, contentType: peliculaMiniaturaFile.type });
         if (!uploadError) {
             const { data: { publicUrl } } = _supabase.storage.from('peliculas-miniaturas').getPublicUrl(path);
             miniaturaUrl = publicUrl;
+        } else {
+            mostrarToast('No se pudo subir la miniatura; se guardará sin cambiarla', 'error');
         }
     }
 
@@ -1937,14 +1898,17 @@ async function guardarPelicula() {
     }
 
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Película';
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Video';
 
     if (error) {
-        mostrarToast('Error al guardar la película', 'error');
+        mostrarToast('Error al guardar el video', 'error');
         return;
     }
 
-    mostrarToast(id ? 'Película actualizada' : 'Película creada', 'success');
+    if (id && videoExistente && videoExistente !== videoUrl) await borrarArchivoDeBucket(videoExistente, 'peliculas-videos');
+    if (id && miniaturaExistente && miniaturaExistente !== miniaturaUrl) await borrarArchivoDeBucket(miniaturaExistente, 'peliculas-miniaturas');
+
+    mostrarToast(id ? 'Video actualizado' : 'Video creado', 'success');
     cerrarFormPelicula();
     cargarPeliculas();
 }
@@ -1955,26 +1919,17 @@ async function toggleActivoPelicula(id, nuevoEstado) {
 }
 
 async function eliminarPelicula(id) {
-    const confirmar = confirm('¿Eliminar esta película permanentemente? Esta acción no se puede deshacer.');
+    const confirmar = confirm('¿Eliminar este video permanentemente? Esta acción no se puede deshacer.');
     if (!confirmar) return;
 
     const pelicula = todasLasPeliculas.find(p => p.id === id);
 
-    if (pelicula?.video_url) {
-        const match = pelicula.video_url.match(/\/object\/public\/peliculas-videos\/(.+)$/);
-        if (match) {
-            await _supabase.storage.from('peliculas-videos').remove([decodeURIComponent(match[1])]);
-        }
-    }
-    if (pelicula?.miniatura_url) {
-        const matchMin = pelicula.miniatura_url.match(/\/object\/public\/peliculas-miniaturas\/(.+)$/);
-        if (matchMin) {
-            await _supabase.storage.from('peliculas-miniaturas').remove([decodeURIComponent(matchMin[1])]);
-        }
-    }
+    const { error } = await _supabase.from('peliculas').delete().eq('id', id);
+    if (error) { mostrarToast('No se pudo eliminar el video', 'error'); return; }
 
-    await _supabase.from('peliculas').delete().eq('id', id);
-    mostrarToast('Película eliminada', 'success');
+    await borrarArchivoDeBucket(pelicula?.video_url, 'peliculas-videos');
+    await borrarArchivoDeBucket(pelicula?.miniatura_url, 'peliculas-miniaturas');
+    mostrarToast('Video eliminado', 'success');
     cargarPeliculas();
 }
 
@@ -1991,15 +1946,21 @@ async function cargarCanjes() {
 
         if (errorCanjes) throw errorCanjes;
 
-        const { data: perfiles, error: errorPerfiles } = await _supabase
-            .from('perfiles')
-            .select('id, email');
+        const idsUsuarios = [...new Set(canjes.map(c => c.user_id).filter(Boolean))];
+        let perfiles = [];
+        if (idsUsuarios.length > 0) {
+            const { data: perfilesData, error: errorPerfiles } = await _supabase
+                .from('perfiles')
+                .select('id, email')
+                .in('id', idsUsuarios);
+            if (errorPerfiles) throw errorPerfiles;
+            perfiles = perfilesData || [];
+        }
 
-        if (errorPerfiles) throw errorPerfiles;
-
+        const emailPorId = new Map(perfiles.map(p => [p.id, p]));
         const data = canjes.map(canje => ({
             ...canje,
-            perfiles: perfiles.find(p => p.id === canje.user_id)
+            perfiles: emailPorId.get(canje.user_id)
         }));
 
         todosLosCanjes = data || [];
@@ -2046,8 +2007,8 @@ function renderListaCanjes() {
         <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-slate-600 transition">
             <div class="flex items-start justify-between mb-3">
                 <div>
-                    <p class="text-sm font-bold text-white">${canje.tipo_premio}</p>
-                    <p class="text-xs text-slate-400 mt-1">${canje.perfiles?.email || 'Sin correo'}</p>
+                    <p class="text-sm font-bold text-white">${escapeHtml(canje.tipo_premio)}</p>
+                    <p class="text-xs text-slate-400 mt-1">${escapeHtml(canje.perfiles?.email || 'Sin correo')}</p>
                 </div>
                 <div class="text-right">
                     <span class="inline-block text-xs font-bold px-2.5 py-1 rounded-lg ${
@@ -2055,7 +2016,7 @@ function renderListaCanjes() {
                         canje.estatus === 'Rechazado' ? 'bg-red-500/20 text-red-400' :
                         'bg-amber-500/20 text-amber-400'
                     }">
-                        ${canje.estatus}
+                        ${escapeHtml(canje.estatus)}
                     </span>
                     <p class="text-xs text-slate-500 mt-2">${new Date(canje.created_at).toLocaleDateString('es-MX')}</p>
                 </div>
@@ -2064,25 +2025,25 @@ function renderListaCanjes() {
             <div class="grid grid-cols-2 gap-2 mb-3 text-xs">
                 <div>
                     <p class="text-slate-500">NetCoins</p>
-                    <p class="font-bold text-amber-400">${canje.netcoins_deducidos.toLocaleString()}</p>
+                    <p class="font-bold text-amber-400">${Number(canje.netcoins_deducidos || 0).toLocaleString()}</p>
                 </div>
                 <div>
                     <p class="text-slate-500">Monto MXN</p>
-                    <p class="font-bold text-emerald-400">$${canje.monto_mxn.toLocaleString()}</p>
+                    <p class="font-bold text-emerald-400">$${Number(canje.monto_mxn || 0).toLocaleString()}</p>
                 </div>
                 <div>
                     <p class="text-slate-500">Banco</p>
-                    <p class="font-bold text-white">${canje.banco_plataforma || '-'}</p>
+                    <p class="font-bold text-white">${escapeHtml(canje.banco_plataforma || '-')}</p>
                 </div>
                 <div>
                     <p class="text-slate-500">Beneficiario</p>
-                    <p class="font-bold text-white">${canje.nombre_beneficiario || '-'}</p>
+                    <p class="font-bold text-white">${escapeHtml(canje.nombre_beneficiario || '-')}</p>
                 </div>
             </div>
 
             <div class="mb-3 text-xs">
                 <p class="text-slate-500">Destino</p>
-                <p class="font-bold text-white break-all">${canje.cuenta_destino}</p>
+                <p class="font-bold text-white break-all">${escapeHtml(canje.cuenta_destino || '-')}</p>
             </div>
 
             ${canje.estatus === 'Pendiente' ? `
@@ -2127,9 +2088,9 @@ async function procesarCanje(canjeId, nuevoStatus) {
             body: JSON.stringify({ canjeId, nuevoStatus })
         });
 
-        const result = await response.json();
+        const result = await response.json().catch(() => ({}));
 
-        if (result.error) {
+        if (!response.ok || result.error) {
             alert('Error: ' + result.error);
             return;
         }
@@ -2151,38 +2112,38 @@ async function procesarCanje(canjeId, nuevoStatus) {
 
 
 let todosLosUsuarios = [];
-let usuariosEnLineaIds = new Set();
-let _usuarioParaSuspender = null; 
-let _suscritoPresenciaUsuarios = false;
+let _usuarioParaSuspender = null;
+let _contadorEnLineaIniciado = false;
+
+async function pedirUsuariosAdmin() {
+    const token = await obtenerTokenSesionValido();
+    const res = await fetch('https://meiwuluwrdjszxeyoqtt.supabase.co/functions/v1/listar-usuarios-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data?.error) throw new Error(data?.error || 'error desconocido');
+    return data.usuarios || [];
+}
 
 async function cargarUsuarios() {
-    document.getElementById('usuarios-loading').classList.remove('hidden');
+    const loading = document.getElementById('usuarios-loading');
+    loading.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Cargando usuarios...';
+    loading.classList.remove('hidden');
     document.getElementById('lista-usuarios').innerHTML = '';
 
     try {
-        const token = await obtenerTokenSesionValido();
-        const res = await fetch('https://meiwuluwrdjszxeyoqtt.supabase.co/functions/v1/listar-usuarios-admin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-
-        if (!res.ok || data?.error) {
-            document.getElementById('usuarios-loading').innerHTML = '<p class="text-rose-400 text-sm">No se pudo cargar la lista de usuarios: ' + (data?.error || 'error desconocido') + '</p>';
-            return;
-        }
-
-        todosLosUsuarios = data.usuarios || [];
-        document.getElementById('usuarios-loading').classList.add('hidden');
+        todosLosUsuarios = await pedirUsuariosAdmin();
+        loading.classList.add('hidden');
         document.getElementById('usuarios-total-count').textContent = todosLosUsuarios.length + ' usuario(s)';
 
-        suscribirsePresenciaUsuarios();
+        actualizarContadorEnLinea();
         renderizarListaUsuarios();
     } catch (e) {
         if (e.message === 'sesion_expirada') {
             document.getElementById('usuarios-loading').innerHTML = '<p class="text-rose-400 text-sm">Tu sesión expiró. Vuelve a iniciar sesión.</p>';
         } else {
-            document.getElementById('usuarios-loading').innerHTML = '<p class="text-rose-400 text-sm">Error de red al cargar usuarios.</p>';
+            document.getElementById('usuarios-loading').innerHTML = '<p class="text-rose-400 text-sm">No se pudo cargar la lista de usuarios: ' + escapeHtml(e.message) + '</p>';
         }
     }
 }
@@ -2191,8 +2152,36 @@ function filtrarListaUsuarios() {
     renderizarListaUsuarios();
 }
 
+function estaEnLinea(usuario) {
+    if (!usuario.ultima_conexion) return false;
+    return Date.now() - new Date(usuario.ultima_conexion).getTime() < MINUTOS_EN_LINEA * 60000;
+}
+
+function actualizarContadorEnLinea() {
+    const contadorEl = document.getElementById('contador-usuarios-activos');
+    if (!contadorEl) return;
+    const n = todosLosUsuarios.filter(estaEnLinea).length;
+    contadorEl.textContent = n === 1 ? '1 activo ahora' : `${n} activos ahora`;
+}
+
+function iniciarContadorEnLinea() {
+    if (_contadorEnLineaIniciado) return;
+    _contadorEnLineaIniciado = true;
+
+    const refrescar = async () => {
+        if (document.hidden) return;
+        try {
+            todosLosUsuarios = await pedirUsuariosAdmin();
+            actualizarContadorEnLinea();
+            if (moduloActivo === 'usuarios') renderizarListaUsuarios();
+        } catch (e) {}
+    };
+    refrescar();
+    setInterval(refrescar, 2 * 60 * 1000);
+}
+
 function _formatearUltimaConexion(usuario) {
-    if (usuariosEnLineaIds.has(usuario.id)) {
+    if (estaEnLinea(usuario)) {
         return '<span class="flex items-center gap-1.5 text-emerald-400"><span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>En línea</span>';
     }
     if (!usuario.ultima_conexion) {
@@ -2232,12 +2221,12 @@ function renderizarListaUsuarios() {
                 </div>
             </div>
             <div class="shrink-0 flex items-center gap-2">
-                <button onclick='abrirModalHistorialUsuario(${JSON.stringify(u.id)}, ${JSON.stringify(u.email || "")})' class="text-xs font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-lg px-3 py-2 transition">
+                <button onclick="abrirModalHistorialUsuario(${escapeHtml(JSON.stringify(u.id))}, ${escapeHtml(JSON.stringify(u.email || ''))})" class="text-xs font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-lg px-3 py-2 transition">
                     <i class="fa-solid fa-history mr-1"></i>Historial
                 </button>
                 ${u.suspendido_permanente
                     ? `<span class="text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2"><i class="fa-solid fa-ban mr-1"></i>Suspendido</span>`
-                    : `<button onclick='abrirModalSuspenderUsuario(${JSON.stringify(u.id)}, ${JSON.stringify(u.email || "")})' class="text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-lg px-3 py-2 transition">Suspender</button>`
+                    : `<button onclick="abrirModalSuspenderUsuario(${escapeHtml(JSON.stringify(u.id))}, ${escapeHtml(JSON.stringify(u.email || ''))})" class="text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-lg px-3 py-2 transition">Suspender</button>`
                 }
             </div>
         </div>
@@ -2251,25 +2240,6 @@ function _escaparHtmlAdmin(texto) {
     return div.innerHTML;
 }
 
-
-function suscribirsePresenciaUsuarios() {
-    if (_suscritoPresenciaUsuarios) return;
-    _suscritoPresenciaUsuarios = true;
-
-    const canal = _supabase.channel('landing-realtime');
-    canal
-        .on('presence', { event: 'sync' }, () => {
-            const estado = canal.presenceState();
-            usuariosEnLineaIds = new Set(Object.values(estado).flat().map(p => p.user_id).filter(Boolean));
-            const contadorEl = document.getElementById('contador-usuarios-activos');
-            if (contadorEl) {
-                const n = usuariosEnLineaIds.size;
-                contadorEl.textContent = n === 1 ? '1 activo ahora' : `${n} activos ahora`;
-            }
-            renderizarListaUsuarios();
-        })
-        .subscribe();
-}
 
 function abrirModalSuspenderUsuario(userId, email) {
     _usuarioParaSuspender = { id: userId, email: email };
@@ -2354,9 +2324,9 @@ async function cargarGananciasUsuario(userId) {
             const horaStr  = fecha.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
             return `<div class="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 hover:border-slate-600 transition">
                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0 text-base">${g.concepto.split(' ')[0]}</div>
+                    <div class="w-9 h-9 bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0 text-base">${escapeHtml(String(g.concepto || '').split(' ')[0])}</div>
                     <div class="min-w-0">
-                        <p class="text-sm font-semibold text-white truncate">${g.concepto.replace(/^.\s/, '')}</p>
+                        <p class="text-sm font-semibold text-white truncate">${escapeHtml(String(g.concepto || '').replace(/^.\s/, ''))}</p>
                         <p class="text-xs text-slate-500">${fechaStr} · ${horaStr}</p>
                     </div>
                 </div>
@@ -2416,11 +2386,11 @@ async function cargarRetirosPendientes(userId) {
                             <i class="fa-solid fa-gift text-purple-400 text-sm"></i>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-sm font-semibold text-white truncate">${c.tipo_premio}</p>
+                            <p class="text-sm font-semibold text-white truncate">${escapeHtml(c.tipo_premio)}</p>
                             <p class="text-xs text-slate-500">${fechaStr} · ${horaStr}</p>
                         </div>
                     </div>
-                    <span class="${est.color} ${est.bg} ${est.border} border text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ml-2">${est.icono} ${c.estatus}</span>
+                    <span class="${est.color} ${est.bg} ${est.border} border text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ml-2">${est.icono} ${escapeHtml(c.estatus)}</span>
                 </div>
                 <div class="flex items-center justify-between mt-1 pt-2 border-t border-slate-700/50">
                     <span class="text-xs text-slate-500">NetCoins descontadas</span>
@@ -2517,12 +2487,12 @@ function renderizarListaBanners(banners) {
     lista.innerHTML = banners.map(banner => `
         <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-slate-600 transition">
             <div class="flex gap-4">
-                <img src="${banner.url_imagen}" alt="${banner.titulo}" class="w-24 h-24 object-cover rounded-lg border border-slate-700">
+                <img src="${escapeHtml(urlSegura(banner.url_imagen))}" alt="${escapeHtml(banner.titulo)}" class="w-24 h-24 object-cover rounded-lg border border-slate-700">
                 
                 <div class="flex-1">
                     <div class="flex items-start justify-between mb-2">
                         <div>
-                            <h3 class="font-bold text-white">${banner.titulo}</h3>
+                            <h3 class="font-bold text-white">${escapeHtml(banner.titulo)}</h3>
                             <div class="flex items-center gap-3 text-xs text-slate-400 mt-1">
                                 <span><i class="fa-solid fa-arrow-up-1-9 mr-1 text-slate-500"></i>Orden ${banner.orden || 0}</span>
                             </div>
@@ -2555,6 +2525,7 @@ function abrirFormNuevoBanner() {
     document.getElementById('input-banner-imagen').value = '';
     document.getElementById('input-banner-orden').value = '0';
     document.getElementById('banner-preview').classList.add('hidden');
+    bannerImagenFile = null;
     document.getElementById('form-banner-titulo').textContent = 'Nuevo Banner';
     document.getElementById('form-banner-container').classList.remove('hidden');
     document.getElementById('form-banner-container').scrollIntoView({ behavior: 'smooth' });
@@ -2600,10 +2571,10 @@ async function guardarBanner() {
 
         // Si hay archivo nuevo, subir
         if (bannerImagenFile) {
-            const nombreArchivo = `banner_${Date.now()}_${bannerImagenFile.name}`;
+            const nombreArchivo = `banner_${Date.now()}_${Math.random().toString(36).slice(2)}.${extensionSegura(bannerImagenFile)}`;
             const { error: uploadError } = await _supabase.storage
                 .from('banners')
-                .upload(nombreArchivo, bannerImagenFile);
+                .upload(nombreArchivo, bannerImagenFile, { cacheControl: '3600', upsert: false, contentType: bannerImagenFile.type });
 
             if (uploadError) throw uploadError;
 
@@ -2616,9 +2587,10 @@ async function guardarBanner() {
 
         const payload = {
             titulo,
-            orden,
-            activo: true
+            orden
         };
+        if (!id) payload.activo = true;
+        const bannerAnterior = id ? todasLosBanners.find(b => b.id === id) : null;
 
         // Si hay imagen nueva, agregarla al payload
         if (bannerImagenFile) {
@@ -2641,6 +2613,7 @@ async function guardarBanner() {
         }
 
         if (error) throw error;
+        if (bannerImagenFile && bannerAnterior?.url_imagen) await borrarArchivoDeBucket(bannerAnterior.url_imagen, 'banners');
         alert(id ? 'Banner actualizado' : 'Banner creado exitosamente');
         cerrarFormBanner();
         cargarBanners();
@@ -2696,29 +2669,20 @@ async function eliminarBanner(id) {
     if (!confirm('¿Eliminar este banner?')) return;
 
     try {
+        const banner = todasLosBanners.find(b => b.id === id);
         const { error } = await _supabase
             .from('banners_pantalla_completa')
             .delete()
             .eq('id', id);
 
         if (error) throw error;
+        await borrarArchivoDeBucket(banner?.url_imagen, 'banners');
         alert('Banner eliminado exitosamente');
         cargarBanners();
     } catch (err) {
         console.error('Error:', err);
         alert('Error al eliminar banner: ' + err.message);
     }
-}
-
-// Cargar banners cuando cambia al módulo
-if (window._cambiarModuloOriginal === undefined) {
-    window._cambiarModuloOriginal = cambiarModulo;
-    window.cambiarModulo = function(modulo) {
-        window._cambiarModuloOriginal(modulo);
-        if (modulo === 'banners') {
-            cargarBanners();
-        }
-    };
 }
 </script>
 
