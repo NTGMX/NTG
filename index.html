@@ -2873,6 +2873,33 @@
             else mostrarNotificacion("¡Código reenviado! Revisa tu correo o bandeja de spam.", "success");
         }
 
+        async function manejarCorreoYaRegistrado(email, password) {
+            const { data: loginData, error } = await _supabase.auth.signInWithPassword({ email, password });
+
+            if (!error && loginData?.user) {
+                mostrarSplashYluego(async () => {
+                    await verificarSesionActiva();
+                    setTimeout(() => {
+                        const nombre = loginData.user.user_metadata?.username || loginData.user.email || "usuario";
+                        mostrarToastSesion('success', `¡Bienvenido de vuelta, ${nombre}!`, 'Ya tenías una cuenta con este correo, así que iniciamos sesión.');
+                    }, 600);
+                });
+                return;
+            }
+
+            const sinConfirmar = error && (error.code === 'email_not_confirmed' || /not confirmed/i.test(error.message));
+            if (!sinConfirmar) {
+                mostrarNotificacion("Este correo ya está registrado. Inicia sesión; si nunca confirmaste tu cuenta, usa la misma contraseña con la que te registraste la primera vez.", "error");
+                return;
+            }
+
+            mostrarPantallaVerificacion(email);
+            iniciarCooldownReenvio('btn-reenviar-codigo');
+            const { error: errorReenvio } = await _supabase.auth.resend({ type: 'signup', email });
+            if (errorReenvio) mostrarNotificacion("Tu cuenta aún no está confirmada. Escribe el código que te enviamos antes o pide uno nuevo en un momento.", "info");
+            else mostrarNotificacion("Tu cuenta aún no estaba confirmada. Te enviamos un código nuevo a tu correo.", "success");
+        }
+
 
         let _recoverEmailActual = '';
 
@@ -3158,15 +3185,20 @@
                     email, password,
                     options: { data: { username, referred_by: refCodeGuardado || null }, emailRedirectTo: null }
                 });
-                btn.disabled = false; btn.innerText = "Registrarse";
-                
-                if (error) { 
-                    mostrarNotificacion(`Error: ${error.message}`, "error"); 
-                    return; 
+                const yaRegistrado = (error && (error.code === 'user_already_exists' || /already registered|already exists/i.test(error.message)))
+                    || (!error && data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0);
+
+                if (yaRegistrado) {
+                    btn.innerText = "Verificando...";
+                    await manejarCorreoYaRegistrado(email, password);
+                    btn.disabled = false; btn.innerText = "Registrarse";
+                    return;
                 }
 
-                if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-                    mostrarNotificacion("Este correo ya está registrado. Intenta iniciar sesión.", "error");
+                btn.disabled = false; btn.innerText = "Registrarse";
+
+                if (error) {
+                    mostrarNotificacion(`Error: ${error.message}`, "error");
                     return;
                 }
                 
