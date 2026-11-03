@@ -316,6 +316,36 @@
             from { transform: translateX(0); opacity: 1; }
             to { transform: translateX(100%); opacity: 0; }
         }
+        .feed-canjes {
+            height: 340px; overflow: hidden; position: relative;
+            -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent);
+            mask-image: linear-gradient(to bottom, #000 80%, transparent);
+        }
+        .feed-canjes-pista.feed-rodando { animation: feedRodar var(--feed-duracion, 40s) linear infinite; }
+        .feed-canjes:hover .feed-canjes-pista { animation-play-state: paused; }
+        @keyframes feedRodar {
+            from { transform: translateY(0); }
+            to { transform: translateY(-50%); }
+        }
+        .feed-item-nuevo { animation: feedNuevo 1.6s ease-out; }
+        @keyframes feedNuevo {
+            0% { opacity: 0; transform: translateY(-12px); background-color: rgba(16, 185, 129, 0.25); }
+            30% { opacity: 1; transform: translateY(0); }
+            100% { background-color: rgba(30, 41, 59, 0.6); }
+        }
+        .feed-punto {
+            width: 8px; height: 8px; border-radius: 9999px; background: #f43f5e;
+            animation: feedLatido 1.4s ease-in-out infinite;
+        }
+        @keyframes feedLatido {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.6); }
+            50% { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .feed-canjes-pista.feed-rodando, .feed-item-nuevo, .feed-punto { animation: none; }
+            .feed-canjes { overflow-y: auto; }
+        }
+
         .toast-enter { animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         .toast-exit { animation: fadeOutRight 0.3s ease-in forwards; }
 
@@ -595,25 +625,16 @@
 
                     <div class="relative group">
                         <div class="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition"></div>
-                        <div class="relative bg-slate-900 border border-slate-800 rounded-3xl p-12 backdrop-blur-xl">
-                            <div class="space-y-8">
-                                <div class="space-y-2">
-                                    <p class="text-slate-500 text-sm font-bold uppercase tracking-wider">Ganancia promedio de nuestros usuarios</p>
-                                    <div class="text-5xl font-black bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">$100MXN</div>
-                                </div>
-                                <div class="space-y-3 pt-6 border-t border-slate-800">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-                                        <span class="text-slate-300">0 depósitos mínimos requeridos</span>
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-                                        <span class="text-slate-300">Retiros diarios sin límite</span>
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-                                        <span class="text-slate-300">100% seguro</span>
-                                    </div>
+                        <div class="relative bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-xl">
+                            <div class="flex items-center justify-between gap-3 mb-5">
+                                <p class="text-slate-400 text-sm font-bold uppercase tracking-wider">Canjes de nuestros usuarios</p>
+                                <span class="flex items-center gap-2 shrink-0 text-xs font-black text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1 rounded-full">
+                                    <span class="feed-punto"></span>EN VIVO
+                                </span>
+                            </div>
+                            <div class="feed-canjes">
+                                <div id="feed-canjes-pista" class="feed-canjes-pista">
+                                    <p class="text-slate-500 text-sm py-8 text-center">Cargando canjes recientes...</p>
                                 </div>
                             </div>
                         </div>
@@ -2316,6 +2337,102 @@
             return setInterval(() => { if (!document.hidden) correr(); }, ms);
         }
 
+        const FEED_INTERVALO_MS = 60 * 1000;
+        const FEED_METODOS = {
+            paypal:   { img: 'https://pngimg.com/uploads/paypal/paypal_PNG7.png', texto: c => `$${c.toLocaleString('es-MX')} MXN por PayPal` },
+            spei:     { img: null, texto: c => `$${c.toLocaleString('es-MX')} MXN por SPEI` },
+            robux:    { img: 'https://cdn3.emoji.gg/emojis/79718-robux.png', texto: c => `${c.toLocaleString('es-MX')} Robux` },
+            freefire: { img: 'https://1.bp.blogspot.com/-TdUX5b7Caq8/XOwOun9Bq8I/AAAAAAAABvE/SoQnWkyMhHQDAcPmLAUmR7uF4HnsVSMsQCLcBGAs/s1600/DIAMANTES.png', texto: c => `${c.toLocaleString('es-MX')} Diamantes para Free Fire` }
+        };
+        let feedUltimoId = null;
+
+        function feedHace(fecha) {
+            const min = Math.floor((Date.now() - new Date(fecha).getTime()) / 60000);
+            if (min < 1) return 'justo ahora';
+            if (min < 60) return `hace ${min} min`;
+            const horas = Math.floor(min / 60);
+            if (horas < 24) return `hace ${horas} h`;
+            const dias = Math.floor(horas / 24);
+            return dias === 1 ? 'hace 1 día' : `hace ${dias} días`;
+        }
+
+        function feedItemHtml(item, esNuevo) {
+            const metodo = FEED_METODOS[item.metodo];
+            const reciente = Date.now() - new Date(item.created_at).getTime() < 60 * 60 * 1000;
+            return `
+                <div class="flex items-center gap-3 bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 mb-3 ${esNuevo ? 'feed-item-nuevo' : ''}">
+                    ${metodo.img
+                        ? `<img src="${metodo.img}" alt="" class="w-10 h-10 object-contain shrink-0" loading="lazy" onerror="this.style.visibility='hidden'">`
+                        : '<div class="w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0"><i class="fa-solid fa-building-columns text-emerald-400"></i></div>'}
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm text-slate-300 leading-snug">
+                            <span class="font-black text-white">${escapeHtml(item.nombre)}</span>
+                            ${reciente ? 'acaba de canjear' : 'canjeó'}
+                            <span class="font-black text-emerald-400">${escapeHtml(metodo.texto(Number(item.cantidad)))}</span>
+                        </p>
+                        <p class="text-xs text-slate-500 mt-0.5" data-feed-fecha="${escapeHtml(item.created_at)}">${feedHace(item.created_at)}</p>
+                    </div>
+                </div>`;
+        }
+
+        async function cargarFeedCanjes() {
+            const pista = document.getElementById('feed-canjes-pista');
+            if (!pista) return;
+            try {
+                const { data, error } = await _supabase
+                    .from('feed_canjes')
+                    .select('id, nombre, metodo, cantidad, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+                if (error) throw error;
+
+                const items = (data || []).filter(i => FEED_METODOS[i.metodo] && Number(i.cantidad) > 0);
+                if (items.length === 0) {
+                    pista.classList.remove('feed-rodando');
+                    pista.innerHTML = '<p class="text-slate-500 text-sm py-8 text-center">Aún no hay canjes recientes. ¡Sé el primero!</p>';
+                    feedUltimoId = null;
+                    return;
+                }
+
+                if (items[0].id === feedUltimoId) {
+                    pista.querySelectorAll('[data-feed-fecha]').forEach(el => { el.textContent = feedHace(el.dataset.feedFecha); });
+                    return;
+                }
+
+                const idsAnteriores = new Set(Array.from(pista.querySelectorAll('[data-feed-id]')).map(el => el.dataset.feedId));
+                const hayAnteriores = feedUltimoId !== null;
+                feedUltimoId = items[0].id;
+
+                const html = items.map(i => {
+                    const esNuevo = hayAnteriores && !idsAnteriores.has(String(i.id));
+                    return `<div data-feed-id="${escapeHtml(String(i.id))}">${feedItemHtml(i, esNuevo)}</div>`;
+                }).join('');
+
+                // Con pocos canjes la lista se queda quieta; con más, rueda en bucle (la copia hace que el bucle no salte).
+                if (items.length >= 5) {
+                    pista.innerHTML = html + `<div aria-hidden="true">${html.replace(/ data-feed-id="[^"]*"/g, '').replace(/feed-item-nuevo/g, '')}</div>`;
+                    pista.style.setProperty('--feed-duracion', `${items.length * 4}s`);
+                    pista.classList.add('feed-rodando');
+                } else {
+                    pista.innerHTML = html;
+                    pista.classList.remove('feed-rodando');
+                }
+            } catch (err) {
+                if (feedUltimoId === null) {
+                    pista.innerHTML = '<p class="text-slate-500 text-sm py-8 text-center">No se pudieron cargar los canjes.</p>';
+                }
+            }
+        }
+
+        function inicializarFeedCanjes() {
+            cargarFeedCanjes();
+            intervaloSoloVisible(() => {
+                const landing = document.getElementById('landing-container');
+                if (currentUser || !landing || landing.classList.contains('hidden')) return;
+                cargarFeedCanjes();
+            }, FEED_INTERVALO_MS);
+        }
+
         function mostrarNotificacion(mensaje, tipo = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -2542,13 +2659,10 @@
 
         async function verificarBonoPorIP(userID) {
             try {
-                const { data: perfilesConMismaIP } = await _supabase
-                    .from('perfiles')
-                    .select('id, bonus_bienvenida_reclamado, ip_bonus_reclamado')
-                    .eq('ip_usuario', ipActualUsuario)
-                    .eq('ip_bonus_reclamado', true);
+                if (!ipActualUsuario) return { puedeRecibir: true, razon: null };
+                const { data: ipYaCobro, error } = await _supabase.rpc('ip_ya_cobro_bono', { p_ip: ipActualUsuario });
 
-                if (perfilesConMismaIP && perfilesConMismaIP.length > 0) {
+                if (!error && ipYaCobro === true) {
                     return { puedeRecibir: false, razon: 'otra_cuenta_ip' };
                 }
 
@@ -2640,6 +2754,7 @@
             
             cargarEstadisticas();
             inicializarEscuchasEstadisticas();
+            inicializarFeedCanjes();
             configurarEventosAuth();
             verificarSesionActiva();
             if (sessionStorage.getItem('ref_code')) {
