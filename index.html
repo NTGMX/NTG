@@ -585,7 +585,7 @@
         .torre-stat-valor { font-size: 1.15rem; font-weight: 900; color: #fff; line-height: 1.2; }
         .torre-stat-etiqueta { font-size: 0.625rem; font-weight: 600; color: rgb(148, 163, 184); margin-top: 0.15rem; }
         .btn-torre {
-            display: inline-flex; align-items: center; gap: 0.6rem;
+            display: inline-flex; align-items: center; gap: 0.6rem; white-space: nowrap;
             padding: 0.8rem 1.4rem; border-radius: 0.9rem; font-weight: 900; color: #fff;
             background: linear-gradient(135deg, #9333ea, #4f46e5);
             box-shadow: 0 10px 30px -10px rgba(124, 58, 237, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -595,9 +595,28 @@
         .btn-torre:active { transform: scale(0.97); }
         .btn-torre:disabled { opacity: 0.6; cursor: wait; transform: none; }
         .btn-torre-costo {
-            font-size: 0.7rem; font-weight: 800; padding: 0.15rem 0.5rem; border-radius: 9999px;
+            font-size: 0.7rem; font-weight: 800; padding: 0.15rem 0.5rem; border-radius: 9999px; white-space: nowrap;
             background: rgba(0, 0, 0, 0.25);
         }
+        .torre-aviso-costo {
+            display: flex; gap: 0.5rem; align-items: flex-start; max-width: 28rem; margin-top: 0.75rem;
+            font-size: 0.75rem; line-height: 1.5; color: rgb(203, 213, 225);
+        }
+        .torre-aviso-costo i { color: #fbbf24; margin-top: 0.15rem; }
+        .torre-aviso-costo strong { color: #fff; }
+        .torre-entrada {
+            display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+            padding: 0.7rem 0.9rem; border-radius: 0.85rem; font-size: 0.8rem;
+            background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.3); color: rgb(254, 205, 211);
+        }
+        .torre-entrada i { margin-right: 0.35rem; }
+        .torre-entrada strong { color: #fff; font-weight: 900; white-space: nowrap; }
+        .torre-balance {
+            border-radius: 0.85rem; padding: 0.6rem 0.85rem; font-size: 0.8rem;
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(51, 65, 85, 0.8);
+        }
+        .torre-balance > div { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.2rem 0; color: rgb(148, 163, 184); }
+        .torre-balance strong { font-weight: 900; font-variant-numeric: tabular-nums; }
         .torre-btn-secundario {
             width: 100%; padding: 0.75rem 1rem; border-radius: 0.9rem; font-weight: 800; color: rgb(203, 213, 225);
             background: rgba(30, 41, 59, 0.8); border: 1px solid rgb(51, 65, 85); transition: background 0.15s, color 0.15s;
@@ -966,7 +985,7 @@
                     <div class="tarjeta-landing">
                         <span class="icono-caja bg-purple-500/10 text-purple-400"><i class="fa-solid fa-gamepad"></i></span>
                         <h4 class="text-lg font-black mt-5 mb-2">Torre NetGamer</h4>
-                        <p class="text-sm text-slate-400 leading-relaxed mb-5">Apila bloques lo más alto que puedas. Cada piso suma NetCoins a tu saldo.</p>
+                        <p class="text-sm text-slate-400 leading-relaxed mb-5">Paga tu entrada en NetCoins y apila bloques lo más alto que puedas. Cada piso suma NetCoins.</p>
                         <span class="tarjeta-premio">+20 NC por piso</span>
                     </div>
                     <div class="tarjeta-landing">
@@ -1909,8 +1928,12 @@
 
                                 <button id="btn-torre-jugar" onclick="torreJugar()" class="btn-torre mt-5">
                                     <i class="fa-solid fa-play"></i> <span class="btn-torre-texto">Jugar ahora</span>
-                                    <span class="btn-torre-costo">−1 ❤️</span>
+                                    <span class="btn-torre-costo"><span class="torre-costo-nc">2,000</span> NC + 1 ❤️</span>
                                 </button>
+                                <p class="torre-aviso-costo">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <span>Cada partida cuesta <strong><span class="torre-costo-nc">2,000</span> NetCoins</strong> y <strong>1 vida</strong>. Se cobran al tocar <strong>Jugar ahora</strong>, aunque salgas antes de terminar.</span>
+                                </p>
                             </div>
                             <div class="torre-ilustracion hidden sm:flex" aria-hidden="true">
                                 <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
@@ -1926,7 +1949,11 @@
                                 <li class="torre-paso"><span>2</span><p>Lo que sobresale se corta y tu siguiente bloque será más pequeño.</p></li>
                                 <li class="torre-paso"><span>3</span><p>Si lo dejas exacto es <strong class="text-amber-300">Perfecto</strong>: no se corta y sumas extra. Con 3 seguidos el bloque crece.</p></li>
                             </ol>
-                            <div class="mt-5 pt-4 border-t border-slate-700/60 grid grid-cols-3 gap-2 text-center">
+                            <div class="torre-entrada mt-5">
+                                <span><i class="fa-solid fa-ticket"></i> Entrada por partida</span>
+                                <strong><span class="torre-costo-nc">2,000</span> NC + 1 ❤️</strong>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-slate-700/60 grid grid-cols-3 gap-2 text-center">
                                 <div>
                                     <p class="text-base font-black text-amber-300">+<span id="torre-cfg-piso">20</span></p>
                                     <p class="text-[10px] text-slate-400 font-semibold">NC por piso</p>
@@ -2396,13 +2423,17 @@
                     <div class="torre-premio mt-3">
                         <i class="fa-solid fa-coins"></i> +<span id="torre-res-premio">0</span> NC
                     </div>
+                    <div class="torre-balance mt-2">
+                        <div><span>Entrada</span><strong class="text-rose-300">−<span class="torre-costo-nc">2,000</span> NC</strong></div>
+                        <div><span>Resultado de la partida</span><strong id="torre-res-neto">0 NC</strong></div>
+                    </div>
                     <p id="torre-res-nota" class="text-xs text-slate-400 mt-3 leading-relaxed"></p>
 
                     <div class="grid gap-2 mt-5">
                         <button type="button" id="torre-res-reintentar" onclick="torreEnviarResultado()" class="btn-torre w-full justify-center torre-oculto"><i class="fa-solid fa-rotate-right"></i> Reintentar guardar</button>
                         <button type="button" id="torre-res-otra" onclick="torreJugarOtraVez()" class="btn-torre w-full justify-center">
-                            <i class="fa-solid fa-play"></i> <span class="btn-torre-texto">Jugar otra vez</span>
-                            <span class="btn-torre-costo">−1 ❤️</span>
+                            <i class="fa-solid fa-play"></i> <span class="btn-torre-texto">Otra vez</span>
+                            <span class="btn-torre-costo"><span class="torre-costo-nc">2,000</span> NC + 1 ❤️</span>
                         </button>
                         <button type="button" onclick="torreCerrar()" class="torre-btn-secundario">Salir</button>
                     </div>
@@ -4417,7 +4448,7 @@
                             <p class="text-xs text-slate-500">${fechaStr} · ${horaStr}</p>
                         </div>
                     </div>
-                    <span class="text-amber-400 font-extrabold text-sm shrink-0 ml-3">+${Number(g.netcoins).toLocaleString('en-US')} NC</span>
+                    <span class="${g.netcoins < 0 ? 'text-rose-400' : 'text-amber-400'} font-extrabold text-sm shrink-0 ml-3">${g.netcoins < 0 ? '−' : '+'}${Math.abs(Number(g.netcoins)).toLocaleString('en-US')} NC</span>
                 </div>`;
             }).join('');
         }
@@ -4587,7 +4618,7 @@
             <p>a) Completar ofertas, encuestas y tareas en los muros de ofertas (offerwalls) integrados de proveedores asociados (por ejemplo AdGem).</p>
             <p>b) Leer noticias dentro de la sección correspondiente de la Plataforma.</p>
             <p>c) Participar en la Ruleta Diaria, que otorga una cantidad aleatoria de NetCoins una vez cada 24 horas (hasta 5 veces al día para usuarios con suscripción Premium activa).</p>
-            <p>d) Jugar los juegos de la Plataforma, como Torre NetGamer, que otorgan NetCoins según el resultado de cada partida conforme a las reglas y límites publicados en el juego.</p>
+            <p>d) Jugar los juegos de la Plataforma, como Torre NetGamer, que otorgan NetCoins según el resultado de cada partida conforme a las reglas y límites publicados en el juego. Algunos juegos cobran una entrada en NetCoins y/o vidas al iniciar cada partida; la entrada no es reembolsable una vez iniciada la partida, aunque esta se abandone.</p>
             <p>e) Invitar a otros usuarios mediante el sistema de referidos.</p>
             <p>f) Reclamar el bono de bienvenida al registrarse por primera vez.</p>
             <p>Las NetCoins acumuladas pueden canjearse posteriormente por recompensas reales, sujeto a las condiciones descritas en la sección 6 de este documento.</p>
@@ -4711,7 +4742,7 @@
         // ================== TORRE NETGAMER ==================
         // El juego corre en el navegador; el premio lo calcula y lo abona
         // Supabase (torre_iniciar / torre_terminar), que valida el resultado.
-        const TORRE_CFG_BASE = { nc_por_piso: 20, nc_por_perfecto: 10, tope_partida: 2000, tope_diario: 10000 };
+        const TORRE_CFG_BASE = { costo_entrada: 2000, nc_por_piso: 20, nc_por_perfecto: 10, tope_partida: 2000, tope_diario: 10000 };
         let _torreCfg = { ...TORRE_CFG_BASE };
         let _torreResumen = null;
         let _torrePartidaId = null;
@@ -4742,6 +4773,7 @@
             poner('torre-cfg-perfecto', _torreFmt(_torreCfg.nc_por_perfecto));
             poner('torre-cfg-tope', _torreFmt(_torreCfg.tope_partida));
             poner('torre-cfg-tope-diario', _torreFmt(_torreCfg.tope_diario));
+            document.querySelectorAll('.torre-costo-nc').forEach(el => { el.textContent = _torreFmt(_torreCfg.costo_entrada); });
 
             const lista = document.getElementById('torre-ranking');
             if (!lista) return;
@@ -4789,6 +4821,7 @@
                     const codigo = data && data.error;
                     const mensajes = {
                         sin_vidas: '💔 Ya no tienes vidas hoy. Vuelve mañana o recarga más vidas.',
+                        sin_netcoins: `💰 Necesitas ${_torreFmt((data && data.costo) || _torreCfg.costo_entrada)} NetCoins para jugar una partida.`,
                         cuenta_suspendida: 'Tu cuenta está suspendida y no puede jugar.',
                         sin_sesion: 'Tu sesión expiró. Vuelve a iniciar sesión.'
                     };
@@ -4801,7 +4834,9 @@
                 }
                 _torrePartidaId = data.partida_id;
                 _torreVidasRestantes = data.ilimitadas ? null : data.vidas_restantes;
+                if (data.costo != null) _torreCfg.costo_entrada = data.costo;
                 cargarVidas();
+                refrescarPerfilLigero();
                 TorreJuego.abrir();
             } catch (e) {
                 mostrarNotificacion('⚠️ No se pudo iniciar la partida. Revisa tu conexión.', 'error');
@@ -4939,6 +4974,11 @@
                 requestAnimationFrame(animar);
             }
 
+            const neto = premio - _torreCfg.costo_entrada;
+            const netoEl = document.getElementById('torre-res-neto');
+            netoEl.textContent = (neto > 0 ? '+' : neto < 0 ? '−' : '') + _torreFmt(Math.abs(neto)) + ' NC';
+            netoEl.className = neto > 0 ? 'text-emerald-300' : neto < 0 ? 'text-rose-300' : 'text-white';
+
             let nota = '';
             if (codigoError === 'error_red') {
                 nota = 'No pudimos guardar tu partida. Revisa tu conexión e intenta otra vez.';
@@ -4967,8 +5007,9 @@
             const textoOtra = otra.querySelector('.btn-torre-texto');
             const costoOtra = otra.querySelector('.btn-torre-costo');
             const sinVidas = _torreVidasRestantes === 0;
-            textoOtra.textContent = textoOtra.dataset.original = sinVidas ? 'Recargar vidas' : 'Jugar otra vez';
-            costoOtra.classList.toggle('torre-oculto', sinVidas || _torreVidasRestantes === null);
+            textoOtra.textContent = textoOtra.dataset.original = sinVidas ? 'Recargar vidas' : 'Otra vez';
+            costoOtra.classList.toggle('torre-oculto', sinVidas);
+            costoOtra.innerHTML = _torreFmt(_torreCfg.costo_entrada) + ' NC' + (_torreVidasRestantes === null ? '' : ' + 1 ❤️');
             document.getElementById('torre-res-vidas').textContent = _torreVidasRestantes === null
                 ? 'Vidas ilimitadas ♾️'
                 : `Te ${_torreVidasRestantes === 1 ? 'queda 1 vida' : 'quedan ' + _torreVidasRestantes + ' vidas'} hoy`;
