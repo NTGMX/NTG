@@ -1928,11 +1928,11 @@
 
                                 <button id="btn-torre-jugar" onclick="torreJugar()" class="btn-torre mt-5">
                                     <i class="fa-solid fa-play"></i> <span class="btn-torre-texto">Jugar ahora</span>
-                                    <span class="btn-torre-costo"><span class="torre-costo-nc">500</span> NC + 1 ❤️</span>
+                                    <span class="btn-torre-costo"><span class="torre-costo-nc">700</span> NC + 1 ❤️</span>
                                 </button>
                                 <p class="torre-aviso-costo">
                                     <i class="fa-solid fa-circle-info"></i>
-                                    <span>Cada partida cuesta <strong><span class="torre-costo-nc">500</span> NetCoins</strong> y <strong>1 vida</strong>. Se cobran al tocar <strong>Jugar ahora</strong>, aunque salgas antes de terminar.</span>
+                                    <span>Cada partida cuesta <strong><span class="torre-costo-nc">700</span> NetCoins</strong> y <strong>1 vida</strong>. Se cobran al tocar <strong>Jugar ahora</strong>, aunque salgas antes de terminar.</span>
                                 </p>
                             </div>
                             <div class="torre-ilustracion hidden sm:flex" aria-hidden="true">
@@ -1951,7 +1951,7 @@
                             </ol>
                             <div class="torre-entrada mt-5">
                                 <span><i class="fa-solid fa-ticket"></i> Entrada por partida</span>
-                                <strong><span class="torre-costo-nc">500</span> NC + 1 ❤️</strong>
+                                <strong><span class="torre-costo-nc">700</span> NC + 1 ❤️</strong>
                             </div>
                             <div class="mt-4 pt-4 border-t border-slate-700/60 grid grid-cols-3 gap-2 text-center">
                                 <div>
@@ -1963,11 +1963,11 @@
                                     <p class="text-[10px] text-slate-400 font-semibold">NC por perfecto</p>
                                 </div>
                                 <div>
-                                    <p class="text-base font-black text-white"><span id="torre-cfg-tope">2,000</span></p>
-                                    <p class="text-[10px] text-slate-400 font-semibold">NC máx. por partida</p>
+                                    <p class="text-base font-black text-emerald-300">Sin límite</p>
+                                    <p class="text-[10px] text-slate-400 font-semibold">de NC por partida</p>
                                 </div>
                             </div>
-                            <p class="text-[11px] text-slate-500 mt-4 text-center">Puedes ganar hasta <span id="torre-cfg-tope-diario">10,000</span> NC al día en Torre.</p>
+                            <p class="text-[11px] text-slate-500 mt-4 text-center">No hay límite por partida ni por día: entre más alto llegues, más ganas.</p>
                         </div>
 
                         <div class="rounded-2xl border border-slate-700/80 bg-slate-800/60 p-5">
@@ -2424,7 +2424,7 @@
                         <i class="fa-solid fa-coins"></i> +<span id="torre-res-premio">0</span> NC
                     </div>
                     <div class="torre-balance mt-2">
-                        <div><span>Entrada</span><strong class="text-rose-300">−<span class="torre-costo-nc">500</span> NC</strong></div>
+                        <div><span>Entrada</span><strong class="text-rose-300">−<span class="torre-costo-nc">700</span> NC</strong></div>
                         <div><span>Resultado de la partida</span><strong id="torre-res-neto">0 NC</strong></div>
                     </div>
                     <p id="torre-res-nota" class="text-xs text-slate-400 mt-3 leading-relaxed"></p>
@@ -2433,7 +2433,7 @@
                         <button type="button" id="torre-res-reintentar" onclick="torreEnviarResultado()" class="btn-torre w-full justify-center torre-oculto"><i class="fa-solid fa-rotate-right"></i> Reintentar guardar</button>
                         <button type="button" id="torre-res-otra" onclick="torreJugarOtraVez()" class="btn-torre w-full justify-center">
                             <i class="fa-solid fa-play"></i> <span class="btn-torre-texto">Otra vez</span>
-                            <span class="btn-torre-costo"><span class="torre-costo-nc">500</span> NC + 1 ❤️</span>
+                            <span class="btn-torre-costo"><span class="torre-costo-nc">700</span> NC + 1 ❤️</span>
                         </button>
                         <button type="button" onclick="torreCerrar()" class="torre-btn-secundario">Salir</button>
                     </div>
@@ -4742,7 +4742,7 @@
         // ================== TORRE NETGAMER ==================
         // El juego corre en el navegador; el premio lo calcula y lo abona
         // Supabase (torre_iniciar / torre_terminar), que valida el resultado.
-        const TORRE_CFG_BASE = { costo_entrada: 500, nc_por_piso: 20, nc_por_perfecto: 10, tope_partida: 2000, tope_diario: 10000 };
+        const TORRE_CFG_BASE = { costo_entrada: 700, nc_por_piso: 20, nc_por_perfecto: 10 };
         let _torreCfg = { ...TORRE_CFG_BASE };
         let _torreResumen = null;
         let _torrePartidaId = null;
@@ -4771,8 +4771,6 @@
             poner('torre-posicion', d.mi_posicion ? '#' + d.mi_posicion : '—');
             poner('torre-cfg-piso', _torreFmt(_torreCfg.nc_por_piso));
             poner('torre-cfg-perfecto', _torreFmt(_torreCfg.nc_por_perfecto));
-            poner('torre-cfg-tope', _torreFmt(_torreCfg.tope_partida));
-            poner('torre-cfg-tope-diario', _torreFmt(_torreCfg.tope_diario));
             document.querySelectorAll('.torre-costo-nc').forEach(el => { el.textContent = _torreFmt(_torreCfg.costo_entrada); });
 
             const lista = document.getElementById('torre-ranking');
@@ -4989,17 +4987,10 @@
                 nota = 'Esta partida ya no se pudo guardar.';
             } else if (res.sospechosa) {
                 nota = 'No pudimos validar esta partida, así que no generó NetCoins.';
+            } else if (premio > 0) {
+                nota = 'Las NetCoins ya están en tu saldo.';
             } else {
-                const bruto = res.altura * _torreCfg.nc_por_piso + res.perfectos * _torreCfg.nc_por_perfecto;
-                if (premio < Math.min(bruto, _torreCfg.tope_partida) && res.ganado_hoy >= res.tope_diario) {
-                    nota = `Llegaste al límite de ${_torreFmt(res.tope_diario)} NC por día en Torre. ¡Vuelve mañana!`;
-                } else if (bruto >= _torreCfg.tope_partida) {
-                    nota = '¡Alcanzaste el máximo de NetCoins por partida!';
-                } else if (premio > 0) {
-                    nota = 'Las NetCoins ya están en tu saldo.';
-                } else {
-                    nota = 'Coloca al menos un bloque para ganar NetCoins.';
-                }
+                nota = 'Coloca al menos un bloque para ganar NetCoins.';
             }
             document.getElementById('torre-res-nota').textContent = nota;
 
@@ -5088,7 +5079,7 @@
             }
 
             const velocidad = () => 170 + Math.min(altura, 60) * 4.2;
-            const ncAcumuladas = () => Math.min(altura * _torreCfg.nc_por_piso + perfectos * _torreCfg.nc_por_perfecto, _torreCfg.tope_partida);
+            const ncAcumuladas = () => altura * _torreCfg.nc_por_piso + perfectos * _torreCfg.nc_por_perfecto;
 
             function hud(pop) {
                 const a = document.getElementById('torre-altura');
