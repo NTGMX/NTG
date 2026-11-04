@@ -1922,11 +1922,11 @@
 
                                 <button id="btn-torre-jugar" onclick="torreJugar()" class="btn-torre mt-5">
                                     <i class="fa-solid fa-play"></i> <span class="btn-torre-texto">Jugar ahora</span>
-                                    <span class="btn-torre-costo"><span class="torre-costo-nc">700</span> NC + 1 ❤️</span>
+                                    <span class="btn-torre-costo"><span class="torre-costo-nc">1,000</span> NC + 1 ❤️</span>
                                 </button>
                                 <p class="torre-aviso-costo">
                                     <i class="fa-solid fa-circle-info"></i>
-                                    <span>Cada partida cuesta <strong><span class="torre-costo-nc">700</span> NetCoins</strong> y <strong>1 vida</strong>. Se cobran al tocar <strong>Jugar ahora</strong>, aunque salgas antes de terminar.</span>
+                                    <span>Cada partida cuesta <strong><span class="torre-costo-nc">1,000</span> NetCoins</strong> y <strong>1 vida</strong>. Se cobran al tocar <strong>Jugar ahora</strong>, aunque salgas antes de terminar.</span>
                                 </p>
                             </div>
                             <div class="torre-ilustracion hidden sm:flex" aria-hidden="true">
@@ -1945,7 +1945,7 @@
                             </ol>
                             <div class="torre-entrada mt-5">
                                 <span><i class="fa-solid fa-ticket"></i> Entrada por partida</span>
-                                <strong><span class="torre-costo-nc">700</span> NC + 1 ❤️</strong>
+                                <strong><span class="torre-costo-nc">1,000</span> NC + 1 ❤️</strong>
                             </div>
                             <div class="mt-4 pt-4 border-t border-slate-700/60 grid grid-cols-3 gap-2 text-center">
                                 <div>
@@ -2423,7 +2423,7 @@
                         <button type="button" id="torre-res-reintentar" onclick="torreEnviarResultado()" class="btn-torre w-full justify-center torre-oculto"><i class="fa-solid fa-rotate-right"></i> Reintentar guardar</button>
                         <button type="button" id="torre-res-otra" onclick="torreJugarOtraVez()" class="btn-torre w-full justify-center">
                             <i class="fa-solid fa-play"></i> <span class="btn-torre-texto">Otra vez</span>
-                            <span class="btn-torre-costo"><span class="torre-costo-nc">700</span> NC + 1 ❤️</span>
+                            <span class="btn-torre-costo"><span class="torre-costo-nc">1,000</span> NC + 1 ❤️</span>
                         </button>
                         <button type="button" onclick="torreCerrar()" class="torre-btn-secundario">Salir</button>
                     </div>
@@ -4732,7 +4732,7 @@
         // ================== TORRE NETGAMER ==================
         // El juego corre en el navegador; el premio lo calcula y lo abona
         // Supabase (torre_iniciar / torre_terminar), que valida el resultado.
-        const TORRE_CFG_BASE = { costo_entrada: 700, nc_por_piso: 20, nc_por_perfecto: 10 };
+        const TORRE_CFG_BASE = { costo_entrada: 1000, nc_por_piso: 20, nc_por_perfecto: 10 };
         let _torreCfg = { ...TORRE_CFG_BASE };
         let _torreResumen = null;
         let _torrePartidaId = null;
