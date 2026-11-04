@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='ng-grad' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23a855f7'/%3E%3Cstop offset='1' stop-color='%234f46e5'/%3E%3C/linearGradient%3E%3ClinearGradient id='ng-moneda' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fde68a'/%3E%3Cstop offset='1' stop-color='%23f59e0b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M32 5 55 18.5v27L32 59 9 45.5v-27z' fill='url(%23ng-grad)' stroke='url(%23ng-grad)' stroke-width='6' stroke-linejoin='round'/%3E%3Cpath d='M32 5 55 18.5 32 32 9 18.5z' fill='%23fff' opacity='.14' stroke='%23fff' stroke-opacity='.14' stroke-width='6' stroke-linejoin='round'/%3E%3Cpath d='M20.5 45V19h6.6l10.3 14.6V19h6.6v26h-6.6L27.1 30.4V45z' fill='%23fff'/%3E%3Ccircle cx='51' cy='13' r='9' fill='%230b0f1a'/%3E%3Ccircle cx='51' cy='13' r='6.8' fill='url(%23ng-moneda)'/%3E%3Ccircle cx='51' cy='13' r='4' fill='none' stroke='%23b45309' stroke-width='1.4'/%3E%3C/svg%3E">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-    <title>NetGamer · Juega, mira y gana dinero real</title>
-    <meta name="description" content="Gana NetCoins jugando, viendo videos y leyendo noticias, y canjéalos por PayPal, SPEI, Robux o Diamantes de Free Fire. Registro gratis.">
+    <title>NetGamer · Juega, lee y gana dinero real</title>
+    <meta name="description" content="Gana NetCoins jugando, leyendo noticias y completando ofertas, y canjéalos por PayPal, SPEI, Robux o Diamantes de Free Fire. Registro gratis.">
     <meta name="theme-color" content="#020617">
     <link rel="canonical" href="https://netgamermx.com/">
 
@@ -14,14 +14,14 @@
     <meta property="og:site_name" content="NetGamer">
     <meta property="og:locale" content="es_MX">
     <meta property="og:url" content="https://netgamermx.com/">
-    <meta property="og:title" content="NetGamer · Juega, mira y gana dinero real">
+    <meta property="og:title" content="NetGamer · Juega, lee y gana dinero real">
     <meta property="og:description" content="Gana NetCoins gratis y canjéalos por PayPal, SPEI, Robux o Diamantes de Free Fire. ¡Regístrate y recibe tu bono de bienvenida!">
     <meta property="og:image" content="https://netgamermx.com/og-netgamer.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="NetGamer: juega, mira y gana dinero real">
+    <meta property="og:image:alt" content="NetGamer: juega, lee y gana dinero real">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="NetGamer · Juega, mira y gana dinero real">
+    <meta name="twitter:title" content="NetGamer · Juega, lee y gana dinero real">
     <meta name="twitter:description" content="Gana NetCoins gratis y canjéalos por PayPal, SPEI, Robux o Diamantes de Free Fire.">
     <meta name="twitter:image" content="https://netgamermx.com/og-netgamer.png">
     
@@ -91,6 +91,15 @@
         #landing-container .titulo-hero {
             font-size: clamp(2.6rem, 7vw + 0.5rem, 5.5rem);
             line-height: 1.05;
+        }
+
+        @media (min-width: 640px) and (max-width: 1023px) {
+            #formas-de-ganar .formas-ganar > :last-child { grid-column: span 2; }
+        }
+        @media (min-width: 1024px) {
+            #formas-de-ganar .formas-ganar { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+            #formas-de-ganar .formas-ganar > * { grid-column: span 2; }
+            #formas-de-ganar .formas-ganar > :nth-child(4) { grid-column: 2 / span 2; }
         }
 
         #landing-container .text-6xl {
@@ -863,11 +872,11 @@
                     <i class="fa-solid fa-gift"></i> Registro gratis + bono de bienvenida
                 </span>
                 <h2 class="titulo-hero font-black tracking-tight mb-6">
-                    Juega, mira y<br>
+                    Juega, lee y<br>
                     <span class="bg-gradient-to-r from-purple-400 via-fuchsia-300 to-indigo-400 bg-clip-text text-transparent">gana dinero real</span>
                 </h2>
                 <p class="text-xl text-slate-400 leading-relaxed max-w-2xl mx-auto mb-10">
-                    Gana NetCoins jugando, leyendo noticias, viendo videos, completando ofertas y girando la ruleta diaria. Canjéalos por PayPal, SPEI, Robux o Diamantes de Free Fire.
+                    Gana NetCoins jugando, leyendo noticias, completando ofertas y girando la ruleta diaria. Canjéalos por PayPal, SPEI, Robux o Diamantes de Free Fire.
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center gap-3 mb-8">
                     <button onclick="irARegistro()" class="btn-principal px-8 py-4 rounded-xl font-black text-lg inline-flex items-center justify-center gap-3">
@@ -957,18 +966,12 @@
                     <h3 class="text-4xl font-black mb-4">Muchas formas de sumar NetCoins</h3>
                     <p class="text-lg text-slate-400">Elige la que más te guste. Todas suman a tu saldo.</p>
                 </div>
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 formas-ganar">
                     <div class="tarjeta-landing">
                         <span class="icono-caja bg-sky-500/10 text-sky-400"><i class="fa-solid fa-newspaper"></i></span>
                         <h4 class="text-lg font-black mt-5 mb-2">Lee noticias</h4>
                         <p class="text-sm text-slate-400 leading-relaxed mb-5">Entérate de lo que pasa en México y gana por cada noticia que leas.</p>
                         <span class="tarjeta-premio">+250 NC por noticia</span>
-                    </div>
-                    <div class="tarjeta-landing">
-                        <span class="icono-caja bg-rose-500/10 text-rose-400"><i class="fa-solid fa-circle-play"></i></span>
-                        <h4 class="text-lg font-black mt-5 mb-2">Mira videos</h4>
-                        <p class="text-sm text-slate-400 leading-relaxed mb-5">Disfruta los videos de Pulso Play y recibe NetCoins al terminarlos.</p>
-                        <span class="tarjeta-premio">NC por cada video</span>
                     </div>
                     <div class="tarjeta-landing">
                         <span class="icono-caja bg-amber-500/10 text-amber-400"><i class="fa-solid fa-rotate"></i></span>
@@ -1012,7 +1015,7 @@
                     <div class="tarjeta-landing text-center">
                         <span class="paso-numero">2</span>
                         <h4 class="text-lg font-black mt-5 mb-2">Gana NetCoins</h4>
-                        <p class="text-sm text-slate-400 leading-relaxed">Juega, lee, mira videos, completa ofertas, gira la ruleta e invita a tus amigos.</p>
+                        <p class="text-sm text-slate-400 leading-relaxed">Juega, lee noticias, completa ofertas, gira la ruleta e invita a tus amigos.</p>
                     </div>
                     <div class="tarjeta-landing text-center">
                         <span class="paso-numero">3</span>
@@ -1082,7 +1085,7 @@
                     </details>
                     <details class="faq-item">
                         <summary>¿Cómo gano NetCoins?</summary>
-                        <p>Jugando Torre NetGamer, leyendo noticias, viendo videos, girando la ruleta diaria, completando ofertas y tareas, e invitando a tus amigos con tu enlace de referido.</p>
+                        <p>Jugando Torre NetGamer, leyendo noticias, girando la ruleta diaria, completando ofertas y tareas, e invitando a tus amigos con tu enlace de referido.</p>
                     </details>
                     <details class="faq-item">
                         <summary>¿Cuál es el mínimo para retirar?</summary>
@@ -1135,7 +1138,7 @@
                         <svg class="w-9 h-9"><use href="#ng-logo"/></svg>
                         <span class="font-black text-lg"><span class="text-white">Net</span><span class="text-purple-400">Gamer</span></span>
                     </div>
-                    <p class="text-sm text-slate-500 leading-relaxed">La plataforma mexicana para ganar recompensas reales jugando, leyendo y viendo videos.</p>
+                    <p class="text-sm text-slate-500 leading-relaxed">La plataforma mexicana para ganar recompensas reales jugando y leyendo noticias.</p>
                 </div>
                 <div>
                     <p class="text-sm font-bold text-white mb-4">Plataforma</p>
@@ -1447,15 +1450,6 @@
             <main id="main-content" class="flex-1 p-3 sm:p-6 overflow-y-auto">
 
                 <div id="tab-inicio" class="tab-content active space-y-4 sm:space-y-6">
-                    <div class="bg-gradient-to-r from-rose-800 to-fuchsia-900 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl">
-                        <h2 class="text-xl sm:text-3xl font-black mb-2">¡Consigue Dinero Real Viendo Videos!</h2>
-                        <p class="text-rose-200 text-xs sm:text-sm mb-4 sm:mb-6">Disfruta de los mejores videos de entretenimiento, acumula NetCoins y canjéalos por premios digitales o transferencias bancarias.</p>
-                        <button onclick="irAKdramas()"
-                            class="bg-white text-fuchsia-900 font-extrabold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition duration-200 text-sm sm:text-base">
-                            <i class="fa-solid fa-clapperboard mr-2"></i>Ver Videos
-                        </button>
-                    </div>
-
                     <div class="bg-gradient-to-r from-purple-800 to-indigo-900 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl">
                         <h2 class="text-xl sm:text-3xl font-black mb-2">¡Consigue Dinero Real Leyendo Noticias!</h2>
                         <p class="text-purple-200 text-xs sm:text-sm mb-4 sm:mb-6">Infórmate con las noticias más relevantes, acumula NetCoins y canjéalos por premios digitales o transferencias bancarias.</p>
@@ -3732,7 +3726,7 @@
 
         function obtenerMensajeCompartir() {
             const enlace = document.getElementById("referral-link-input").value;
-            return `¡Únete a NetGamer y gana dinero real viendo videos, Jugando, leyendo noticias y completando tareas! Usa mi enlace y ambos recibimos 6,000 NetCoins de regalo 🎮💰 ${enlace}`;
+            return `¡Únete a NetGamer y gana dinero real jugando, leyendo noticias y completando tareas! Usa mi enlace y ambos recibimos 6,000 NetCoins de regalo 🎮💰 ${enlace}`;
         }
 
         function compartirWhatsApp() { window.open(`https://wa.me/?text=${encodeURIComponent(obtenerMensajeCompartir())}`, '_blank', 'noopener'); }
@@ -4676,16 +4670,6 @@
             const urlNoticias = "https://pulsomx1.github.io/PulsoMX/"; 
             
             window.open(`${urlNoticias}?uid=${currentUser.id}`, '_blank', 'noopener');
-        }
-
-        function irAKdramas() {
-            if (!currentUser) {
-                mostrarNotificacion("Debes iniciar sesión para ganar monedas viendo K-Dramas.", "error");
-                return;
-            }
-            const urlKdramas = "https://pulsomx1.github.io/Pulso-Play/";
-
-            window.open(`${urlKdramas}?uid=${currentUser.id}`, '_blank', 'noopener');
         }
 
 
