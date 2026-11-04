@@ -4927,9 +4927,7 @@
             try {
                 ({ data, error } = await _supabase.rpc('torre_terminar', {
                     p_partida: _torrePartidaId,
-                    p_altura: stats.altura,
-                    p_perfectos: stats.perfectos,
-                    p_combo_max: stats.comboMax
+                    p_toques: stats.toques
                 }));
             } catch (e) { error = e; }
 
@@ -4943,13 +4941,16 @@
         }
 
         function torreMostrarResultado(res, codigoError) {
-            const stats = TorreJuego.stats();
+            const local = TorreJuego.stats();
+            const stats = res
+                ? { altura: res.altura, perfectos: res.perfectos, comboMax: res.combo_max }
+                : local;
             document.getElementById('torre-res-altura').textContent = _torreFmt(stats.altura);
             document.getElementById('torre-res-perfectos').textContent = _torreFmt(stats.perfectos);
             document.getElementById('torre-res-combo').textContent = stats.comboMax ? 'x' + stats.comboMax : '—';
             document.getElementById('torre-res-record').classList.toggle('torre-oculto', !(res && res.nuevo_record));
 
-            const premio = res ? res.premio : 0;
+            const premio = res ? (res.en_revision ? res.premio_revision : res.premio) : 0;
             const premioEl = document.getElementById('torre-res-premio');
             premioEl.textContent = '0';
             if (premio > 0) {
@@ -4972,6 +4973,8 @@
                 nota = 'Esta partida ya no se pudo guardar.';
             } else if (res.sospechosa) {
                 nota = 'No pudimos validar esta partida, así que no generó NetCoins.';
+            } else if (res.en_revision) {
+                nota = '¡Gran partida! Por seguridad, este premio queda en revisión y se agregará a tu saldo en cuanto lo aprobemos.';
             } else if (premio > 0) {
                 nota = 'Las NetCoins ya están en tu saldo.';
             } else {
@@ -4994,13 +4997,56 @@
             if (res && res.nuevo_record) _torreTono(880, 0.5, 'triangle', 0.12, 1320);
         }
 
+        // Reglas de Torre en enteros (milésimas de unidad). Supabase usa exactamente
+        // las mismas en _torre_simular para repetir la partida: si cambias algo aquí,
+        // cámbialo también allá.
+        const TorreReglas = {
+            ANCHO: 230000, TOLERANCIA: 5000, RANGO: 150000, CRECE: 10000, CICLO: 600000, BASE_X: 85000,
+            // x del bloque `t` ms después de aparecer, sobre un bloque en `tx`, con `altura` pisos ya puestos.
+            posicion(tx, altura, t) {
+                const d = Math.floor(t * (1700 + 42 * Math.min(altura, 60)) / 10);
+                const p = d % this.CICLO;
+                const off = p <= 2 * this.RANGO ? p : this.CICLO - p;
+                return altura % 2 === 0 ? tx - this.RANGO + off : tx + this.RANGO - off;
+            },
+            // Resultado de soltar el bloque en `x` encima de (tx, tw).
+            colocar(tx, tw, x, combo) {
+                const dx = x - tx;
+                if (Math.abs(dx) <= this.TOLERANCIA) {
+                    let w = tw, nx = tx;
+                    combo++;
+                    if (combo >= 3 && w < this.ANCHO) {
+                        const crece = Math.min(this.CRECE, this.ANCHO - w);
+                        w += crece;
+                        nx -= Math.floor(crece / 2);
+                    }
+                    return { perdio: false, perfecto: true, x: nx, w, combo, corte: null };
+                }
+                const traslape = tw - Math.abs(dx);
+                if (traslape <= 0) return { perdio: true, perfecto: false, x, w: tw, combo: 0, corte: null };
+                const corte = dx > 0 ? { x: tx + tw, w: dx } : { x, w: -dx };
+                return { perdio: false, perfecto: false, x: dx < 0 ? tx : x, w: traslape, combo: 0, corte };
+            },
+            simular(toques) {
+                let tx = this.BASE_X, tw = this.ANCHO, altura = 0, perfectos = 0, combo = 0, comboMax = 0;
+                for (const t of toques) {
+                    const r = this.colocar(tx, tw, this.posicion(tx, altura, t), combo);
+                    if (r.perdio) break;
+                    combo = r.combo;
+                    if (r.perfecto) { perfectos++; comboMax = Math.max(comboMax, combo); }
+                    tx = r.x; tw = r.w; altura++;
+                }
+                return { altura, perfectos, combo_max: comboMax };
+            }
+        };
+
         const TorreJuego = (() => {
-            const MUNDO_ANCHO = 400, ALTO_BLOQUE = 26, ANCHO_INICIAL = 230, TOLERANCIA = 5, RANGO = 150;
+            const MUNDO_ANCHO = 400, ALTO_BLOQUE = 26;
             let canvas, ctx, escenario, iniciado = false;
             let anchoPx = 0, altoPx = 0, escala = 1, dpr = 1, altoMundo = 0, suelo = 0;
             let estado = 'inactivo', enviando = false;
             let pila = [], actual = null, caidas = [], particulas = [], destellos = [], textos = [], estrellas = [];
-            let altura = 0, perfectos = 0, combo = 0, comboMax = 0, tono = 0;
+            let altura = 0, perfectos = 0, combo = 0, comboMax = 0, tono = 0, toques = [];
             let cam = 0, raf = 0, ultimoT = 0, sacudida = 0;
 
             const color = (i, luz = 58) => `hsl(${(tono + i * 7) % 360}, 72%, ${luz}%)`;
@@ -5042,7 +5088,9 @@
             }
 
             function reiniciar() {
-                pila = [{ x: (MUNDO_ANCHO - ANCHO_INICIAL) / 2, w: ANCHO_INICIAL, i: 0 }];
+                // x/w en unidades del juego para dibujar; px/pw en enteros para las reglas.
+                pila = [{ x: TorreReglas.BASE_X / 1000, w: TorreReglas.ANCHO / 1000, px: TorreReglas.BASE_X, pw: TorreReglas.ANCHO, i: 0 }];
+                toques = [];
                 actual = null;
                 caidas = []; particulas = []; destellos = []; textos = [];
                 altura = perfectos = combo = comboMax = 0;
@@ -5056,14 +5104,14 @@
 
             function nuevoBloque() {
                 const arriba = pila[pila.length - 1];
-                const desdeIzquierda = pila.length % 2 === 1;
-                actual = {
-                    x: arriba.x + (desdeIzquierda ? -RANGO : RANGO), w: arriba.w, i: pila.length,
-                    dir: desdeIzquierda ? 1 : -1, minX: arriba.x - RANGO, maxX: arriba.x + RANGO
-                };
+                // t: ms que lleva moviéndose (no avanza en pausa).
+                actual = { i: pila.length, t: 0, tx: arriba.px, tw: arriba.pw, x: 0, w: arriba.w };
+                moverActual();
             }
 
-            const velocidad = () => 170 + Math.min(altura, 60) * 4.2;
+            function moverActual() {
+                actual.x = TorreReglas.posicion(actual.tx, altura, actual.t) / 1000;
+            }
             const ncAcumuladas = () => altura * _torreCfg.nc_por_piso + perfectos * _torreCfg.nc_por_perfecto;
 
             function hud(pop) {
@@ -5081,40 +5129,39 @@
 
             function soltar() {
                 if (estado !== 'jugando' || !actual) return;
-                const arriba = pila[pila.length - 1];
-                const dx = actual.x - arriba.x;
-                let ganado = _torreCfg.nc_por_piso;
+                // Supabase repite la partida con estos mismos ms y las mismas reglas.
+                const t = Math.max(0, Math.round(actual.t));
+                toques.push(t);
+                const px = TorreReglas.posicion(actual.tx, altura, t);
+                const r = TorreReglas.colocar(actual.tx, actual.tw, px, combo);
+                actual.x = px / 1000;
+                if (r.perdio) { perder(); return; }
 
-                if (Math.abs(dx) <= TOLERANCIA) {
-                    actual.x = arriba.x;
-                    combo++; perfectos++;
+                let ganado = _torreCfg.nc_por_piso;
+                combo = r.combo;
+                if (r.perfecto) {
+                    perfectos++;
                     comboMax = Math.max(comboMax, combo);
                     ganado += _torreCfg.nc_por_perfecto;
-                    if (combo >= 3 && actual.w < ANCHO_INICIAL) {
-                        const crece = Math.min(10, ANCHO_INICIAL - actual.w);
-                        actual.w += crece;
-                        actual.x -= crece / 2;
-                    }
+                    actual.x = r.x / 1000;
+                    actual.w = r.w / 1000;
                     efectoPerfecto(actual);
                     mostrarCombo();
                     _torreTono(523.25 * Math.pow(2, Math.min(combo, 12) / 12), 0.16, 'triangle', 0.14);
                     _torreVibrar(18);
                 } else {
-                    const traslape = arriba.w - Math.abs(dx);
-                    if (traslape <= 0) { perder(); return; }
-                    combo = 0;
-                    const corte = dx > 0 ? { x: arriba.x + arriba.w, w: dx } : { x: actual.x, w: -dx };
+                    const lado = px > actual.tx ? 1 : -1;
                     caidas.push({
-                        x: corte.x, w: corte.w, yb: actual.i * ALTO_BLOQUE, vy: 0,
-                        vx: dx > 0 ? 45 : -45, rot: 0, vr: (dx > 0 ? 1 : -1) * (1.5 + Math.random()), color: color(actual.i)
+                        x: r.corte.x / 1000, w: r.corte.w / 1000, yb: actual.i * ALTO_BLOQUE, vy: 0,
+                        vx: lado * 45, rot: 0, vr: lado * (1.5 + Math.random()), color: color(actual.i)
                     });
-                    if (dx < 0) actual.x = arriba.x;
-                    actual.w = traslape;
+                    actual.x = r.x / 1000;
+                    actual.w = r.w / 1000;
                     _torreTono(196 + Math.min(altura, 40) * 6, 0.09, 'triangle', 0.1);
                     _torreVibrar(8);
                 }
 
-                pila.push({ x: actual.x, w: actual.w, i: actual.i });
+                pila.push({ x: actual.x, w: actual.w, px: r.x, pw: r.w, i: actual.i });
                 altura++;
                 textos.push({ x: actual.x + actual.w / 2, yb: (actual.i + 1) * ALTO_BLOQUE + 8, t: 0, txt: '+' + ganado });
                 hud(true);
@@ -5136,7 +5183,8 @@
             function perder() {
                 estado = 'terminado';
                 combo = 0;
-                caidas.push({ x: actual.x, w: actual.w, yb: actual.i * ALTO_BLOQUE, vy: 0, vx: actual.dir * 60, rot: 0, vr: actual.dir * 2.2, color: color(actual.i) });
+                const lado = actual.x * 1000 > actual.tx ? 1 : -1;
+                caidas.push({ x: actual.x, w: actual.w, yb: actual.i * ALTO_BLOQUE, vy: 0, vx: lado * 60, rot: 0, vr: lado * 2.2, color: color(actual.i) });
                 actual = null;
                 sacudida = 9;
                 _torreTono(330, 0.45, 'sawtooth', 0.07, 70);
@@ -5153,9 +5201,8 @@
 
             function actualizar(dt) {
                 if (actual && estado === 'jugando') {
-                    actual.x += actual.dir * velocidad() * dt;
-                    if (actual.x > actual.maxX) { actual.x = actual.maxX; actual.dir = -1; }
-                    else if (actual.x < actual.minX) { actual.x = actual.minX; actual.dir = 1; }
+                    actual.t += dt * 1000;
+                    moverActual();
                 }
                 const n = actual ? actual.i : pila.length;
                 const camObjetivo = Math.max(0, (n + 1) * ALTO_BLOQUE - suelo + altoMundo * 0.42);
@@ -5366,7 +5413,7 @@
                 },
                 estado: () => estado,
                 enviando: () => enviando,
-                stats: () => ({ altura, perfectos, comboMax })
+                stats: () => ({ altura, perfectos, comboMax, toques: toques.slice() })
             };
         })();
 
