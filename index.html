@@ -5578,6 +5578,8 @@
                     createOrder: (data, actions) => {
                         return actions.order.create({
                             intent: 'CAPTURE',
+                            // Premium es digital: sin dirección de envío.
+                            application_context: { shipping_preference: 'NO_SHIPPING' },
                             purchase_units: [{
                                 reference_id: currentUser.id,
                                 amount: {
@@ -5593,6 +5595,7 @@
                                 description: 'NetGamer Premium — Suscripción mensual',
                                 items: [{
                                     name: 'Premium Mensual',
+                                    category: 'DIGITAL_GOODS',
                                     description: 'Vidas ilimitadas, 5 giros diarios y badge Premium',
                                     unit_amount: {
                                         currency_code: 'USD',
@@ -5606,11 +5609,10 @@
 
                     onApprove: async (data, actions) => {
                         try {
-                            const details = await actions.order.capture();
-                            
+                            // La orden la captura Supabase (no el navegador) para validar el cobro y activar Premium.
                             const { data: { session: pmSession } } = await _supabase.auth.getSession();
                             const response = await _supabase.functions.invoke('paypal-capture-order', {
-                                body: { orderID: details.id },
+                                body: { orderID: data.orderID },
                                 headers: { Authorization: `Bearer ${pmSession?.access_token}` }
                             });
 
@@ -5618,7 +5620,7 @@
                                 mostrarNotificacion(`✅ Premium activado por $${response.data.amount} ${response.data.currency}`, 'success');
                                 setTimeout(() => location.reload(), 1500);
                             } else {
-                                mostrarNotificacion(`Error: ${response.data?.error}`, 'error');
+                                mostrarNotificacion(response.data?.error || 'No pudimos confirmar tu pago. Escríbenos por soporte y lo revisamos.', 'error');
                             }
                         } catch (err) {
                             console.error(err);
