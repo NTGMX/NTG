@@ -4112,6 +4112,8 @@
                 if (data?.error === 'saldo_insuficiente') msg = `Saldo insuficiente. Necesitas ${data.necesitas} NC.`;
                 else if (data?.error === 'campos_incompletos') msg = "Por favor completa todos los campos.";
                 else if (data?.error === 'error_db') msg = "Error del servidor al registrar retiro.";
+                else if (data?.error === 'cuenta_suspendida') msg = "Tu cuenta está suspendida y no puede solicitar canjes.";
+                else if (data?.error === 'premio_invalido') msg = "Esa opción de canje ya no está disponible. Recarga la página.";
                 
                 mostrarNotificacion(msg, "error");
                 btn.disabled = false;
