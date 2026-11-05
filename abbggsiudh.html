@@ -1080,7 +1080,7 @@ async function toggleEstadoTicket() {
         return;
     }
 
-    const confirmar = confirm('¿Marcar como resuelto? Esto eliminará todos los mensajes e imágenes de esta conversación permanentemente.');
+    const confirmar = await confirmarPanel('¿Marcar como resuelto? Esto eliminará todos los mensajes e imágenes de esta conversación permanentemente.');
     if (!confirmar) return;
 
     const btn = document.getElementById('toggle-status-btn');
@@ -1264,6 +1264,55 @@ function mostrarToast(msg, tipo) {
     setTimeout(() => el.remove(), 3500);
 }
 
+// Ventanas propias del panel (en lugar de alert/confirm del navegador).
+function _ventanaPanel(mensaje, conCancelar, textoOk) {
+    return new Promise(resolve => {
+        const esError = /^(error|no se pudo|tu sesión)/i.test(mensaje);
+        const fondo = document.createElement('div');
+        fondo.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[10000] p-4';
+        fondo.setAttribute('role', conCancelar ? 'alertdialog' : 'dialog');
+        fondo.setAttribute('aria-modal', 'true');
+        const caja = document.createElement('div');
+        caja.className = 'bg-slate-900 border ' + (esError ? 'border-red-500/40' : 'border-slate-700') + ' rounded-2xl p-6 w-full max-w-sm shadow-2xl';
+        const icono = document.createElement('div');
+        icono.className = 'w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center text-xl ' +
+            (conCancelar ? 'bg-amber-500/15 text-amber-400' : esError ? 'bg-red-500/15 text-red-400' : 'bg-cyan-500/15 text-cyan-400');
+        icono.innerHTML = '<i class="fa-solid ' + (conCancelar ? 'fa-circle-question' : esError ? 'fa-triangle-exclamation' : 'fa-circle-info') + '"></i>';
+        const texto = document.createElement('p');
+        texto.className = 'text-white text-sm text-center leading-relaxed mb-6 whitespace-pre-line';
+        texto.textContent = mensaje;
+        const botones = document.createElement('div');
+        botones.className = 'flex gap-3';
+        const cerrar = valor => { document.removeEventListener('keydown', teclas, true); fondo.remove(); resolve(valor); };
+        const ok = document.createElement('button');
+        ok.type = 'button';
+        ok.className = 'flex-1 py-2.5 rounded-xl font-bold text-sm ' + (conCancelar ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-cyan-600 hover:bg-cyan-500 text-white');
+        ok.textContent = textoOk || (conCancelar ? 'Sí, continuar' : 'Entendido');
+        ok.onclick = () => cerrar(true);
+        if (conCancelar) {
+            const no = document.createElement('button');
+            no.type = 'button';
+            no.className = 'flex-1 py-2.5 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700';
+            no.textContent = 'Cancelar';
+            no.onclick = () => cerrar(false);
+            botones.appendChild(no);
+            fondo.onclick = e => { if (e.target === fondo) cerrar(false); };
+        }
+        botones.appendChild(ok);
+        function teclas(e) {
+            if (e.key === 'Escape') { e.preventDefault(); cerrar(!conCancelar); }
+            else if (e.key === 'Enter') { e.preventDefault(); cerrar(true); }
+        }
+        document.addEventListener('keydown', teclas, true);
+        caja.append(icono, texto, botones);
+        fondo.appendChild(caja);
+        document.body.appendChild(fondo);
+        ok.focus();
+    });
+}
+function avisoPanel(mensaje) { return _ventanaPanel(String(mensaje), false); }
+function confirmarPanel(mensaje, textoOk) { return _ventanaPanel(String(mensaje), true, textoOk); }
+
 
 (async () => {
     const { data: { session } } = await _supabase.auth.getSession();
@@ -1369,7 +1418,7 @@ async function cargarRevisionTorre() {
 }
 
 async function revisarPartidaTorre(id, aprobar, boton) {
-    if (!aprobar && !confirm('¿Rechazar este premio? El jugador no recibirá las NetCoins.')) return;
+    if (!aprobar && !await confirmarPanel('¿Rechazar este premio? El jugador no recibirá las NetCoins.')) return;
     boton.disabled = true;
     const { data, error } = await _supabase.rpc('torre_revisar', { p_partida: id, p_aprobar: aprobar });
     if (error || !data || data.error) {
@@ -1451,7 +1500,7 @@ function cerrarModalSuspender() {
 async function confirmarSuspenderSitio() {
     const motivo = document.getElementById('input-motivo-suspension').value.trim();
     if (!motivo) {
-        alert('Escribe un motivo para mostrar a los usuarios.');
+        avisoPanel('Escribe un motivo para mostrar a los usuarios.');
         return;
     }
 
@@ -1469,7 +1518,7 @@ async function confirmarSuspenderSitio() {
         const data = await res.json();
 
         if (!res.ok || data?.error) {
-            alert('No se pudo suspender el sitio: ' + (data?.error || 'error desconocido'));
+            avisoPanel('No se pudo suspender el sitio: ' + (data?.error || 'error desconocido'));
             return;
         }
 
@@ -1477,9 +1526,9 @@ async function confirmarSuspenderSitio() {
         actualizarTarjetaEstadoSitio(true, motivo);
     } catch (e) {
         if (e.message === 'sesion_expirada') {
-            alert('Tu sesión de administrador expiró. Vuelve a iniciar sesión e intenta de nuevo.');
+            avisoPanel('Tu sesión de administrador expiró. Vuelve a iniciar sesión e intenta de nuevo.');
         } else {
-            alert('Error de red al suspender el sitio.');
+            avisoPanel('Error de red al suspender el sitio.');
         }
     } finally {
         btn.disabled = false;
@@ -1501,16 +1550,16 @@ async function reactivarSitio() {
         const data = await res.json();
 
         if (!res.ok || data?.error) {
-            alert('No se pudo reactivar el sitio: ' + (data?.error || 'error desconocido'));
+            avisoPanel('No se pudo reactivar el sitio: ' + (data?.error || 'error desconocido'));
             return;
         }
 
         actualizarTarjetaEstadoSitio(false, null);
     } catch (e) {
         if (e.message === 'sesion_expirada') {
-            alert('Tu sesión de administrador expiró. Vuelve a iniciar sesión e intenta de nuevo.');
+            avisoPanel('Tu sesión de administrador expiró. Vuelve a iniciar sesión e intenta de nuevo.');
         } else {
-            alert('Error de red al reactivar el sitio.');
+            avisoPanel('Error de red al reactivar el sitio.');
         }
     } finally {
         btn.disabled = false;
@@ -1740,7 +1789,7 @@ async function toggleActivoAnuncio(id, nuevoEstado) {
 }
 
 async function eliminarAnuncio(id) {
-    const confirmar = confirm('¿Eliminar este anuncio permanentemente? Esta acción no se puede deshacer.');
+    const confirmar = await confirmarPanel('¿Eliminar este anuncio permanentemente? Esta acción no se puede deshacer.');
     if (!confirmar) return;
 
     const anuncio = todosLosAnuncios.find(a => a.id === id);
@@ -2014,7 +2063,7 @@ async function toggleActivoPelicula(id, nuevoEstado) {
 }
 
 async function eliminarPelicula(id) {
-    const confirmar = confirm('¿Eliminar este video permanentemente? Esta acción no se puede deshacer.');
+    const confirmar = await confirmarPanel('¿Eliminar este video permanentemente? Esta acción no se puede deshacer.');
     if (!confirmar) return;
 
     const pelicula = todasLasPeliculas.find(p => p.id === id);
@@ -2168,7 +2217,7 @@ function actualizarStatsCanjes() {
 }
 
 async function procesarCanje(canjeId, nuevoStatus) {
-    if (!confirm(`¿Estás seguro de que deseas marcar este canje como ${nuevoStatus}?`)) return;
+    if (!await confirmarPanel(`¿Estás seguro de que deseas marcar este canje como ${nuevoStatus}?`)) return;
 
     try {
  
@@ -2192,7 +2241,7 @@ async function procesarCanje(canjeId, nuevoStatus) {
                 no_autorizado: 'Tu cuenta no tiene permiso para procesar canjes.',
                 status_invalido: 'Estatus no válido.'
             };
-            alert(mensajes[result.error] || 'No se pudo procesar el canje. Intenta de nuevo.');
+            avisoPanel(mensajes[result.error] || 'No se pudo procesar el canje. Intenta de nuevo.');
             cargarCanjes();
             return;
         }
@@ -2205,9 +2254,9 @@ async function procesarCanje(canjeId, nuevoStatus) {
         cargarCanjes();
     } catch(err) {
         if (err.message === 'sesion_expirada') {
-            alert('Tu sesión de administrador expiró. Vuelve a iniciar sesión e intenta de nuevo.');
+            avisoPanel('Tu sesión de administrador expiró. Vuelve a iniciar sesión e intenta de nuevo.');
         } else {
-            alert('Error al procesar el canje: ' + err.message);
+            avisoPanel('Error al procesar el canje: ' + err.message);
         }
     }
 }
@@ -2538,7 +2587,7 @@ async function confirmarSuspenderUsuarioPermanente() {
     if (!_usuarioParaSuspender) return;
     const motivo = document.getElementById('input-motivo-suspension-usuario').value.trim();
     if (!motivo) {
-        alert('Escribe un motivo para mostrarle al usuario.');
+        avisoPanel('Escribe un motivo para mostrarle al usuario.');
         return;
     }
 
@@ -2556,7 +2605,7 @@ async function confirmarSuspenderUsuarioPermanente() {
         const data = await res.json();
 
         if (!res.ok || data?.error) {
-            alert('No se pudo suspender al usuario: ' + (data?.error || 'error desconocido'));
+            avisoPanel('No se pudo suspender al usuario: ' + (data?.error || 'error desconocido'));
             return;
         }
 
@@ -2568,9 +2617,9 @@ async function confirmarSuspenderUsuarioPermanente() {
         mostrarToast('Usuario suspendido permanentemente', 'success');
     } catch (e) {
         if (e.message === 'sesion_expirada') {
-            alert('Tu sesión de administrador expiró. Vuelve a iniciar sesión e intenta de nuevo.');
+            avisoPanel('Tu sesión de administrador expiró. Vuelve a iniciar sesión e intenta de nuevo.');
         } else {
-            alert('Error de red al suspender al usuario.');
+            avisoPanel('Error de red al suspender al usuario.');
         }
     } finally {
         btn.disabled = false;
@@ -2600,7 +2649,7 @@ async function cargarBanners() {
         renderizarListaBanners(todasLosBanners);
     } catch (err) {
         console.error('Error cargando banners:', err);
-        alert('Error al cargar banners: ' + err.message);
+        avisoPanel('Error al cargar banners: ' + err.message);
     }
 }
 
@@ -2685,12 +2734,12 @@ async function guardarBanner() {
     const orden = parseInt(document.getElementById('input-banner-orden').value) || 0;
 
     if (!titulo) {
-        alert('El título es requerido');
+        avisoPanel('El título es requerido');
         return;
     }
 
     if (!bannerImagenFile && !id) {
-        alert('La imagen es requerida');
+        avisoPanel('La imagen es requerida');
         return;
     }
 
@@ -2742,12 +2791,12 @@ async function guardarBanner() {
 
         if (error) throw error;
         if (bannerImagenFile && bannerAnterior?.url_imagen) await borrarArchivoDeBucket(bannerAnterior.url_imagen, 'banners');
-        alert(id ? 'Banner actualizado' : 'Banner creado exitosamente');
+        mostrarToast(id ? 'Banner actualizado' : 'Banner creado exitosamente', 'success');
         cerrarFormBanner();
         cargarBanners();
     } catch (err) {
         console.error('Error:', err);
-        alert('Error al guardar banner: ' + err.message);
+        avisoPanel('Error al guardar banner: ' + err.message);
     }
 }
 
@@ -2756,7 +2805,7 @@ function editarBanner(id) {
     const banner = todasLosBanners.find(b => b.id === id);
 
     if (!banner) {
-        alert('Banner no encontrado');
+        avisoPanel('Banner no encontrado');
         return;
     }
 
@@ -2789,12 +2838,12 @@ async function toggleActivoBanner(id, nuevoEstado) {
         cargarBanners();
     } catch (err) {
         console.error('Error:', err);
-        alert('Error al actualizar estado: ' + err.message);
+        avisoPanel('Error al actualizar estado: ' + err.message);
     }
 }
 
 async function eliminarBanner(id) {
-    if (!confirm('¿Eliminar este banner?')) return;
+    if (!await confirmarPanel('¿Eliminar este banner?')) return;
 
     try {
         const banner = todasLosBanners.find(b => b.id === id);
@@ -2805,11 +2854,11 @@ async function eliminarBanner(id) {
 
         if (error) throw error;
         await borrarArchivoDeBucket(banner?.url_imagen, 'banners');
-        alert('Banner eliminado exitosamente');
+        mostrarToast('Banner eliminado exitosamente', 'success');
         cargarBanners();
     } catch (err) {
         console.error('Error:', err);
-        alert('Error al eliminar banner: ' + err.message);
+        avisoPanel('Error al eliminar banner: ' + err.message);
     }
 }
 </script>
