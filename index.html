@@ -45,10 +45,12 @@
             } else {
                 window.MONEDA_PAYPAL = 'USD';
             }
+            window.MONEDA_DETECTADA = true;
             window.dispatchEvent(new CustomEvent('monedaPayPalDetectada'));
         })
         .catch(() => {
             window.MONEDA_PAYPAL = 'MXN';
+            window.MONEDA_DETECTADA = true;
             window.dispatchEvent(new CustomEvent('monedaPayPalDetectada'));
         });
     </script>
@@ -2083,10 +2085,10 @@
                                 class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-extrabold py-4 rounded-xl shadow-lg shadow-amber-700/30 transition-all active:scale-95 text-base flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-crown"></i><span>Premium — <span data-precio-mxn="49">$49 MXN</span>/mes</span>
                             </button>
-                            <p class="text-center text-xs text-slate-500 mt-3">Pago seguro vía MercadoPago · Tarjeta, OXXO, transferencia</p>
+                            <p id="premium-texto-pago" class="text-center text-xs text-slate-500 mt-3">Pago seguro vía MercadoPago · Tarjeta, OXXO, transferencia</p>
                         </div>
 
-                        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-wrap items-center justify-center gap-3">
+                        <div id="premium-metodos-pago" class="bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-wrap items-center justify-center gap-3">
                             <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider w-full text-center mb-1">Métodos de pago aceptados por MercadoPago</span>
                             <span class="bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-credit-card text-blue-400"></i> Tarjeta</span>
                             <span class="bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-store text-red-400"></i> OXXO</span>
@@ -2338,7 +2340,7 @@
                     </div>
                 </button>
 
-                <p class="text-[10px] text-slate-600 text-center">Pago seguro vía MercadoPago · Se acredita al instante</p>
+                <p id="vidas-texto-pago" class="text-[10px] text-slate-600 text-center">Pago seguro vía MercadoPago · Se acredita al instante</p>
             </div>
         </div>
     </div>
@@ -6363,9 +6365,23 @@ function aplicarConversionesMonedas() {
     document.querySelectorAll('.spei-canje-item').forEach(elem => {
         elem.style.display = 'none';
     });
+
+    // Fuera de México Premium se cobra con PayPal en USD (las vidas siguen por MercadoPago).
+    const textoPago = document.getElementById('premium-texto-pago');
+    if (textoPago) textoPago.textContent = 'Pago seguro vía PayPal · Cuenta PayPal o tarjeta de crédito/débito';
+    const metodos = document.getElementById('premium-metodos-pago');
+    if (metodos) {
+        metodos.innerHTML = '<span class="text-xs text-slate-500 font-semibold uppercase tracking-wider w-full text-center mb-1">Métodos de pago aceptados por PayPal</span>'
+            + '<span class="bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5"><i class="fa-brands fa-paypal text-sky-400"></i> PayPal</span>'
+            + '<span class="bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5"><i class="fa-solid fa-credit-card text-blue-400"></i> Tarjeta de crédito o débito</span>';
+    }
+    const textoVidas = document.getElementById('vidas-texto-pago');
+    if (textoVidas) textoVidas.textContent = 'Pago seguro · Vidas vía MercadoPago · Premium vía PayPal';
 }
 
 window.addEventListener('monedaPayPalDetectada', aplicarConversionesMonedas);
+// Si el país se detectó antes de que cargara este script, el evento ya pasó.
+if (window.MONEDA_DETECTADA) aplicarConversionesMonedas();
 
 setTimeout(aplicarConversionesMonedas, 500);
 
