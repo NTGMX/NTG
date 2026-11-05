@@ -2026,10 +2026,6 @@
                                     <span class="w-7 h-7 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-rose-400 text-xs"></i></span>
                                     <span><strong class="text-white">Vidas ilimitadas</strong> <span class="text-slate-400 text-xs">para jugar sin límite</span></span>
                                 </li>
-                                <li class="flex items-center gap-3 text-sm text-slate-200">
-                                    <span class="w-7 h-7 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0"><i class="fa-solid fa-rotate text-purple-400 text-xs"></i></span>
-                                    <span><strong class="text-white">5 giros diarios</strong> <span class="text-slate-400 text-xs">en la Ruleta Diaria</span></span>
-                                </li>
 
                                 <li class="flex items-center gap-3 text-sm text-slate-200">
                                     <span class="w-7 h-7 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0"><i class="fa-solid fa-crown text-amber-400 text-xs"></i></span>
@@ -2069,10 +2065,6 @@
                                 <li class="flex items-center gap-3 text-sm text-slate-200">
                                     <i class="fa-solid fa-circle-check text-emerald-400 shrink-0"></i>
                                     <span><strong class="text-white">Vidas ilimitadas</strong> <span class="text-slate-400">para jugar sin límite</span></span>
-                                </li>
-                                <li class="flex items-center gap-3 text-sm text-slate-200">
-                                    <i class="fa-solid fa-circle-check text-emerald-400 shrink-0"></i>
-                                    <span><strong class="text-white">5 giros diarios</strong> <span class="text-slate-400">en la Ruleta Diaria</span></span>
                                 </li>
                                 <li class="flex items-center gap-3 text-sm text-slate-200">
                                     <i class="fa-solid fa-circle-check text-emerald-400 shrink-0"></i> Badge <span class="text-amber-400 font-bold">👑 Premium</span> en tu perfil
@@ -4230,7 +4222,7 @@
                 .eq('id', currentUser.id)
                 .single();
 
-            const limiteGiros = isPremium ? 5 : 1;
+            const limiteGiros = 1;
             const ultimoGiro = (data?.ultimo_giro_ruleta || '').slice(0, 10);
             const girosUsadosHoy = (ultimoGiro === hoy) ? (data?.giros_ruleta_hoy || 0) : 0;
             const girosRestantes = limiteGiros - girosUsadosHoy;
@@ -4241,14 +4233,8 @@
         function actualizarTextosRuleta() {
             const subtitulo = document.getElementById('ruleta-subtitulo');
             const countdownLabel = document.getElementById('ruleta-countdown-label');
-            if (subtitulo) {
-                subtitulo.innerText = isPremium
-                    ? '👑 Premium: gira 5 veces al día gratis y gana NetCoins'
-                    : 'Gira gratis una vez al día y gana NetCoins';
-            }
-            if (countdownLabel) {
-                countdownLabel.innerText = isPremium ? 'Próximos giros en:' : 'Próximo giro en:';
-            }
+            if (subtitulo) subtitulo.innerText = 'Gira gratis una vez al día y gana NetCoins';
+            if (countdownLabel) countdownLabel.innerText = 'Próximo giro en:';
         }
 
         function actualizarBotonRuleta(girosRestantes, limiteGiros) {
@@ -4602,7 +4588,7 @@
             <p>NetGamer es una plataforma de recompensas y entretenimiento donde puedes acumular <strong>NetCoins (NC)</strong>, un sistema interno de puntos, mediante actividades como:</p>
             <p>a) Completar ofertas, encuestas y tareas en los muros de ofertas de proveedores asociados (por ejemplo, AdGem y BitLabs). La acreditación depende de que el proveedor confirme que completaste la oferta.</p>
             <p>b) Leer noticias en la sección correspondiente.</p>
-            <p>c) Girar la Ruleta Diaria: 1 giro gratis por día natural (hora del centro de México), o hasta 5 giros por día con Premium activo. El premio de cada giro es aleatorio entre los montos mostrados en la ruleta y lo determina el servidor.</p>
+            <p>c) Girar la Ruleta Diaria: 1 giro gratis por día natural (hora del centro de México), igual para todos los usuarios; ninguna compra ni suscripción da giros adicionales. El premio de cada giro es aleatorio entre los montos mostrados en la ruleta y lo determina el servidor.</p>
             <p>d) Jugar los juegos de la Plataforma, en los que el premio depende de la habilidad del jugador conforme a las reglas publicadas en cada juego. Algunos juegos cobran una entrada en NetCoins y/o vidas al iniciar cada partida; la entrada no es reembolsable una vez iniciada la partida, aunque la abandones. Las partidas que no se terminan dentro del tiempo límite del juego se dan por finalizadas.</p>
             <p>e) Invitar amigos con tu enlace de referido.</p>
             <p>f) Reclamar el bono de bienvenida al registrarte por primera vez.</p>
@@ -4614,7 +4600,7 @@
             <p>Al registrarte y verificar tu cuenta por primera vez puedes reclamar un bono de bienvenida de <strong>20,000 NetCoins</strong>, una sola vez por persona. Al invitar amigos con tu enlace, tú y la persona invitada pueden recibir <strong>6,000 NetCoins</strong> cada uno cuando el registro del referido se valide.</p>
             <p>Para evitar abusos, NetGamer verifica la dirección IP de cada cuenta: <strong>solo se otorga un bono de bienvenida y un bono de referido por dirección IP</strong>. Si ya se otorgó uno desde la misma IP, la nueva cuenta no lo recibirá, pero podrá usar las demás funciones. Los montos de los bonos pueden cambiar; el monto aplicable es el vigente al momento de reclamarlo.</p>
             <h3 class="font-bold text-white mb-2 mt-4">6. Vidas, Premium y compras</h3>
-            <p>Los juegos usan "vidas" que se consumen al iniciar cada partida y se recargan diariamente. Puedes comprar <strong>Vidas Ilimitadas</strong> (pago único) o la suscripción <strong>Premium</strong> (vidas ilimitadas, hasta 5 giros diarios en la ruleta y distintivo Premium durante el periodo pagado). Premium <strong>no se renueva automáticamente</strong>: al terminar el periodo, puedes renovarlo si lo deseas. Las Vidas Ilimitadas se mantienen mientras tu cuenta y la Plataforma estén activas.</p>
+            <p>Los juegos usan "vidas" que se consumen al iniciar cada partida y se recargan diariamente. Puedes comprar <strong>Vidas Ilimitadas</strong> (pago único) o la suscripción <strong>Premium</strong> (vidas ilimitadas, distintivo Premium y soporte prioritario durante el periodo pagado; no incluye giros adicionales en la Ruleta Diaria). Premium <strong>no se renueva automáticamente</strong>: al terminar el periodo, puedes renovarlo si lo deseas. Las Vidas Ilimitadas se mantienen mientras tu cuenta y la Plataforma estén activas.</p>
             <p>El precio que se muestra antes de pagar es el total a pagar, en pesos mexicanos o, si pagas desde fuera de México con PayPal, en dólares estadounidenses. Los pagos se procesan en MercadoPago o PayPal. Al ser contenido digital que se activa de inmediato, las compras no son reembolsables una vez activado el beneficio, salvo cobro duplicado, cobro sin que se active el beneficio o falla atribuible a NetGamer, casos en que lo corregiremos o te reembolsaremos. Esto no limita los derechos que te otorga la Ley Federal de Protección al Consumidor. Comprar vidas o Premium no otorga NetCoins.</p>
             <h3 class="font-bold text-white mb-2 mt-4">7. Canjes de recompensas</h3>
             <p>Puedes solicitar el canje de tus NetCoins por recompensas como transferencia bancaria (SPEI), PayPal, Robux o Diamantes de Free Fire, según los montos mínimos y equivalencias que se muestran en la sección de canjes al momento de solicitarlo. Debes contar con saldo suficiente y dar datos de destino correctos; NetGamer no se hace responsable de envíos hechos a datos incorrectos proporcionados por el usuario.</p>
@@ -5596,7 +5582,7 @@
                                 items: [{
                                     name: 'Premium Mensual',
                                     category: 'DIGITAL_GOODS',
-                                    description: 'Vidas ilimitadas, 5 giros diarios y badge Premium',
+                                    description: 'Vidas ilimitadas y badge Premium',
                                     unit_amount: {
                                         currency_code: 'USD',
                                         value: '3.00',
