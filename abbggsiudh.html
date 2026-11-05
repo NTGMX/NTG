@@ -596,7 +596,7 @@
             </div>
             <p class="text-sm text-slate-400 mb-5">Estado en línea en tiempo real y suspensión permanente de cuentas.</p>
 
-            <input id="usuarios-buscador" type="text" placeholder="Buscar por correo o usuario..." oninput="filtrarListaUsuarios()"
+            <input id="usuarios-buscador" type="text" placeholder="Buscar por correo, usuario o país..." oninput="filtrarListaUsuarios()"
                 class="w-full bg-slate-800 border border-slate-700 focus:border-purple-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition placeholder-slate-600 mb-4">
 
             <div id="usuarios-loading" class="text-center text-slate-500 text-sm py-10">
@@ -2226,7 +2226,26 @@ async function pedirUsuariosAdmin() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data?.error) throw new Error(data?.error || 'error desconocido');
-    return data.usuarios || [];
+    const usuarios = data.usuarios || [];
+    try {
+        const { data: paises } = await _supabase.from('perfiles').select('id, pais').not('pais', 'is', null);
+        const paisPorId = new Map((paises || []).map(p => [p.id, p.pais]));
+        usuarios.forEach(u => { u.pais = paisPorId.get(u.id) || null; });
+    } catch (e) { /* sin país: se muestra el globo */ }
+    return usuarios;
+}
+
+const _nombresPais = (() => { try { return new Intl.DisplayNames(['es'], { type: 'region' }); } catch (e) { return null; } })();
+function nombrePais(codigo) {
+    if (!codigo) return '';
+    try { return _nombresPais?.of(codigo) || codigo; } catch (e) { return codigo; }
+}
+function banderaPais(codigo) {
+    if (!/^[A-Z]{2}$/.test(codigo || '')) {
+        return '<span title="País desconocido" class="w-6 h-4 shrink-0 rounded-sm bg-slate-700 text-slate-400 flex items-center justify-center text-[10px]"><i class="fa-solid fa-globe"></i></span>';
+    }
+    const c = codigo.toLowerCase();
+    return `<img src="https://flagcdn.com/w40/${c}.png" alt="${codigo}" title="${escapeHtml(nombrePais(codigo))}" loading="lazy" class="w-6 h-4 shrink-0 rounded-sm object-cover border border-slate-600">`;
 }
 
 async function cargarUsuarios() {
@@ -2306,7 +2325,10 @@ function renderizarListaUsuarios() {
 
     const usuariosFiltrados = todosLosUsuarios.filter(u => {
         if (!busqueda) return true;
-        return (u.email || '').toLowerCase().includes(busqueda) || (u.username || '').toLowerCase().includes(busqueda);
+        return (u.email || '').toLowerCase().includes(busqueda)
+            || (u.username || '').toLowerCase().includes(busqueda)
+            || (u.pais || '').toLowerCase() === busqueda
+            || nombrePais(u.pais).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(busqueda.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
     });
 
     if (usuariosFiltrados.length === 0) {
@@ -2317,8 +2339,12 @@ function renderizarListaUsuarios() {
     cont.innerHTML = usuariosFiltrados.map(u => `
         <div class="flex items-center justify-between gap-3 bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-3">
             <div class="min-w-0">
-                <p class="font-bold text-white text-sm truncate">${_escaparHtmlAdmin(u.email || 'Sin correo')}</p>
-                <div class="flex items-center gap-3 mt-0.5 text-xs">
+                <div class="flex items-center gap-2 min-w-0">
+                    ${banderaPais(u.pais)}
+                    <p class="font-bold text-white text-sm truncate">${_escaparHtmlAdmin(u.email || 'Sin correo')}</p>
+                </div>
+                <div class="flex items-center gap-3 mt-0.5 text-xs flex-wrap">
+                    <span class="font-bold text-amber-400"><i class="fa-solid fa-coins mr-1"></i>${Number(u.netcoins || 0).toLocaleString('es-MX')} NC</span>
                     ${_formatearUltimaConexion(u)}
                     ${u.username ? `<span class="text-slate-600">@${_escaparHtmlAdmin(u.username)}</span>` : ''}
                 </div>
