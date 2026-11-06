@@ -22,6 +22,7 @@
         .msg-admin { background: #1e293b; border: 1px solid #334155; border-radius: 16px 16px 16px 4px; }
         #login-screen { display: flex; }
         #app-screen { display: none; }
+        #mfa-screen { display: none; }
         textarea { resize: none; }
 
         @media (max-width: 767px) {
@@ -64,6 +65,56 @@
                 class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold py-3 rounded-xl text-sm transition active:scale-95">
                 <i class="fa-solid fa-right-to-bracket mr-2"></i>Entrar al panel
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Verificación en dos pasos (código de la app del celular) -->
+<div id="mfa-screen" class="h-screen p-4 overflow-y-auto">
+    <div class="w-full max-w-sm bg-slate-800 border border-slate-700 rounded-2xl p-7 shadow-2xl m-auto">
+        <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
+                <i class="fa-solid fa-mobile-screen-button text-white"></i>
+            </div>
+            <div>
+                <h1 id="mfa-titulo" class="font-black text-lg text-white">Verificación en dos pasos</h1>
+                <p class="text-xs text-slate-400">Protección extra del panel</p>
+            </div>
+        </div>
+
+        <!-- Primera vez: vincular la app -->
+        <div id="mfa-vincular" class="hidden space-y-4">
+            <ol class="text-sm text-slate-300 space-y-2 list-decimal pl-5">
+                <li>Instala en tu celular <b class="text-white">Google Authenticator</b> o <b class="text-white">Microsoft Authenticator</b>.</li>
+                <li>En la app toca <b class="text-white">+</b> y <b class="text-white">escanea este código</b>.</li>
+                <li>Escribe abajo el código de 6 dígitos que te muestra la app.</li>
+            </ol>
+            <div class="bg-white rounded-xl p-3 flex items-center justify-center min-h-[200px]">
+                <img id="mfa-qr" alt="Código QR para vincular la app" class="w-48 h-48">
+            </div>
+            <details class="text-xs text-slate-400">
+                <summary class="cursor-pointer hover:text-slate-200">¿No puedes escanear? Escribe esta clave en la app</summary>
+                <div class="mt-2 flex items-center gap-2">
+                    <code id="mfa-secreto" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-emerald-300 font-mono text-xs break-all select-all"></code>
+                </div>
+            </details>
+        </div>
+
+        <!-- Ya vinculada: solo pide el código -->
+        <p id="mfa-pedir" class="hidden text-sm text-slate-300 mb-4">
+            Abre <b class="text-white">Google Authenticator</b> (o la app que vinculaste) y escribe el código de 6 dígitos de <b class="text-white">NetGamer</b>.
+        </p>
+
+        <div class="space-y-3 mt-4">
+            <input id="mfa-codigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"
+                onkeydown="if(event.key==='Enter') verificarCodigoMfa()"
+                class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-500 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] font-mono text-white outline-none transition placeholder-slate-700">
+            <p id="mfa-error" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2"></p>
+            <button onclick="verificarCodigoMfa()" id="mfa-btn"
+                class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-bold py-3 rounded-xl text-sm transition active:scale-95">
+                <i class="fa-solid fa-shield-halved mr-2"></i>Verificar y entrar
+            </button>
+            <button onclick="cerrarSesionAdmin()" class="w-full text-xs text-slate-500 hover:text-slate-300 py-1">Cerrar sesión</button>
         </div>
     </div>
 </div>
@@ -765,7 +816,89 @@ async function iniciarSesionAdmin() {
         return;
     }
 
-    await entrarAlPanel(data.user);
+    await exigirMfa(data.user);
+}
+
+// ---------- Verificación en dos pasos ----------
+// Después de la contraseña, el panel pide el código de la app del celular.
+// La primera vez muestra un QR para vincular la app. Sin el código no se entra
+// (y el servidor tampoco acepta acciones de admin sin él).
+let mfaFactorId = null;
+let mfaUsuario = null;
+
+function mostrarPantallaMfa(modo) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('mfa-screen').style.display = 'flex';
+    document.getElementById('mfa-vincular').classList.toggle('hidden', modo !== 'vincular');
+    document.getElementById('mfa-pedir').classList.toggle('hidden', modo !== 'pedir');
+    document.getElementById('mfa-titulo').textContent = modo === 'vincular' ? 'Activa la verificación en dos pasos' : 'Verificación en dos pasos';
+    document.getElementById('mfa-error').classList.add('hidden');
+    const input = document.getElementById('mfa-codigo');
+    input.value = '';
+    // Al vincular se deja ver primero el QR; al pedir el código se pone el cursor listo.
+    if (modo === 'pedir') setTimeout(() => input.focus(), 50);
+    else document.getElementById('mfa-screen').scrollTop = 0;
+}
+
+function errorMfa(msg) {
+    const el = document.getElementById('mfa-error');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+}
+
+async function exigirMfa(user) {
+    mfaUsuario = user;
+    const { data: nivel } = await _supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (nivel?.currentLevel === 'aal2') { await entrarAlPanel(user); return; }
+
+    const { data: factores, error } = await _supabase.auth.mfa.listFactors();
+    if (error) { showLoginError('No se pudo revisar la verificación en dos pasos. Intenta de nuevo.'); return; }
+    const verificado = (factores?.totp || []).find(x => x.status === 'verified');
+    if (verificado) {
+        mfaFactorId = verificado.id;
+        mostrarPantallaMfa('pedir');
+        return;
+    }
+
+    // Primera vez: se quitan intentos de vinculación que quedaron a medias y se crea uno nuevo.
+    for (const f of (factores?.all || [])) {
+        if (f.factor_type === 'totp' && f.status !== 'verified') {
+            await _supabase.auth.mfa.unenroll({ factorId: f.id });
+        }
+    }
+    const { data: alta, error: errAlta } = await _supabase.auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: 'NetGamer Admin',
+        issuer: 'NetGamer MX'
+    });
+    if (errAlta || !alta) {
+        showLoginError('No se pudo preparar la verificación en dos pasos: ' + (errAlta?.message || 'error desconocido'));
+        document.getElementById('login-screen').style.display = 'flex';
+        return;
+    }
+    mfaFactorId = alta.id;
+    document.getElementById('mfa-qr').src = alta.totp.qr_code;
+    document.getElementById('mfa-secreto').textContent = alta.totp.secret;
+    mostrarPantallaMfa('vincular');
+}
+
+async function verificarCodigoMfa() {
+    const codigo = document.getElementById('mfa-codigo').value.replace(/\D/g, '');
+    if (codigo.length !== 6) { errorMfa('Escribe los 6 dígitos que muestra tu app.'); return; }
+    const btn = document.getElementById('mfa-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-2"></i>Verificando...';
+    const { error } = await _supabase.auth.mfa.challengeAndVerify({ factorId: mfaFactorId, code: codigo });
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-shield-halved mr-2"></i>Verificar y entrar';
+    if (error) {
+        errorMfa('Código incorrecto o vencido. Revisa que la hora de tu celular esté bien y escribe el código nuevo.');
+        document.getElementById('mfa-codigo').value = '';
+        return;
+    }
+    document.getElementById('mfa-screen').style.display = 'none';
+    await entrarAlPanel(mfaUsuario);
 }
 
 async function entrarAlPanel(user) {
@@ -1346,7 +1479,7 @@ function confirmarPanel(mensaje, textoOk) { return _ventanaPanel(String(mensaje)
 (async () => {
     const { data: { session } } = await _supabase.auth.getSession();
     if (session?.user && session.user.email === ADMIN_EMAIL) {
-        await entrarAlPanel(session.user);
+        await exigirMfa(session.user);
     } else if (session?.user) {
         await _supabase.auth.signOut();
     }
