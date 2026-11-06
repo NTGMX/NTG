@@ -168,6 +168,11 @@
                         Resueltos
                     </button>
                 </div>
+                <button id="btn-filtro-premium" type="button" onclick="toggleSoloPremium()"
+                    class="hidden w-full text-xs font-bold py-1.5 rounded-lg border border-amber-500/30 bg-slate-800 text-amber-400 hover:bg-amber-500/10 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-crown"></i> Premium
+                    <span id="premium-abiertos-count" class="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/20">0</span>
+                </button>
             </div>
 
             <div class="flex items-center justify-between px-3 py-2 border-b border-slate-700/50">
@@ -718,6 +723,12 @@ const MINUTOS_EN_LINEA = 6;
 let adminUser = null;
 let todosLosTickets = [];
 let filtroActual = 'all';
+let soloPremium = false;
+
+function _ticketEsPremium(t) {
+    const p = t.perfiles;
+    return !!(p?.is_premium && p?.premium_hasta && new Date(p.premium_hasta) >= new Date());
+}
 let ticketActivoId = null;
 let chatRealtimeChannel = null;
 let adminFilesSelected = [];
@@ -814,8 +825,20 @@ function renderTicketsList() {
     let lista = todosLosTickets.filter(t => {
         if (filtroActual === 'open' && t.status !== 'open') return false;
         if (filtroActual === 'resolved' && t.status !== 'resolved') return false;
+        if (filtroActual === 'open' && soloPremium && !_ticketEsPremium(t)) return false;
         return true;
     });
+
+    const btnPremium = document.getElementById('btn-filtro-premium');
+    if (btnPremium) {
+        btnPremium.classList.toggle('hidden', filtroActual !== 'open');
+        btnPremium.classList.toggle('bg-amber-500', soloPremium);
+        btnPremium.classList.toggle('text-amber-950', soloPremium);
+        btnPremium.classList.toggle('bg-slate-800', !soloPremium);
+        btnPremium.classList.toggle('text-amber-400', !soloPremium);
+        document.getElementById('premium-abiertos-count').textContent =
+            todosLosTickets.filter(t => t.status === 'open' && _ticketEsPremium(t)).length;
+    }
 
     document.getElementById('tickets-count').textContent = lista.length;
 
@@ -855,7 +878,7 @@ function renderTicketsList() {
                 </div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-1">
-                        <p class="ticket-email text-xs sm:text-sm font-semibold text-white truncate">${escapeHtml(emailCorto)}</p>
+                        <p class="ticket-email text-xs sm:text-sm font-semibold text-white truncate">${_ticketEsPremium(t) ? '<i class="fa-solid fa-crown text-amber-400 mr-1" title="Premium"></i>' : ''}${escapeHtml(emailCorto)}</p>
                         <span class="ticket-date text-xs text-slate-500 flex-shrink-0">${fecha}</span>
                     </div>
                     <div class="flex items-center justify-between mt-0.5">
@@ -868,8 +891,14 @@ function renderTicketsList() {
     }).join('');
 }
 
+function toggleSoloPremium() {
+    soloPremium = !soloPremium;
+    renderTicketsList();
+}
+
 function setFiltro(f) {
     filtroActual = f;
+    if (f !== 'open') soloPremium = false;
     document.querySelectorAll('.filter-btn').forEach(btn => {
         const isActive = btn.dataset.filter === f;
         btn.className = btn.className.replace(/bg-purple-600 text-white|bg-slate-800 text-slate-400 hover:bg-slate-700/g, '').trim();
