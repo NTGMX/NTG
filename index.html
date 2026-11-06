@@ -3695,6 +3695,7 @@
         async function _enviarLatidoPresencia() {
             if (!currentUser || _usuarioSuspendidoPermanente) return;
             _guardarPaisUsuario();
+            _guardarDispositivoUsuario();
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session?.access_token) return;
             _supabase.functions.invoke('latido-presencia', {
@@ -3714,6 +3715,30 @@
             if (!error) { try { localStorage.setItem(clave, pais); } catch (e) {} }
         }
         window.addEventListener('monedaPayPalDetectada', _guardarPaisUsuario);
+
+        // Tipo de dispositivo (celular / computadora / tablet) para el ícono del panel admin.
+        // Se guarda solo cuando cambia.
+        function _tipoDispositivo() {
+            const ua = navigator.userAgent || '';
+            const tactil = (navigator.maxTouchPoints || 0) > 1;
+            if (/iPad|Tablet|PlayBook|Silk|Kindle/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua))) return 'tablet';
+            if (/Macintosh/i.test(ua) && tactil) return 'tablet'; // iPad que se presenta como Mac
+            if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
+                return navigator.userAgentData.mobile ? 'celular' : 'computadora';
+            }
+            if (/Mobi|Android|iPhone|iPod|Windows Phone|Opera Mini|IEMobile/i.test(ua)) return 'celular';
+            return 'computadora';
+        }
+        var _dispositivoEnviado = false;
+        async function _guardarDispositivoUsuario() {
+            if (_dispositivoEnviado || !currentUser) return;
+            _dispositivoEnviado = true;
+            const dispositivo = _tipoDispositivo();
+            const clave = 'ng_disp_' + currentUser.id;
+            try { if (localStorage.getItem(clave) === dispositivo) return; } catch (e) {}
+            const { error } = await _supabase.from('perfiles').update({ dispositivo }).eq('id', currentUser.id);
+            if (!error) { try { localStorage.setItem(clave, dispositivo); } catch (e) {} }
+        }
 
         function mostrarModalBonus() {
             document.getElementById('bonus-cantidad').innerText = NC_BONUS_BIENVENIDA;
