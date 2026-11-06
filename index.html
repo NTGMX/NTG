@@ -5,9 +5,7 @@
     <meta charset="UTF-8">
     <style>html.ng-revisando body{visibility:hidden!important}</style>
     <script>
-    // Puerta de suspensión: antes de mostrar nada se pregunta si el sitio está
-    // suspendido. Si lo está, se detiene la carga de toda la página (landing,
-    // imágenes, scripts) y solo queda el mensaje. El admin sí puede entrar.
+        
     (function () {
         var raiz = document.documentElement;
         raiz.classList.add('ng-revisando');
@@ -48,14 +46,13 @@
                 + '<h1>Hemos suspendido temporalmente el sitio para todas las personas</h1>'
                 + '<p>' + esc(motivo) + '</p>'
                 + '<p class="m">NetGamer</p></div></div></body>');
-            // Cuando se reactive el sitio, la página vuelve sola.
+
             setInterval(function () {
                 pedirEstado().then(function (e) { if (e && !e.suspendido) location.reload(); }).catch(function () {});
             }, 60000);
         }
 
-        // Si el servidor tarda, se muestra el sitio normal (la revisión de
-        // siempre, más abajo en la página, sigue funcionando).
+
         var espera = setTimeout(mostrarSitio, 3000);
         pedirEstado().then(function (e) {
             clearTimeout(espera);
@@ -4732,9 +4729,26 @@
                 mostrarNotificacion("Debes iniciar sesión para ganar monedas leyendo noticias.", "error");
                 return;
             }
-            const urlNoticias = "https://pulsomx1.github.io/PulsoMX/"; 
-            
-            window.open(`${urlNoticias}?uid=${currentUser.id}`, '_blank', 'noopener');
+            // ⚠️ Dirección del sitio de noticias PulsoMX (con / al final).
+            const urlNoticias = "https://pulsomx11.github.io/Pulsomx/";
+
+            // La pestaña se abre al instante (si se abre después de esperar al
+            // servidor, el navegador la bloquea como ventana emergente).
+            const ventana = window.open('about:blank', '_blank');
+            _supabase.functions.invoke('pase-noticias').then(({ data }) => {
+                // El pase va después de # : no viaja al servidor de GitHub y
+                // PulsoMX lo quita de la barra de direcciones al leerlo.
+                const destino = data?.pase ? `${urlNoticias}#pase=${encodeURIComponent(data.pase)}` : urlNoticias;
+                if (ventana && !ventana.closed) {
+                    try { ventana.opener = null; } catch (e) {}
+                    ventana.location.href = destino;
+                } else {
+                    window.open(destino, '_blank', 'noopener');
+                }
+                if (!data?.pase) mostrarNotificacion("No se pudo vincular tu cuenta con PulsoMX; las noticias no darán NetCoins esta vez.", "error");
+            }).catch(() => {
+                if (ventana && !ventana.closed) ventana.location.href = urlNoticias;
+            });
         }
 
 
