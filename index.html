@@ -40,6 +40,7 @@
     fetch('https://ipapi.co/json/')
         .then(res => res.json())
         .then(data => {
+            if (data && /^[A-Z]{2}$/.test(data.country_code || '')) window.PAIS_DETECTADO = data.country_code;
             if (data && data.country_code === 'MX') {
                 window.MONEDA_PAYPAL = 'MXN';
             } else {
@@ -3631,6 +3632,7 @@
 
         async function _enviarLatidoPresencia() {
             if (!currentUser || _usuarioSuspendidoPermanente) return;
+            _guardarPaisUsuario();
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session?.access_token) return;
             _supabase.functions.invoke('latido-presencia', {
@@ -3638,6 +3640,18 @@
             }).catch(() => {});
         }
         intervaloSoloVisible(_enviarLatidoPresencia, 5 * 60 * 1000);
+
+        var _paisEnviado = false;
+        async function _guardarPaisUsuario() {
+            const pais = window.PAIS_DETECTADO;
+            if (_paisEnviado || !currentUser || !/^[A-Z]{2}$/.test(pais || '')) return;
+            const clave = 'ng_pais_' + currentUser.id;
+            try { if (localStorage.getItem(clave) === pais) { _paisEnviado = true; return; } } catch (e) {}
+            _paisEnviado = true;
+            const { error } = await _supabase.from('perfiles').update({ pais }).eq('id', currentUser.id);
+            if (!error) { try { localStorage.setItem(clave, pais); } catch (e) {} }
+        }
+        window.addEventListener('monedaPayPalDetectada', _guardarPaisUsuario);
 
         function mostrarModalBonus() {
             document.getElementById('bonus-cantidad').innerText = NC_BONUS_BIENVENIDA;
