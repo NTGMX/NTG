@@ -1663,18 +1663,26 @@
 
                     <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
                         <div class="flex border-b border-slate-700 bg-slate-900/50 overflow-x-auto">
-                            <button id="tab-muro-bitlabs" onclick="cambiarMuroTab('bitlabs')"
+                            <button id="tab-muro-adgem" onclick="cambiarMuroTab('adgem')"
                                 class="muro-tab-btn flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 border-purple-500 text-purple-400 transition">
+                                <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shrink-0"></span>
+                                AdGem
+                            </button>
+                            <button id="tab-muro-bitlabs" onclick="cambiarMuroTab('bitlabs')"
+                                class="hidden muro-tab-btn flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 border-transparent text-slate-400 hover:text-white transition">
                                 <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shrink-0"></span>
                                 BitLabs
                             </button>
                             <button id="tab-muro-monlix" onclick="cambiarMuroTab('monlix')"
-                                class="muro-tab-btn flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 border-transparent text-slate-400 hover:text-white transition">
+                                class="hidden muro-tab-btn flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 border-transparent text-slate-400 hover:text-white transition">
                                 <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse shrink-0"></span>
                                 Monlix
                             </button>
                         </div>
-                        <div id="muro-bitlabs" class="muro-panel">
+                        <div id="muro-adgem" class="muro-panel">
+                            <iframe id="iframe-adgem" src="about:blank" title="Ofertas AdGem" style="width:100%; height:690px; border:none;" frameborder="0" scrolling="yes"></iframe>
+                        </div>
+                        <div id="muro-bitlabs" class="muro-panel hidden">
                             <iframe id="iframe-bitlabs" src="about:blank" style="width:100%; height:690px; border:none;" frameborder="0" scrolling="yes"></iframe>
                         </div>
                         <div id="muro-monlix" class="muro-panel hidden">
@@ -3366,7 +3374,7 @@
                 return;
             }
 
-            await _supabase.auth.signOut();
+            await _supabase.auth.signOut({ scope: 'local' });
 
             _recoverEmailActual = '';
             toggleAuthViews(true);
@@ -3554,7 +3562,7 @@
                 cargarDatosReferidos(currentUser);
                 generarEnlaceReferido(currentUser);
                 setTimeout(() => inicializarRuleta(), 500);
-                inicializarIframeMuro('bitlabs');
+                inicializarIframeMuro('adgem');
                 verificarBadgeSoporte(currentUser.id);
             } else {
                 document.getElementById("landing-container").classList.remove("hidden");
@@ -3648,7 +3656,7 @@
         }
 
         async function cerrarSesionDesdeSuspension() {
-            try { await _supabase.auth.signOut(); } catch (e) {}
+            try { await _supabase.auth.signOut({ scope: 'local' }); } catch (e) {}
             try { localStorage.clear(); } catch (e) {}
             window.location.href = window.location.origin + window.location.pathname;
         }
@@ -4306,6 +4314,7 @@
         function inicializarIframeMuro(muro) {
             if (!currentUser) return;
             const iframes = {
+                adgem:   { id: 'iframe-adgem',    url: `https://adunits.adgem.com/wall?appid=34016&playerid=${encodeURIComponent(currentUser.id)}` },
                 bitlabs: { id: 'iframe-bitlabs',  url: `https://web.bitlabs.ai?token=${bitlabsAppToken}&uid=${currentUser.id.toLowerCase()}` }
             };
             const cfg = iframes[muro];
@@ -4644,7 +4653,7 @@
         async function cerrarSesion() {
             historialCargado = { ganancias: false, canjes: false };
             mostrarSplashYluego(async () => {
-                await _supabase.auth.signOut();
+                await _supabase.auth.signOut({ scope: 'local' });
                 currentUser = null;
                 document.getElementById("auth-container").classList.remove("hidden");
                 document.getElementById("app-container").classList.add("hidden");
@@ -5801,7 +5810,7 @@
 
         function applySandbox(iframe) {
             var id  = iframe.id || '';
-            if (id === 'iframe-bitlabs' || id === 'iframe-monlix') return;
+            if (id === 'iframe-bitlabs' || id === 'iframe-monlix' || id === 'iframe-adgem') return;
             if (!iframe.hasAttribute('sandbox')) {
                 iframe.setAttribute('sandbox', AD_SANDBOX);
             }
