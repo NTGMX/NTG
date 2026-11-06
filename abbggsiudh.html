@@ -2439,9 +2439,13 @@ async function pedirUsuariosAdmin() {
     if (!res.ok || data?.error) throw new Error(data?.error || 'error desconocido');
     const usuarios = data.usuarios || [];
     try {
-        const { data: paises } = await _supabase.from('perfiles').select('id, pais').not('pais', 'is', null);
-        const paisPorId = new Map((paises || []).map(p => [p.id, p.pais]));
-        usuarios.forEach(u => { u.pais = paisPorId.get(u.id) || null; });
+        const { data: extras } = await _supabase.from('perfiles').select('id, pais, dispositivo');
+        const extraPorId = new Map((extras || []).map(p => [p.id, p]));
+        usuarios.forEach(u => {
+            const x = extraPorId.get(u.id) || {};
+            u.pais = x.pais || null;
+            u.dispositivo = x.dispositivo || null;
+        });
     } catch (e) { /* sin país: se muestra el globo */ }
     return usuarios;
 }
@@ -2450,6 +2454,16 @@ const _nombresPais = (() => { try { return new Intl.DisplayNames(['es'], { type:
 function nombrePais(codigo) {
     if (!codigo) return '';
     try { return _nombresPais?.of(codigo) || codigo; } catch (e) { return codigo; }
+}
+function iconoDispositivo(tipo) {
+    const tipos = {
+        celular:     { icono: 'fa-mobile-screen-button', color: 'text-sky-400',     nombre: 'Celular' },
+        computadora: { icono: 'fa-laptop',               color: 'text-violet-400',  nombre: 'Computadora' },
+        tablet:      { icono: 'fa-tablet-screen-button', color: 'text-emerald-400', nombre: 'Tablet' }
+    };
+    const t = tipos[tipo];
+    if (!t) return '<span title="Dispositivo desconocido (aún no entra con la versión nueva)" class="w-5 shrink-0 text-center text-slate-600 text-sm"><i class="fa-solid fa-circle-question"></i></span>';
+    return `<span title="${t.nombre}" class="w-5 shrink-0 text-center ${t.color} text-base"><i class="fa-solid ${t.icono}"></i></span>`;
 }
 function banderaPais(codigo) {
     if (!/^[A-Z]{2}$/.test(codigo || '')) {
@@ -2551,6 +2565,7 @@ function renderizarListaUsuarios() {
         <div class="flex items-center justify-between gap-3 bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-3">
             <div class="min-w-0">
                 <div class="flex items-center gap-2 min-w-0">
+                    ${iconoDispositivo(u.dispositivo)}
                     ${banderaPais(u.pais)}
                     <p class="font-bold text-white text-sm truncate">${_escaparHtmlAdmin(u.email || 'Sin correo')}</p>
                 </div>
