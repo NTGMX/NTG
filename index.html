@@ -3,6 +3,67 @@
 <head>
     <meta name='impact-site-verification' value='2b2cde58-4dd6-42c7-b564-d08b9c5a4a22'>
     <meta charset="UTF-8">
+    <style>html.ng-revisando body{visibility:hidden!important}</style>
+    <script>
+    // Puerta de suspensión: antes de mostrar nada se pregunta si el sitio está
+    // suspendido. Si lo está, se detiene la carga de toda la página (landing,
+    // imágenes, scripts) y solo queda el mensaje. El admin sí puede entrar.
+    (function () {
+        var raiz = document.documentElement;
+        raiz.classList.add('ng-revisando');
+        var listo = false;
+        function mostrarSitio() { if (listo) return; listo = true; raiz.classList.remove('ng-revisando'); }
+        var esAdmin = false;
+        try {
+            var ses = JSON.parse(localStorage.getItem('sb-meiwuluwrdjszxeyoqtt-auth-token') || 'null');
+            esAdmin = !!(ses && ses.user && ses.user.email === 'ed8108868@gmail.com');
+        } catch (e) {}
+        if (esAdmin) { mostrarSitio(); return; }
+
+        var URL_ESTADO = 'https://meiwuluwrdjszxeyoqtt.supabase.co/rest/v1/estado_sitio?id=eq.1&select=suspendido,motivo';
+        var CLAVE = 'sb_publishable_gZgGIamNJqf8ir8vvt1OTw_bJ-rosi4';
+        function pedirEstado() {
+            return fetch(URL_ESTADO, { headers: { apikey: CLAVE, Authorization: 'Bearer ' + CLAVE }, cache: 'no-store' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (filas) { return filas && filas[0] ? filas[0] : null; });
+        }
+        function esc(t) { return String(t || '').replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+        function pantallaSuspendido(motivo) {
+            listo = true;
+            try { window.stop(); } catch (e) {}
+            raiz.className = '';
+            raiz.innerHTML = ('<head><meta charset="UTF-8">'
+                + '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+                + '<meta name="robots" content="noindex">'
+                + '<title>NetGamer · Sitio suspendido temporalmente</title>'
+                + '<style>html,body{margin:0;height:100%;background:#020617;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}'
+                + '.c{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}'
+                + '.b{max-width:440px;width:100%;text-align:center}'
+                + '.i{width:64px;height:64px;margin:0 auto 20px;border-radius:16px;background:rgba(244,63,94,.15);border:1px solid rgba(244,63,94,.3);display:flex;align-items:center;justify-content:center;font-size:30px}'
+                + 'h1{font-size:22px;font-weight:900;margin:0 0 16px;line-height:1.3}'
+                + 'p{color:#94a3b8;font-size:14px;line-height:1.6;white-space:pre-line;margin:0}'
+                + '.m{color:#475569;font-size:12px;margin-top:24px}</style></head><body><div class="c"><div class="b">'
+                + '<div class="i">⚠️</div>'
+                + '<h1>Hemos suspendido temporalmente el sitio para todas las personas</h1>'
+                + '<p>' + esc(motivo) + '</p>'
+                + '<p class="m">NetGamer</p></div></div></body>');
+            // Cuando se reactive el sitio, la página vuelve sola.
+            setInterval(function () {
+                pedirEstado().then(function (e) { if (e && !e.suspendido) location.reload(); }).catch(function () {});
+            }, 60000);
+        }
+
+        // Si el servidor tarda, se muestra el sitio normal (la revisión de
+        // siempre, más abajo en la página, sigue funcionando).
+        var espera = setTimeout(mostrarSitio, 3000);
+        pedirEstado().then(function (e) {
+            clearTimeout(espera);
+            if (e && e.suspendido) pantallaSuspendido(e.motivo);
+            else mostrarSitio();
+        }).catch(function () { clearTimeout(espera); mostrarSitio(); });
+    })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='ng-grad' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23a855f7'/%3E%3Cstop offset='1' stop-color='%234f46e5'/%3E%3C/linearGradient%3E%3ClinearGradient id='ng-moneda' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fde68a'/%3E%3Cstop offset='1' stop-color='%23f59e0b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M32 5 55 18.5v27L32 59 9 45.5v-27z' fill='url(%23ng-grad)' stroke='url(%23ng-grad)' stroke-width='6' stroke-linejoin='round'/%3E%3Cpath d='M32 5 55 18.5 32 32 9 18.5z' fill='%23fff' opacity='.14' stroke='%23fff' stroke-opacity='.14' stroke-width='6' stroke-linejoin='round'/%3E%3Cpath d='M20.5 45V19h6.6l10.3 14.6V19h6.6v26h-6.6L27.1 30.4V45z' fill='%23fff'/%3E%3Ccircle cx='51' cy='13' r='9' fill='%230b0f1a'/%3E%3Ccircle cx='51' cy='13' r='6.8' fill='url(%23ng-moneda)'/%3E%3Ccircle cx='51' cy='13' r='4' fill='none' stroke='%23b45309' stroke-width='1.4'/%3E%3C/svg%3E">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <title>NetGamer · Juega, lee y gana dinero real</title>
@@ -2719,6 +2780,7 @@
                     const esAdmin = currentUser && currentUser.email === ADMIN_EMAIL_SITIO;
                     if (payload.new.suspendido && !esAdmin) {
                         mostrarPantallaSuspendido(payload.new.motivo);
+                        setTimeout(() => location.reload(), 1500);
                     } else {
                         ocultarPantallaSuspendido();
                     }
