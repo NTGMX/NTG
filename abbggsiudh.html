@@ -810,7 +810,7 @@ async function iniciarSesionAdmin() {
     }
 
     if (data.user.email !== ADMIN_EMAIL) {
-        await _supabase.auth.signOut();
+        await _supabase.auth.signOut({ scope: 'local' });
         showLoginError('No tienes permiso para acceder a este panel.');
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket mr-2"></i>Entrar al panel';
@@ -931,7 +931,7 @@ function showLoginError(msg) {
 }
 
 async function cerrarSesionAdmin() {
-    await _supabase.auth.signOut();
+    await _supabase.auth.signOut({ scope: 'local' });
     location.reload();
 }
 
@@ -1479,10 +1479,18 @@ function confirmarPanel(mensaje, textoOk) { return _ventanaPanel(String(mensaje)
 
 (async () => {
     const { data: { session } } = await _supabase.auth.getSession();
+    if (session?.user) {
+        const { data: real, error: errReal } = await _supabase.auth.getUser();
+        if (errReal || !real?.user) {
+            await _supabase.auth.signOut({ scope: 'local' });
+            showLoginError('Tu sesión se cerró. Vuelve a entrar.');
+            return;
+        }
+    }
     if (session?.user && session.user.email === ADMIN_EMAIL) {
         await exigirMfa(session.user);
     } else if (session?.user) {
-        await _supabase.auth.signOut();
+        await _supabase.auth.signOut({ scope: 'local' });
     }
 })();
 
@@ -1630,6 +1638,14 @@ function actualizarTarjetaEstadoSitio(suspendido, motivo) {
     }
 }
 
+
+async function sesionCerradaVolverAEntrar() {
+    try { await _supabase.auth.signOut({ scope: 'local' }); } catch (e) {}
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('mfa-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    showLoginError('Tu sesión se cerró (por ejemplo, al cerrar sesión en otra pestaña). Vuelve a entrar.');
+}
 
 async function obtenerTokenSesionValido() {
     let { data: { session } } = await _supabase.auth.getSession();
@@ -2435,6 +2451,7 @@ async function pedirUsuariosAdmin() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
     });
+    if (res.status === 401) { await sesionCerradaVolverAEntrar(); throw new Error('sesion_cerrada'); }
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data?.error) throw new Error(data?.error || 'error desconocido');
     const usuarios = data.usuarios || [];
