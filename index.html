@@ -1663,8 +1663,13 @@
 
                     <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
                         <div class="flex border-b border-slate-700 bg-slate-900/50 overflow-x-auto">
-                            <button id="tab-muro-adgem" onclick="cambiarMuroTab('adgem')"
+                            <button id="tab-muro-cpx" onclick="cambiarMuroTab('cpx')"
                                 class="muro-tab-btn flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 border-purple-500 text-purple-400 transition">
+                                <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shrink-0"></span>
+                                Encuestas CPX
+                            </button>
+                            <button id="tab-muro-adgem" onclick="cambiarMuroTab('adgem')"
+                                class="muro-tab-btn flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 border-transparent text-slate-400 hover:text-white transition">
                                 <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shrink-0"></span>
                                 AdGem
                             </button>
@@ -1679,7 +1684,11 @@
                                 Monlix
                             </button>
                         </div>
-                        <div id="muro-adgem" class="muro-panel">
+                        <div id="muro-cpx" class="muro-panel">
+                            <p id="cpx-estado" class="hidden text-center text-sm text-slate-400 py-10"></p>
+                            <iframe id="iframe-cpx" src="about:blank" title="Encuestas CPX Research" style="width:100%; height:2000px; border:none;" frameborder="0"></iframe>
+                        </div>
+                        <div id="muro-adgem" class="muro-panel hidden">
                             <iframe id="iframe-adgem" src="about:blank" title="Ofertas AdGem" style="width:100%; height:690px; border:none;" frameborder="0" scrolling="yes"></iframe>
                         </div>
                         <div id="muro-bitlabs" class="muro-panel hidden">
@@ -3562,7 +3571,7 @@
                 cargarDatosReferidos(currentUser);
                 generarEnlaceReferido(currentUser);
                 setTimeout(() => inicializarRuleta(), 500);
-                inicializarIframeMuro('adgem');
+                inicializarIframeMuro('cpx');
                 verificarBadgeSoporte(currentUser.id);
             } else {
                 document.getElementById("landing-container").classList.remove("hidden");
@@ -4317,11 +4326,37 @@
                 adgem:   { id: 'iframe-adgem',    url: `https://adunits.adgem.com/wall?appid=34016&playerid=${encodeURIComponent(currentUser.id)}` },
                 bitlabs: { id: 'iframe-bitlabs',  url: `https://web.bitlabs.ai?token=${bitlabsAppToken}&uid=${currentUser.id.toLowerCase()}` }
             };
+            if (muro === 'cpx') { cargarMuroCpx(); return; }
             const cfg = iframes[muro];
             if (!cfg) return;
             const iframe = document.getElementById(cfg.id);
             if (iframe && iframe.src === 'about:blank') {
                 iframe.src = cfg.url;
+            }
+        }
+
+        let _cpxCargando = false;
+        async function cargarMuroCpx() {
+            const iframe = document.getElementById('iframe-cpx');
+            const estado = document.getElementById('cpx-estado');
+            if (!iframe || iframe.src !== 'about:blank' || _cpxCargando) return;
+            _cpxCargando = true;
+            try {
+                const { data } = await _supabase.functions.invoke('cpx-url', { body: {} });
+                if (data && data.url) {
+                    estado.classList.add('hidden');
+                    iframe.classList.remove('hidden');
+                    iframe.src = data.url;
+                } else {
+                    throw new Error((data && data.error) || 'sin_url');
+                }
+            } catch (e) {
+                console.error('CPX:', e);
+                iframe.classList.add('hidden');
+                estado.textContent = 'Las encuestas no están disponibles en este momento. Intenta de nuevo más tarde.';
+                estado.classList.remove('hidden');
+            } finally {
+                _cpxCargando = false;
             }
         }
 
@@ -5810,7 +5845,7 @@
 
         function applySandbox(iframe) {
             var id  = iframe.id || '';
-            if (id === 'iframe-bitlabs' || id === 'iframe-monlix' || id === 'iframe-adgem') return;
+            if (id === 'iframe-bitlabs' || id === 'iframe-monlix' || id === 'iframe-adgem' || id === 'iframe-cpx') return;
             if (!iframe.hasAttribute('sandbox')) {
                 iframe.setAttribute('sandbox', AD_SANDBOX);
             }
