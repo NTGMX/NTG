@@ -2369,11 +2369,6 @@ function renderListaCanjes() {
                 <p class="font-bold text-white break-all">${escapeHtml(canje.cuenta_destino || '-')}</p>
             </div>
 
-            ${canje.estatus === 'Pendiente' && String(canje.tipo_premio || '').startsWith('PayPal') ? `
-                <button onclick="pagarConPaypal('${canje.id}', this)" class="w-full mb-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-bold text-xs py-2 rounded-lg transition">
-                    <i class="fa-brands fa-paypal mr-1"></i>Pagar con PayPal ($${Number(canje.monto_mxn || 0).toLocaleString()} MXN)
-                </button>
-            ` : ''}
             ${canje.estatus === 'Pendiente' ? `
                 <div class="flex gap-2">
                     <button onclick="procesarCanje('${canje.id}', 'Procesado')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2 rounded-lg transition">
@@ -2398,59 +2393,6 @@ function actualizarStatsCanjes() {
     document.getElementById('stat-canjes-procesados').textContent = procesados;
     document.getElementById('stat-canjes-rechazados').textContent = rechazados;
     document.getElementById('stat-canjes-total').textContent = total;
-}
-
-// Paga el retiro con PayPal Payouts desde el saldo de la cuenta de empresa.
-// Si sale bien, el servidor lo marca como Procesado solo.
-async function pagarConPaypal(canjeId, boton) {
-    const canje = todosLosCanjes.find(c => c.id === canjeId);
-    if (!canje) return;
-    if (!await confirmarPanel(`¿Enviar $${Number(canje.monto_mxn || 0).toLocaleString()} MXN por PayPal a ${canje.cuenta_destino}? El dinero sale de tu saldo de PayPal.`)) return;
-
-    const textoOriginal = boton.innerHTML;
-    boton.disabled = true;
-    boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Enviando pago...';
-    try {
-        const token = await obtenerTokenSesionValido();
-        const response = await fetch('https://meiwuluwrdjszxeyoqtt.supabase.co/functions/v1/pagar-retiro-paypal', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ canjeId })
-        });
-        if (response.status === 401) { await sesionCerradaVolverAEntrar(); return; }
-        const r = await response.json().catch(() => ({}));
-
-        if (r.ok) {
-            if (r.sinCuenta) {
-                avisoPanel('Pago enviado, pero ese correo todavía no tiene cuenta de PayPal. El usuario tiene 30 días para crearla y recibirlo; si no, el dinero regresa a tu PayPal.');
-            } else {
-                mostrarToast('✅ Pago enviado por PayPal y retiro marcado como Procesado', 'success');
-            }
-            cargarCanjes();
-            return;
-        }
-
-        const mensajes = {
-            saldo_paypal_insuficiente: 'No tienes saldo suficiente en PayPal. Recarga tu cuenta e intenta de nuevo.',
-            payouts_sin_permiso: 'PayPal no dejó enviar el pago: tu cuenta todavía no tiene permiso para Payouts. Pide a soporte de PayPal que lo activen.',
-            paypal_sin_acceso: 'No se pudo conectar con PayPal (revisa las claves PAYPAL_CLIENT_ID y PAYPAL_SECRET en Supabase).',
-            correo_invalido: 'El destino de este retiro no es un correo válido. Págalo a mano o recházalo.',
-            pago_fallido: `PayPal no completó el pago (estado: ${r.estado || 'desconocido'}). Revisa en tu PayPal y, si no salió, paga a mano o rechaza el retiro.`,
-            lote_repetido: 'PayPal dice que este pago ya se había enviado antes. Revisa tu actividad de PayPal antes de hacer otra cosa.',
-            ya_procesado: 'Este retiro ya estaba procesado.',
-            no_es_paypal: 'Este retiro no es de PayPal.',
-            no_autorizado: 'Tu cuenta no tiene permiso para pagar retiros.'
-        };
-        avisoPanel(mensajes[r.error] || `No se pudo enviar el pago (${r.detalle || r.error || 'error desconocido'}).`);
-        cargarCanjes();
-    } catch (err) {
-        avisoPanel(err.message === 'sesion_expirada'
-            ? 'Tu sesión de administrador expiró. Vuelve a iniciar sesión e intenta de nuevo.'
-            : 'Error al enviar el pago: ' + err.message);
-    } finally {
-        boton.disabled = false;
-        boton.innerHTML = textoOriginal;
-    }
 }
 
 async function procesarCanje(canjeId, nuevoStatus) {
