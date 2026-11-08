@@ -153,6 +153,9 @@
                 <button id="modulo-btn-juegos" onclick="cambiarModulo('juegos')" class="modulo-btn text-xs font-bold px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">
                     <i class="fa-solid fa-gamepad mr-1.5"></i>Juegos <span id="badge-juegos-pendientes" class="hidden ml-1 bg-amber-500 text-slate-950 rounded-full px-1.5 text-[10px]"></span>
                 </button>
+                <button id="modulo-btn-opiniones" onclick="cambiarModulo('opiniones')" class="modulo-btn text-xs font-bold px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-comment-dots mr-1.5"></i>Opiniones <span id="badge-opiniones" class="hidden ml-1 bg-emerald-500 text-slate-950 rounded-full px-1.5 text-[10px]"></span>
+                </button>
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -171,7 +174,13 @@
         </div>
     </div>
 
-    <div class="sm:hidden flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-b border-slate-700/50">
+    <style>
+        /* Menú del celular: si los botones no caben, se desliza de lado en vez de cortar los nombres */
+        #menu-modulos-movil { scrollbar-width: none; }
+        #menu-modulos-movil::-webkit-scrollbar { display: none; }
+        #menu-modulos-movil > .modulo-btn { flex: 1 0 auto; padding-left: .6rem; padding-right: .6rem; white-space: nowrap; }
+    </style>
+    <div id="menu-modulos-movil" class="sm:hidden flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-b border-slate-700/50 overflow-x-auto">
         <button id="modulo-btn-soporte-mobile" onclick="cambiarModulo('soporte')" class="modulo-btn flex-1 text-xs font-bold py-2 rounded-lg bg-purple-600 text-white transition">
             <i class="fa-solid fa-headset mr-1.5"></i>Soporte
         </button>
@@ -192,6 +201,9 @@
         </button>
         <button id="modulo-btn-juegos-mobile" onclick="cambiarModulo('juegos')" class="modulo-btn flex-1 text-xs font-bold py-2 rounded-lg bg-slate-800 text-slate-400 transition">
             <i class="fa-solid fa-gamepad mr-1.5"></i>Juegos
+        </button>
+        <button id="modulo-btn-opiniones-mobile" onclick="cambiarModulo('opiniones')" class="modulo-btn flex-1 text-xs font-bold py-2 rounded-lg bg-slate-800 text-slate-400 transition">
+            <i class="fa-solid fa-comment-dots mr-1.5"></i>Opiniones
         </button>
     </div>
 
@@ -565,6 +577,51 @@
             </div>
         </div>
     </div>
+
+    <div id="modulo-opiniones" class="hidden flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="max-w-4xl mx-auto w-full space-y-5">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                    <h2 class="text-lg font-black text-white flex items-center gap-2"><i class="fa-solid fa-comment-dots text-emerald-400"></i> Opiniones de usuarios</h2>
+                    <p class="text-sm text-slate-400 mt-1">Lo que escriben los usuarios después de recibir un canje. Llegan aquí al instante.</p>
+                </div>
+                <button onclick="cargarOpiniones()" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                    <i class="fa-solid fa-rotate-right mr-1"></i>Actualizar
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+                    <p class="text-[11px] text-slate-400 font-semibold">Total</p>
+                    <p id="op-stat-total" class="text-2xl font-black text-white mt-1">0</p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+                    <p class="text-[11px] text-slate-400 font-semibold">Calificación promedio</p>
+                    <p class="text-2xl font-black text-amber-400 mt-1"><span id="op-stat-promedio">—</span> <span class="text-base">★</span></p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+                    <p class="text-[11px] text-slate-400 font-semibold">Positivas (4–5 ★)</p>
+                    <p id="op-stat-positivas" class="text-2xl font-black text-emerald-400 mt-1">0%</p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+                    <p class="text-[11px] text-slate-400 font-semibold">Sin leer</p>
+                    <p id="op-stat-sinleer" class="text-2xl font-black text-sky-400 mt-1">0</p>
+                </div>
+            </div>
+
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="filtrarOpiniones('todas')" data-filtro-op="todas" class="op-filtro text-xs font-bold px-3 py-1.5 rounded-lg bg-purple-600 text-white transition">Todas</button>
+                <button onclick="filtrarOpiniones('sinleer')" data-filtro-op="sinleer" class="op-filtro text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 transition">Sin leer</button>
+                <button onclick="filtrarOpiniones('positivas')" data-filtro-op="positivas" class="op-filtro text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 transition">4–5 ★</button>
+                <button onclick="filtrarOpiniones('neutras')" data-filtro-op="neutras" class="op-filtro text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 transition">3 ★</button>
+                <button onclick="filtrarOpiniones('negativas')" data-filtro-op="negativas" class="op-filtro text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 transition">1–2 ★</button>
+            </div>
+
+            <div id="lista-opiniones" class="space-y-3">
+                <p class="text-center text-slate-500 py-8">Cargando...</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div id="modal-suspender-usuario" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
@@ -801,6 +858,8 @@ async function entrarAlPanel(user) {
     suscribirAnunciosRealtime();
     iniciarContadorEnLinea();
     cargarRevisionTorre();
+    actualizarBadgeOpiniones();
+    suscribirOpinionesRealtime();
 }
 
 function suscribirAnunciosRealtime() {
@@ -1398,6 +1457,7 @@ function cambiarModulo(modulo) {
     const esUsuarios = modulo === 'usuarios';
     const esBanners = modulo === 'banners';
     const esJuegos = modulo === 'juegos';
+    const esOpiniones = modulo === 'opiniones';
 
     document.getElementById('main-body').classList.toggle('hidden', !esSoporte);
     document.getElementById('modulo-canjes').classList.toggle('hidden', !esCanjes);
@@ -1412,14 +1472,16 @@ function cambiarModulo(modulo) {
     document.getElementById('modulo-usuarios').classList.toggle('flex', esUsuarios);
     document.getElementById('modulo-juegos').classList.toggle('hidden', !esJuegos);
     document.getElementById('modulo-juegos').classList.toggle('flex', esJuegos);
+    document.getElementById('modulo-opiniones').classList.toggle('hidden', !esOpiniones);
+    document.getElementById('modulo-opiniones').classList.toggle('flex', esOpiniones);
 
-    ['modulo-btn-soporte', 'modulo-btn-canjes', 'modulo-btn-anuncios', 'modulo-btn-banners', 'modulo-btn-sitio', 'modulo-btn-usuarios', 'modulo-btn-soporte-mobile', 'modulo-btn-canjes-mobile', 'modulo-btn-anuncios-mobile', 'modulo-btn-banners-mobile','modulo-btn-sitio-mobile', 'modulo-btn-usuarios-mobile', 'modulo-btn-juegos', 'modulo-btn-juegos-mobile'].forEach(id => {
+    ['modulo-btn-soporte', 'modulo-btn-canjes', 'modulo-btn-anuncios', 'modulo-btn-banners', 'modulo-btn-sitio', 'modulo-btn-usuarios', 'modulo-btn-soporte-mobile', 'modulo-btn-canjes-mobile', 'modulo-btn-anuncios-mobile', 'modulo-btn-banners-mobile','modulo-btn-sitio-mobile', 'modulo-btn-usuarios-mobile', 'modulo-btn-juegos', 'modulo-btn-juegos-mobile', 'modulo-btn-opiniones', 'modulo-btn-opiniones-mobile'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         const esEsteBtn = id.includes(modulo);
         el.classList.toggle('bg-purple-600', esEsteBtn);
         el.classList.toggle('text-white', esEsteBtn);
-        el.classList.toggle('bg-slate-800', !esEsteBtn && (id.includes('mobile') || id.includes('canjes') || id.includes('anuncios') || id.includes('banners') || id.includes('sitio') || id.includes('usuarios') || id.includes('juegos')));
+        el.classList.toggle('bg-slate-800', !esEsteBtn && (id.includes('mobile') || id.includes('canjes') || id.includes('anuncios') || id.includes('banners') || id.includes('sitio') || id.includes('usuarios') || id.includes('juegos') || id.includes('opiniones')));
         el.classList.toggle('text-slate-400', !esEsteBtn);
     });
 
@@ -1429,7 +1491,166 @@ function cambiarModulo(modulo) {
     if (modulo === 'sitio') cargarEstadoSitio();
     if (modulo === 'usuarios') cargarUsuarios();
     if (modulo === 'juegos') cargarRevisionTorre();
+    if (modulo === 'opiniones') cargarOpiniones();
 }
+
+// ---------- Opiniones de usuarios (después de un canje entregado) ----------
+let todasLasOpiniones = [];
+let filtroOpiniones = 'todas';
+
+async function cargarOpiniones() {
+    const lista = document.getElementById('lista-opiniones');
+    try {
+        const { data, error } = await _supabase
+            .from('opiniones')
+            .select('id, user_id, premio, estrellas, mensaje, leida, created_at')
+            .order('created_at', { ascending: false })
+            .limit(500);
+        if (error) throw error;
+
+        const ids = [...new Set((data || []).map(o => o.user_id).filter(Boolean))];
+        let emails = new Map();
+        if (ids.length) {
+            const { data: perfiles } = await _supabase.from('perfiles').select('id, email').in('id', ids);
+            emails = new Map((perfiles || []).map(p => [p.id, p.email]));
+        }
+        todasLasOpiniones = (data || []).map(o => ({ ...o, email: emails.get(o.user_id) || '' }));
+        pintarStatsOpiniones();
+        pintarOpiniones();
+    } catch (e) {
+        console.error('Opiniones:', e);
+        lista.innerHTML = '<p class="text-center text-red-400 py-8">No se pudieron cargar las opiniones.</p>';
+    }
+}
+
+function pintarStatsOpiniones() {
+    const ops = todasLasOpiniones;
+    const conEstrellas = ops.filter(o => o.estrellas);
+    const prom = conEstrellas.length ? conEstrellas.reduce((s, o) => s + o.estrellas, 0) / conEstrellas.length : 0;
+    const positivas = conEstrellas.filter(o => o.estrellas >= 4).length;
+    const sinLeer = ops.filter(o => !o.leida).length;
+    document.getElementById('op-stat-total').textContent = ops.length.toLocaleString('es-MX');
+    document.getElementById('op-stat-promedio').textContent = conEstrellas.length ? prom.toFixed(1) : '—';
+    document.getElementById('op-stat-positivas').textContent = conEstrellas.length ? Math.round(positivas * 100 / conEstrellas.length) + '%' : '—';
+    document.getElementById('op-stat-sinleer').textContent = sinLeer;
+    pintarBadgeOpiniones(sinLeer);
+}
+
+function filtrarOpiniones(filtro) {
+    filtroOpiniones = filtro;
+    document.querySelectorAll('.op-filtro').forEach(b => {
+        const activo = b.dataset.filtroOp === filtro;
+        b.classList.toggle('bg-purple-600', activo);
+        b.classList.toggle('text-white', activo);
+        b.classList.toggle('bg-slate-700', !activo);
+        b.classList.toggle('text-slate-300', !activo);
+    });
+    pintarOpiniones();
+}
+
+function _estrellasHtml(n) {
+    if (!n) return '<span class="text-xs text-slate-500">Sin calificación</span>';
+    return '<span class="text-amber-400 tracking-tight">' + '★'.repeat(n) + '</span><span class="text-slate-600 tracking-tight">' + '★'.repeat(5 - n) + '</span>';
+}
+
+function pintarOpiniones() {
+    const lista = document.getElementById('lista-opiniones');
+    const f = filtroOpiniones;
+    const ops = todasLasOpiniones.filter(o =>
+        f === 'sinleer' ? !o.leida :
+        f === 'positivas' ? o.estrellas >= 4 :
+        f === 'neutras' ? o.estrellas === 3 :
+        f === 'negativas' ? (o.estrellas && o.estrellas <= 2) : true);
+
+    if (!ops.length) {
+        lista.innerHTML = '<div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center text-slate-500 text-sm"><i class="fa-regular fa-comment text-2xl mb-2 block"></i>' +
+            (todasLasOpiniones.length ? 'No hay opiniones con este filtro.' : 'Todavía no hay opiniones. Aparecerán aquí cuando los usuarios reciban sus canjes.') + '</div>';
+        return;
+    }
+
+    lista.innerHTML = ops.map(o => {
+        const fecha = new Date(o.created_at).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const borde = o.leida ? 'border-slate-700' : 'border-emerald-500/40';
+        return `<div class="bg-slate-800 border ${borde} rounded-2xl p-4 sm:p-5">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        ${o.leida ? '' : '<span class="text-[10px] font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">NUEVA</span>'}
+                        <p class="font-bold text-white text-sm truncate">${escapeHtml(o.email || 'Usuario')}</p>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">${fecha}${o.premio ? ' · Canje: ' + escapeHtml(o.premio) : ''}</p>
+                </div>
+                <div class="text-lg leading-none">${_estrellasHtml(o.estrellas)}</div>
+            </div>
+            <p class="mt-3 text-sm text-slate-200 leading-relaxed break-words">${escapeHtml(o.mensaje)}</p>
+            <div class="mt-4 flex gap-2 flex-wrap">
+                <button onclick="marcarOpinionLeida('${o.id}', ${!o.leida})" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
+                    <i class="fa-solid ${o.leida ? 'fa-envelope' : 'fa-envelope-open'} mr-1"></i>${o.leida ? 'Marcar como no leída' : 'Marcar como leída'}
+                </button>
+                <button onclick="copiarOpinion('${o.id}')" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
+                    <i class="fa-regular fa-copy mr-1"></i>Copiar texto
+                </button>
+                <button onclick="eliminarOpinion('${o.id}')" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 transition">
+                    <i class="fa-solid fa-trash mr-1"></i>Eliminar
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function marcarOpinionLeida(id, leida) {
+    const { error } = await _supabase.from('opiniones').update({ leida }).eq('id', id);
+    if (error) { mostrarToast('No se pudo actualizar la opinión', 'error'); return; }
+    const o = todasLasOpiniones.find(x => x.id === id);
+    if (o) o.leida = leida;
+    pintarStatsOpiniones();
+    pintarOpiniones();
+}
+
+async function copiarOpinion(id) {
+    const o = todasLasOpiniones.find(x => x.id === id);
+    if (!o) return;
+    try {
+        await navigator.clipboard.writeText(o.mensaje);
+        mostrarToast('Opinión copiada', 'success');
+    } catch (e) {
+        mostrarToast('No se pudo copiar', 'error');
+    }
+}
+
+async function eliminarOpinion(id) {
+    if (!await confirmarPanel('¿Eliminar esta opinión? No se puede deshacer.')) return;
+    const { error } = await _supabase.from('opiniones').delete().eq('id', id);
+    if (error) { mostrarToast('No se pudo eliminar', 'error'); return; }
+    todasLasOpiniones = todasLasOpiniones.filter(x => x.id !== id);
+    pintarStatsOpiniones();
+    pintarOpiniones();
+    mostrarToast('Opinión eliminada', 'success');
+}
+
+function pintarBadgeOpiniones(n) {
+    const b = document.getElementById('badge-opiniones');
+    if (!b) return;
+    b.textContent = n > 99 ? '99+' : n;
+    b.classList.toggle('hidden', !n);
+}
+
+async function actualizarBadgeOpiniones() {
+    const { count, error } = await _supabase.from('opiniones').select('id', { count: 'exact', head: true }).eq('leida', false);
+    if (!error) pintarBadgeOpiniones(count || 0);
+}
+
+function suscribirOpinionesRealtime() {
+    _supabase
+        .channel('admin-opiniones')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'opiniones' }, async () => {
+            mostrarToast('💬 Nueva opinión de un usuario', 'success');
+            if (moduloActivo === 'opiniones') await cargarOpiniones();
+            else await actualizarBadgeOpiniones();
+        })
+        .subscribe();
+}
+
 
 // ---------- Torre NetGamer: revisión de premios ----------
 async function cargarRevisionTorre() {
