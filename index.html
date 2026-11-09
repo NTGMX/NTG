@@ -6920,5 +6920,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<script>
+    // Enlace "ya no quiero recibir recordatorios" de los correos automáticos.
+    (function () {
+        const params = new URLSearchParams(location.search);
+        const token = params.get('baja_correos');
+        if (!token) return;
+        history.replaceState(null, '', location.pathname);
+        fetch('https://meiwuluwrdjszxeyoqtt.supabase.co/functions/v1/baja-recordatorios', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+        }).then(r => r.json()).then(d => {
+            if (d.ok) mostrarNotificacion('Listo, ya no recibirás estos recordatorios.', 'success');
+            else mostrarNotificacion('Ese enlace no es válido.', 'error');
+        }).catch(() => mostrarNotificacion('No se pudo procesar tu baja. Intenta de nuevo.', 'error'));
+    })();
+</script>
 </body>
 </html>
