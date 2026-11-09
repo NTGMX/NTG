@@ -1639,6 +1639,7 @@
                     <div class="rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-xl" style="background:linear-gradient(to right,#0f766e,#134e4a)">
                         <h2 class="text-xl sm:text-3xl font-black mb-2">¡Consigue Dinero Real Contestando Encuestas!</h2>
                         <p class="text-xs sm:text-sm mb-4 sm:mb-6" style="color:#ccfbf1">Da tu opinión en encuestas pagadas, acumula NetCoins y canjéalos por premios digitales o transferencias bancarias.</p>
+                        <p id="encuestas-disponibles-texto" class="hidden text-xs sm:text-sm font-bold mb-3" style="color:#ffffff"></p>
                         <button onclick="switchTab('tab-ofertas'); cambiarMuroTab('cpx');" style="color:#134e4a"
                             class="bg-white font-extrabold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition duration-200 text-sm sm:text-base">
                             <i class="fa-solid fa-clipboard-list mr-2"></i>Ir a contestar encuestas
@@ -3706,6 +3707,7 @@
                 generarEnlaceReferido(currentUser);
                 setTimeout(() => inicializarRuleta(), 500);
                 inicializarIframeMuro('cpx');
+                iniciarEncuestasDisponibles();
                 setTimeout(revisarCanjesEntregados, 1800);
                 verificarBadgeSoporte(currentUser.id);
             } else {
@@ -4620,6 +4622,49 @@
         }
 
         let _cpxCargando = false;
+        // Cuántas encuestas tiene CPX para este usuario: aviso en Inicio y bolita en el menú.
+        let _encuestasIntervalo = null;
+        function pintarEncuestasDisponibles(total) {
+            const texto = document.getElementById('encuestas-disponibles-texto');
+            if (texto) {
+                texto.textContent = total === null ? ''
+                    : total === 0 ? 'Por ahora no hay encuestas para ti. Vuelve más tarde, se actualizan seguido.'
+                    : total === 1 ? '● Tienes 1 encuesta disponible ahora'
+                    : '● Tienes ' + total + ' encuestas disponibles ahora';
+                texto.classList.toggle('hidden', total === null);
+            }
+            document.querySelectorAll("button.tab-btn[onclick*=\"'tab-ofertas'\"], button.tab-btn-mobile[onclick*=\"'tab-ofertas'\"]").forEach(btn => {
+                let bolita = btn.querySelector('.encuestas-bolita');
+                if (!total) { if (bolita) bolita.remove(); return; }
+                if (!bolita) {
+                    bolita = document.createElement('span');
+                    bolita.className = 'encuestas-bolita';
+                    if (btn.classList.contains('tab-btn-mobile')) {
+                        btn.style.position = 'relative';
+                        bolita.style.cssText = 'position:absolute;top:0;right:2px;';
+                    } else {
+                        bolita.style.cssText = 'margin-left:auto;';
+                    }
+                    bolita.style.cssText += 'min-width:18px;height:18px;line-height:18px;padding:0 5px;border-radius:9px;background:#0f766e;color:#fff;font-size:11px;font-weight:800;text-align:center;';
+                    btn.appendChild(bolita);
+                }
+                bolita.textContent = total > 9 ? '9+' : String(total);
+            });
+        }
+        async function actualizarEncuestasDisponibles() {
+            if (!currentUser || document.hidden) return;
+            try {
+                const { data } = await _supabase.functions.invoke('cpx-disponibles', { body: {} });
+                pintarEncuestasDisponibles(data && typeof data.total === 'number' ? data.total : null);
+            } catch (e) {
+                pintarEncuestasDisponibles(null);
+            }
+        }
+        function iniciarEncuestasDisponibles() {
+            actualizarEncuestasDisponibles();
+            if (!_encuestasIntervalo) _encuestasIntervalo = setInterval(actualizarEncuestasDisponibles, 10 * 60 * 1000);
+        }
+
         async function cargarMuroCpx() {
             const iframe = document.getElementById('iframe-cpx');
             const estado = document.getElementById('cpx-estado');
