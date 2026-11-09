@@ -2295,6 +2295,11 @@ async function pedirUsuariosAdmin() {
             u.dispositivo = x.dispositivo || null;
         });
     } catch (e) { /* sin país: se muestra el globo */ }
+    try {
+        const { data: encuestas } = await _supabase.from('cpx_disponibles').select('user_id, total, actualizado');
+        const encuestasPorId = new Map((encuestas || []).map(e => [e.user_id, e]));
+        usuarios.forEach(u => { u.encuestas = encuestasPorId.get(u.id) || null; });
+    } catch (e) { /* sin dato de encuestas */ }
     return usuarios;
 }
 
@@ -2392,6 +2397,16 @@ function _formatearUltimaConexion(usuario) {
     return `<span class="flex items-center gap-1.5 text-slate-500"><span class="w-1.5 h-1.5 bg-slate-600 rounded-full"></span>Últ. vez ${texto}</span>`;
 }
 
+function _formatearEncuestas(usuario) {
+    const e = usuario.encuestas;
+    if (!e) return '<span class="text-slate-600" title="Aún no se consulta: el usuario no ha entrado desde que se activó esto"><i class="fa-solid fa-clipboard-list mr-1"></i>Sin dato</span>';
+    const total = Number(e.total) || 0;
+    const min = Math.max(0, Math.floor((Date.now() - new Date(e.actualizado).getTime()) / 60000));
+    const cuando = min < 1 ? 'hace un momento' : min < 60 ? `hace ${min} min` : min < 1440 ? `hace ${Math.floor(min / 60)} h` : `hace ${Math.floor(min / 1440)} d`;
+    const color = total > 0 ? 'text-teal-400' : 'text-slate-500';
+    return `<span class="font-bold ${color}" title="Última consulta a CPX: ${cuando}"><i class="fa-solid fa-clipboard-list mr-1"></i>${total} ${total === 1 ? 'encuesta' : 'encuestas'} <span class="font-normal text-slate-500">· ${cuando}</span></span>`;
+}
+
 function renderizarListaUsuarios() {
     const cont = document.getElementById('lista-usuarios');
     const busqueda = (document.getElementById('usuarios-buscador')?.value || '').toLowerCase().trim();
@@ -2419,6 +2434,7 @@ function renderizarListaUsuarios() {
                 </div>
                 <div class="flex items-center gap-3 mt-0.5 text-xs flex-wrap">
                     <span class="font-bold text-amber-400"><i class="fa-solid fa-coins mr-1"></i>${Number(u.netcoins || 0).toLocaleString('es-MX')} NC</span>
+                    ${_formatearEncuestas(u)}
                     ${_formatearUltimaConexion(u)}
                     ${u.username ? `<span class="text-slate-600">@${_escaparHtmlAdmin(u.username)}</span>` : ''}
                 </div>
