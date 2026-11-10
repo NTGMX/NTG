@@ -1940,9 +1940,17 @@
                     </div>
 
                     <!-- Guía detallada del programa de referidos -->
-                    <div class="ref-guia bg-slate-800 border border-slate-700 rounded-2xl p-4 sm:p-6">
-                        <h3 class="font-extrabold text-base sm:text-lg"><i class="fa-solid fa-circle-info mr-2 text-purple-400"></i>¿Cómo funciona?</h3>
-                        <ol class="ref-pasos">
+                    <div class="ref-guia rounded-2xl border border-slate-700/80 bg-slate-800/60 overflow-hidden">
+                        <button onclick="this.parentElement.querySelector('#ref-guia-body').classList.toggle('hidden'); this.querySelector('i.fa-chevron-down').classList.toggle('rotate-180')" class="w-full flex items-center justify-between gap-2 px-4 py-3.5 bg-slate-800 hover:bg-slate-750 transition active:bg-slate-700 text-left">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-info text-purple-400 text-sm"></i>
+                                <h3 class="font-extrabold text-white text-sm">¿Cómo funciona?</h3>
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-300"></i>
+                        </button>
+                        <div id="ref-guia-body" class="hidden border-t border-slate-700/60">
+                        <div class="p-4">
+                        <ol class="ref-pasos" style="margin-top:0;">
                             <li>
                                 <span class="ref-num">1</span>
                                 <div><p class="ref-t">Copia tu enlace personal</p><p class="ref-d">Es único y está ligado a tu cuenta. Así sabemos que el amigo llegó por ti.</p></div>
@@ -1984,6 +1992,8 @@
 
                         <div class="ref-bloque ref-aviso">
                             <p><i class="fa-solid fa-triangle-exclamation mr-2"></i>Crear cuentas falsas, usar datos de otras personas o abusar del programa provoca la <strong>suspensión permanente</strong> de todas las cuentas involucradas y la pérdida de sus NetCoins.</p>
+                        </div>
+                        </div>
                         </div>
                     </div>
 
