@@ -817,12 +817,12 @@
         /* Muro de CPX en celular: que quepa en la pantalla y se pueda ver completo. */
         .cpx-barra-movil, .cpx-salir-completa { display: none; }
         @media (max-width: 767px) {
-            #iframe-cpx { height: calc(100vh - 130px) !important; height: calc(100dvh - 130px) !important; min-height: 420px; }
+            #iframe-cpx { height: calc(100vh - 200px) !important; height: calc(100dvh - 200px) !important; min-height: 420px; }
             .cpx-barra-movil { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 2px 10px; }
             .cpx-barra-movil p { margin: 0; font-size: 12px; line-height: 1.35; color: #94a3b8; }
             .cpx-barra-movil button { flex-shrink: 0; padding: 8px 12px; border-radius: 10px; background: #0f766e; color: #fff; font-size: 12px; font-weight: 800; }
             #muro-cpx.cpx-completa { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 6000; display: flex; flex-direction: column; background: #fff; }
-            #muro-cpx.cpx-completa .cpx-barra-movil { display: none; }
+            #muro-cpx.cpx-completa .cpx-barra-movil, #muro-cpx.cpx-completa .cpx-aviso-idioma { display: none; }
             #muro-cpx.cpx-completa .cpx-salir-completa { display: block; flex-shrink: 0; width: 100%; padding: 12px; background: #0f172a; color: #fff; font-size: 14px; font-weight: 800; text-align: center; }
             #muro-cpx.cpx-completa #iframe-cpx { flex: 1 1 auto; height: auto !important; min-height: 0; }
         }
@@ -1834,6 +1834,7 @@
                             </button>
                         </div>
                         <div id="muro-cpx" class="muro-panel">
+                            <p class="cpx-aviso-idioma" style="margin:0 0 10px; padding:8px 12px; border-radius:10px; background:rgba(15,118,110,0.15); border:1px solid rgba(20,184,166,0.35); color:#99f6e4; font-size:12px; line-height:1.4;"><i class="fa-solid fa-language" style="margin-right:6px;"></i>Las primeras preguntas pueden salir en inglés; después la encuesta continúa en español. Si no entiendes alguna, usa la opción <b>Traducir</b> de tu navegador.</p>
                             <div class="cpx-barra-movil">
                                 <p>¿No ves el botón para continuar? Desliza hacia abajo dentro de la encuesta.</p>
                                 <button type="button" onclick="pantallaCompletaCpx(true)"><i class="fa-solid fa-expand mr-1"></i>Pantalla completa</button>
