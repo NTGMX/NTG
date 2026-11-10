@@ -2862,9 +2862,7 @@
                 <li><i class="fa-solid fa-circle-check"></i><span>La confirmación de la encuesta puede tardar <strong>unos minutos</strong> en reflejarse. Después vuelve a presionar <strong>Leer Noticias</strong>.</span></li>
                 <li><i class="fa-solid fa-circle-check"></i><span>Si en algún momento no tienes encuestas disponibles, puedes leer noticias con recompensa <strong>sin ningún requisito</strong>.</span></li>
             </ul>
-            <button type="button" class="candado-btn candado-btn-principal" onclick="candadoIrAEncuestas()"><i class="fa-solid fa-clipboard-list"></i> Ver encuestas disponibles</button>
-            <button type="button" class="candado-btn candado-btn-secundario" onclick="candadoLeerSinRecompensa()"><i class="fa-regular fa-newspaper"></i> Leer noticias sin recompensa</button>
-            <p class="candado-nota">El límite de 100 noticias al día y la recompensa de 250 NC por noticia no cambian.</p>
+            <button type="button" class="candado-btn candado-btn-principal" onclick="candadoIrAEncuestas()"><i class="fa-solid fa-clipboard-list"></i> Ver encuestas disponibles</button>            <p class="candado-nota">El límite de 100 noticias al día y la recompensa de 250 NC por noticia no cambian.</p>
         </div>
     </div>
 
@@ -5617,10 +5615,6 @@
             cerrarCandadoNoticias();
             switchTab('tab-ofertas', null);
             cambiarMuroTab('cpx');
-        }
-        function candadoLeerSinRecompensa() {
-            cerrarCandadoNoticias();
-            window.open('https://pulsomx11.github.io/Pulsomx/#sinpase', '_blank', 'noopener');
         }
 
         function _avatarColor(id) {
