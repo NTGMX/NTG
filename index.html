@@ -818,6 +818,23 @@
         }
     </style>
     <style>
+        /* Guía del programa de referidos */
+        .ref-pasos { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 12px; }
+        .ref-pasos li { display: flex; gap: 12px; align-items: flex-start; }
+        .ref-num { flex-shrink: 0; width: 28px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: rgba(147,51,234,.2); border: 1px solid rgba(168,85,247,.4); color: #c084fc; font-size: 13px; font-weight: 900; }
+        .ref-t { margin: 0; font-size: 14px; font-weight: 800; color: #fff; }
+        .ref-d { margin: 3px 0 0; font-size: 12.5px; line-height: 1.5; color: #94a3b8; }
+        .ref-d strong, .ref-bloque strong { color: #e2e8f0; }
+        .ref-bloque { margin-top: 16px; padding: 12px 14px; border-radius: 12px; font-size: 12.5px; line-height: 1.5; color: #cbd5e1; }
+        .ref-bloque-titulo { margin: 0 0 6px; font-size: 13px; font-weight: 800; }
+        .ref-bloque ul { margin: 0; padding-left: 18px; list-style: disc; display: grid; gap: 4px; }
+        .ref-bloque p { margin: 0; }
+        .ref-requisitos { background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.3); }
+        .ref-requisitos .ref-bloque-titulo { color: #93c5fd; }
+        .ref-consejos { background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.3); }
+        .ref-consejos .ref-bloque-titulo { color: #6ee7b7; }
+        .ref-aviso { background: rgba(244,63,94,.08); border: 1px solid rgba(244,63,94,.3); color: #fda4af; }
+
         /* Muro de CPX: que quepa en la pantalla (celular y compu) y se pueda ver completo. */
         .cpx-salir-completa { display: none; }
         #iframe-cpx { height: calc(100vh - 150px) !important; height: calc(100dvh - 150px) !important; min-height: 560px; }
@@ -1868,7 +1885,7 @@
                 <div id="tab-referidos" class="tab-content space-y-4 sm:space-y-6">
                     <div class="border-b border-slate-700 pb-3 sm:pb-4">
                         <h2 class="text-xl sm:text-2xl font-extrabold">Programa de Referidos</h2>
-                        <p class="text-slate-400 text-xs sm:text-sm mt-1">Invita amigos y ganen NetCoins juntos.</p>
+                        <p class="text-slate-400 text-xs sm:text-sm mt-1">Invita a tus amigos a NetGamer y ganen <strong class="text-amber-300">6,000 NC cada uno</strong> cuando creen su cuenta con tu enlace. Sin límite de invitaciones.</p>
                     </div>
 
                     <div class="grid grid-cols-3 gap-2 sm:gap-4">
@@ -1922,27 +1939,75 @@
                         </div>
                     </div>
 
+                    <!-- Guía detallada del programa de referidos -->
+                    <div class="ref-guia bg-slate-800 border border-slate-700 rounded-2xl p-4 sm:p-6">
+                        <h3 class="font-extrabold text-base sm:text-lg"><i class="fa-solid fa-circle-info mr-2 text-purple-400"></i>¿Cómo funciona?</h3>
+                        <ol class="ref-pasos">
+                            <li>
+                                <span class="ref-num">1</span>
+                                <div><p class="ref-t">Copia tu enlace personal</p><p class="ref-d">Es único y está ligado a tu cuenta. Así sabemos que el amigo llegó por ti.</p></div>
+                            </li>
+                            <li>
+                                <span class="ref-num">2</span>
+                                <div><p class="ref-t">Compártelo con personas reales</p><p class="ref-d">Mándalo por WhatsApp, Telegram, Facebook o X con los botones de arriba, o pégalo en tus redes. Cuéntales que en NetGamer se gana contestando encuestas, leyendo noticias y jugando.</p></div>
+                            </li>
+                            <li>
+                                <span class="ref-num">3</span>
+                                <div><p class="ref-t">Tu amigo crea su cuenta desde tu enlace</p><p class="ref-d">Debe abrir tu enlace, registrarse y verificar su correo <strong>en esa misma página, sin cerrarla</strong>. Si cierra la página y después entra a NetGamer por otro lado, la invitación no se registra.</p></div>
+                            </li>
+                            <li>
+                                <span class="ref-num">4</span>
+                                <div><p class="ref-t">Los dos reciben 6,000 NC</p><p class="ref-d">En cuanto tu amigo entra a su cuenta por primera vez, se acreditan automáticamente <strong>6,000 NC para ti y 6,000 NC para él</strong>. Lo verás en tu historial y en "Amigos que invitaste".</p></div>
+                            </li>
+                        </ol>
+
+                        <div class="ref-bloque ref-requisitos">
+                            <p class="ref-bloque-titulo"><i class="fa-solid fa-shield-halved mr-2"></i>Requisitos para que cuente</p>
+                            <ul>
+                                <li>La cuenta de tu amigo debe ser <strong>nueva</strong> y entrar a NetGamer dentro de los <strong>3 días</strong> siguientes a registrarse.</li>
+                                <li>Debe usar <strong>su propia conexión a internet</strong>. Si se registra desde tu misma red Wi‑Fi o desde tu dispositivo, no cuenta.</li>
+                                <li>Cada conexión a internet solo puede usarse <strong>una vez</strong> como referido.</li>
+                                <li>No se acepta registrarse con <strong>VPN, proxy o Tor</strong>.</li>
+                                <li>No puedes invitarte a ti mismo ni crear cuentas extra.</li>
+                            </ul>
+                        </div>
+
+                        <div class="ref-bloque ref-consejos">
+                            <p class="ref-bloque-titulo"><i class="fa-solid fa-lightbulb mr-2"></i>Consejos para invitar más amigos</p>
+                            <ul>
+                                <li>Comparte una captura de tu primer canje: es la mejor prueba de que funciona.</li>
+                                <li>Explica cómo se gana (encuestas, noticias y juegos) en lugar de solo mandar el enlace.</li>
+                                <li>Publícalo en tus estados de WhatsApp, historias o en un video corto de TikTok.</li>
+                                <li>Ayuda a tu amigo a registrarse y verificar su correo en ese momento.</li>
+                            </ul>
+                        </div>
+
+                        <div class="ref-bloque ref-aviso">
+                            <p><i class="fa-solid fa-triangle-exclamation mr-2"></i>Crear cuentas falsas, usar datos de otras personas o abusar del programa provoca la <strong>suspensión permanente</strong> de todas las cuentas involucradas y la pérdida de sus NetCoins.</p>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-3 gap-2 sm:gap-4">
                         <div class="stat-card bg-slate-800 border border-slate-700 p-3 sm:p-5 rounded-xl sm:rounded-2xl flex items-center justify-between">
                             <div>
                                 <span class="text-xs text-slate-400 font-bold uppercase tracking-wider leading-tight block">Total</span>
                                 <h3 class="text-lg sm:text-2xl font-black text-white mt-1"><span id="stat-total-referidos">0</span></h3>
                             </div>
-                            <div class="p-2 sm:p-3 bg-purple-500/10 text-purple-400 rounded-lg sm:rounded-xl text-base sm:text-xl"><i class="fa-solid fa-users"></i></div>
+                            <div class="hidden sm:block p-2 sm:p-3 bg-purple-500/10 text-purple-400 rounded-lg sm:rounded-xl text-base sm:text-xl"><i class="fa-solid fa-users"></i></div>
                         </div>
                         <div class="stat-card bg-slate-800 border border-slate-700 p-3 sm:p-5 rounded-xl sm:rounded-2xl flex items-center justify-between">
                             <div>
                                 <span class="text-xs text-slate-400 font-bold uppercase tracking-wider leading-tight block">NC Ganadas</span>
                                 <h3 class="text-lg sm:text-2xl font-black text-amber-300 mt-1"><span id="stat-nc-referidos">0</span></h3>
                             </div>
-                            <div class="p-2 sm:p-3 bg-amber-500/10 text-amber-400 rounded-lg sm:rounded-xl text-base sm:text-xl"><i class="fa-solid fa-coins"></i></div>
+                            <div class="hidden sm:block p-2 sm:p-3 bg-amber-500/10 text-amber-400 rounded-lg sm:rounded-xl text-base sm:text-xl"><i class="fa-solid fa-coins"></i></div>
                         </div>
                         <div class="stat-card bg-slate-800 border border-slate-700 p-3 sm:p-5 rounded-xl sm:rounded-2xl flex items-center justify-between">
                             <div>
                                 <span class="text-xs text-slate-400 font-bold uppercase tracking-wider leading-tight block">Por Referido</span>
-                                <h3 class="text-lg sm:text-2xl font-black text-emerald-400 mt-1">+6000NC</h3>
+                                <h3 class="text-lg sm:text-2xl font-black text-emerald-400 mt-1">+6,000 NC</h3>
                             </div>
-                            <div class="p-2 sm:p-3 bg-emerald-500/10 text-emerald-400 rounded-lg sm:rounded-xl text-base sm:text-xl"><i class="fa-solid fa-gift"></i></div>
+                            <div class="hidden sm:block p-2 sm:p-3 bg-emerald-500/10 text-emerald-400 rounded-lg sm:rounded-xl text-base sm:text-xl"><i class="fa-solid fa-gift"></i></div>
                         </div>
                     </div>
 
