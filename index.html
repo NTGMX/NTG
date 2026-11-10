@@ -3246,22 +3246,21 @@
 
             if (!main.dataset.hintScrollBound) {
                 main.dataset.hintScrollBound = 'true';
-                
+
+                // Solo se quita cuando ya bajó de verdad (más de 150 px), no con un roce.
                 const handleScroll = () => {
                     if (document.getElementById('landing-container').classList.contains('hidden')) return;
-                    hint.classList.remove('visible');
-                    main.removeEventListener('scroll', handleScroll, { passive: true });
-                    window.removeEventListener('scroll', handleScroll, { passive: true });
+                    if (Math.max(window.scrollY, main.scrollTop) > 150) hint.classList.remove('visible');
                 };
-                
+
                 // La página puede desplazarse en main o en la ventana, según el tamaño de pantalla.
                 main.addEventListener('scroll', handleScroll, { passive: true });
                 window.addEventListener('scroll', handleScroll, { passive: true });
             }
-            
+
             window._landingHintAutoHideTimer = setTimeout(() => {
                 hint.classList.remove('visible');
-            }, 8000);
+            }, 25000);
         }
 
         function toggleAuthViews(showLogin) {
@@ -4281,7 +4280,7 @@
             mostrarHintScrollOfertas(tabId === 'tab-ofertas');
         }
 
-        // Misma flechita del landing, al entrar a Ofertas. Se quita al deslizar o a los 8 s.
+        // Misma flechita del landing, al entrar a Ofertas. Se quita al bajar más de 150 px o a los 25 s.
         function mostrarHintScrollOfertas(mostrar) {
             const hint = document.getElementById('ofertas-scroll-hint');
             if (!hint) return;
@@ -4294,13 +4293,17 @@
             window._ofertasHintTimer = setTimeout(() => {
                 hint.classList.add('visible');
                 // Se activa después de que termina el scroll suave hacia arriba de switchTab.
+                const posicion = () => Math.max(window.scrollY, document.getElementById('main-content')?.scrollTop || 0);
+                const inicio = posicion();
                 window._ofertasHintScroll = () => {
+                    // Solo cuenta bajar; así el scroll suave hacia arriba de switchTab tampoco la quita.
+                    if (posicion() - inicio < 150) return;
                     hint.classList.remove('visible');
                     document.removeEventListener('scroll', window._ofertasHintScroll, true);
                 };
                 document.addEventListener('scroll', window._ofertasHintScroll, { capture: true, passive: true });
             }, 700);
-            window._ofertasHintAutoHideTimer = setTimeout(() => hint.classList.remove('visible'), 8000);
+            window._ofertasHintAutoHideTimer = setTimeout(() => hint.classList.remove('visible'), 25000);
         }
 
         const CANJES_CONFIG = {
