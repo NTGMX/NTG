@@ -2854,6 +2854,42 @@
             }, 4000);
         }
 
+        // Aviso al entrar cuando el usuario ya junta NC para un canje. Una vez por sesión del navegador.
+        function avisarCanjeDisponible(userId, netcoins) {
+            const minimo = Math.min(...Object.values(CANJES_CONFIG).flatMap(c => c.montos.map(m => m.nc)));
+            if (!(Number(netcoins) >= minimo)) return;
+            const clave = 'aviso-canje-' + userId;
+            try { if (sessionStorage.getItem(clave)) return; sessionStorage.setItem(clave, '1'); } catch (e) { /* sin storage: se muestra igual */ }
+
+            setTimeout(() => {
+                const container = document.getElementById('toast-container');
+                if (!container || document.getElementById('aviso-canje-disponible')) return;
+                const toast = document.createElement('div');
+                toast.id = 'aviso-canje-disponible';
+                toast.setAttribute('role', 'status');
+                toast.className = 'flex items-start gap-3 p-4 rounded-r-xl shadow-2xl text-sm font-semibold text-white pointer-events-auto toast-enter bg-slate-800 border-l-4 border-emerald-500';
+                toast.innerHTML = `
+                    <i class="fa-solid fa-gift text-emerald-500 text-lg" style="margin-top:2px;"></i>
+                    <div style="flex:1; min-width:0;">
+                        <p style="margin:0; font-weight:800;">¡Ya puedes canjear una recompensa!</p>
+                        <p style="margin:4px 0 0; font-size:12px; font-weight:500; color:#cbd5e1; line-height:1.4;">Tienes <b class="aviso-canje-nc" style="color:#fbbf24;"></b> NC, suficientes para tu canje.</p>
+                        <button type="button" class="aviso-canje-ir" style="margin-top:10px; padding:7px 14px; border-radius:10px; background:#059669; color:#fff; font-size:12px; font-weight:800;"><i class="fa-solid fa-arrow-right" style="margin-right:6px;"></i>Ir a canjear</button>
+                    </div>
+                    <button type="button" class="aviso-canje-cerrar" aria-label="Cerrar" style="color:#94a3b8; padding:0 2px; line-height:1;"><i class="fa-solid fa-xmark"></i></button>`;
+                toast.querySelector('.aviso-canje-nc').textContent = Number(netcoins).toLocaleString('en-US');
+
+                const cerrar = () => {
+                    clearTimeout(toast._timer);
+                    toast.classList.replace('toast-enter', 'toast-exit');
+                    setTimeout(() => toast.remove(), 300);
+                };
+                toast.querySelector('.aviso-canje-ir').addEventListener('click', () => { cerrar(); switchTab('tab-canjear'); });
+                toast.querySelector('.aviso-canje-cerrar').addEventListener('click', cerrar);
+                container.appendChild(toast);
+                toast._timer = setTimeout(cerrar, 15000);
+            }, 2500);
+        }
+
         const SUPABASE_URL = "https://meiwuluwrdjszxeyoqtt.supabase.co";
         const SUPABASE_KEY = "sb_publishable_gZgGIamNJqf8ir8vvt1OTw_bJ-rosi4";
         const NC_POR_REFERIDO = 6000;
@@ -3777,6 +3813,7 @@
                 _enviarLatidoPresencia();
                 
                 actualizarTextosInterfaz(data.netcoins || 0);
+                avisarCanjeDisponible(user.id, data.netcoins || 0);
                 const totalRef = data.total_referidos || 0;
                 document.getElementById("total-referidos-header").innerText = totalRef;
                 document.getElementById("stat-total-referidos").innerText = totalRef;
