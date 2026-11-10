@@ -793,6 +793,39 @@
         #modal-aviso-canje { overscroll-behavior: contain; }
         #modal-aviso-canje .aviso-tarjeta { max-height: 92vh; max-height: 92dvh; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
         html.aviso-canje-abierto, html.aviso-canje-abierto body, html.aviso-canje-abierto main { overflow: hidden !important; }
+
+        /* Candado de noticias: primero una encuesta */
+        #modal-candado-noticias { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(2, 6, 23, .85); }
+        #modal-candado-noticias.hidden { display: none; }
+        .candado-tarjeta { position: relative; width: 100%; max-width: 460px; max-height: 92dvh; overflow-y: auto; overscroll-behavior: contain; background: linear-gradient(180deg, #1e293b, #0f172a); border: 1px solid rgba(56, 189, 248, .35); border-radius: 20px; padding: 26px 22px 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .6); color: #cbd5e1; }
+        .candado-cerrar { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 10px; color: #94a3b8; background: transparent; border: 0; cursor: pointer; }
+        .candado-cerrar:hover { background: rgba(148, 163, 184, .12); color: #fff; }
+        .candado-icono { width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #38bdf8; background: rgba(56, 189, 248, .12); border: 1px solid rgba(56, 189, 248, .3); }
+        .candado-titulo { text-align: center; color: #fff; font-weight: 900; font-size: 20px; line-height: 1.25; margin: 0 0 8px; }
+        .candado-sub { text-align: center; font-size: 14px; line-height: 1.55; margin: 0 0 16px; }
+        .candado-sub strong { color: #fbbf24; }
+        .candado-lista { list-style: none; margin: 0 0 18px; padding: 14px; border-radius: 14px; background: rgba(15, 23, 42, .7); border: 1px solid rgba(51, 65, 85, .8); display: grid; gap: 10px; }
+        .candado-lista li { display: flex; gap: 10px; font-size: 13px; line-height: 1.5; }
+        .candado-lista li i { color: #34d399; margin-top: 3px; flex-shrink: 0; width: 14px; text-align: center; }
+        .candado-lista li strong { color: #e2e8f0; }
+        .candado-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; padding: 12px 16px; font-weight: 800; font-size: 14px; cursor: pointer; border: 0; transition: background .15s, transform .1s; }
+        .candado-btn:active { transform: scale(.98); }
+        .candado-btn-principal { background: #0284c7; color: #fff; box-shadow: 0 10px 20px -8px rgba(2, 132, 199, .6); }
+        .candado-btn-principal:hover { background: #0ea5e9; }
+        .candado-btn-secundario { margin-top: 8px; background: transparent; color: #94a3b8; border: 1px solid rgba(71, 85, 105, .8); }
+        .candado-btn-secundario:hover { color: #fff; border-color: #94a3b8; }
+        .candado-nota { margin: 12px 0 0; text-align: center; font-size: 11.5px; color: #64748b; line-height: 1.5; }
+        @media (max-width: 640px) {
+            .candado-tarjeta { padding: 22px 16px 16px; }
+            .candado-titulo { font-size: 18px; }
+            .candado-lista { padding: 12px; }
+        }
+        /* Nota de cómo funciona, dentro de la tarjeta de noticias */
+        .noticias-regla { position: relative; z-index: 10; margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: rgba(15, 23, 42, .55); border: 1px solid rgba(56, 189, 248, .2); font-size: 12.5px; line-height: 1.55; color: #94a3b8; }
+        .noticias-regla p { margin: 0; }
+        .noticias-regla p + p { margin-top: 6px; }
+        .noticias-regla strong { color: #e2e8f0; }
+        .noticias-regla i { color: #38bdf8; margin-right: 6px; }
         @media (max-width: 640px) {
             #aviso-canje-paso-1 { padding: 20px 16px 14px; }
             #modal-aviso-canje .aviso-check { width: 48px; height: 48px; font-size: 22px; }
@@ -1815,6 +1848,10 @@
                                 </button>
                             </div>
                         </div>
+                        <div class="noticias-regla">
+                            <p><i class="fa-solid fa-circle-info"></i><strong>¿Cómo se desbloquean?</strong> Si tienes encuestas disponibles, completa <strong>una</strong> y las noticias con recompensa quedan desbloqueadas por el resto del día (hora del centro de México).</p>
+                            <p>Solo cuentan las encuestas completadas en su totalidad; las descalificaciones no cuentan. Si no tienes encuestas disponibles, puedes leer con recompensa sin requisitos. Límite: 100 noticias al día.</p>
+                        </div>
                     </div>
 
                     <div class="bg-gradient-to-r from-emerald-900/50 to-teal-900/50 border border-emerald-500/30 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mt-4">
@@ -2810,6 +2847,24 @@
                     <p id="torre-res-vidas" class="text-[11px] text-slate-500 mt-3"></p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-candado-noticias" class="hidden" role="dialog" aria-modal="true" aria-labelledby="candado-noticias-titulo" onclick="if (event.target === this) cerrarCandadoNoticias()">
+        <div class="candado-tarjeta">
+            <button type="button" class="candado-cerrar" onclick="cerrarCandadoNoticias()" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+            <div class="candado-icono"><i class="fa-solid fa-lock"></i></div>
+            <h2 id="candado-noticias-titulo" class="candado-titulo">Completa una encuesta para desbloquear las noticias de hoy</h2>
+            <p class="candado-sub"><span id="candado-noticias-cantidad">Ahora mismo tienes encuestas disponibles.</span> Para seguir ganando <strong>+250 NC por noticia</strong>, primero completa una de ellas.</p>
+            <ul class="candado-lista">
+                <li><i class="fa-solid fa-circle-check"></i><span>Al completar <strong>una encuesta</strong>, las noticias con recompensa quedan desbloqueadas <strong>por el resto del día</strong> (hora del centro de México).</span></li>
+                <li><i class="fa-solid fa-circle-check"></i><span>Solo cuentan las encuestas <strong>completadas en su totalidad</strong>. Si la encuesta te descalifica, aunque recibas un premio de consolación, no se considera completada.</span></li>
+                <li><i class="fa-solid fa-circle-check"></i><span>La confirmación de la encuesta puede tardar <strong>unos minutos</strong> en reflejarse. Después vuelve a presionar <strong>Leer Noticias</strong>.</span></li>
+                <li><i class="fa-solid fa-circle-check"></i><span>Si en algún momento no tienes encuestas disponibles, puedes leer noticias con recompensa <strong>sin ningún requisito</strong>.</span></li>
+            </ul>
+            <button type="button" class="candado-btn candado-btn-principal" onclick="candadoIrAEncuestas()"><i class="fa-solid fa-clipboard-list"></i> Ver encuestas disponibles</button>
+            <button type="button" class="candado-btn candado-btn-secundario" onclick="candadoLeerSinRecompensa()"><i class="fa-regular fa-newspaper"></i> Leer noticias sin recompensa</button>
+            <p class="candado-nota">El límite de 100 noticias al día y la recompensa de 250 NC por noticia no cambian.</p>
         </div>
     </div>
 
@@ -5430,7 +5485,7 @@
             <p>NetGamer es una plataforma de recompensas y entretenimiento donde puedes acumular <strong>NetCoins (NC)</strong>, un sistema interno de puntos, mediante actividades como:</p>
             <p>a) Completar ofertas, encuestas y tareas en los muros de ofertas de proveedores asociados (por ejemplo, CPX Research, AdGem y BitLabs). La acreditación depende de que el proveedor confirme que completaste la oferta.</p>
             <p>En las encuestas debes responder con información verdadera y con atención. El proveedor decide si calificas para cada encuesta: puede terminarla antes si no cumples el perfil buscado, en cuyo caso puede no haber recompensa o solo un premio menor. Si el proveedor revierte o cancela después una encuesta u oferta ya acreditada (por ejemplo, por respuestas inconsistentes, apresuradas o fraudulentas), NetGamer descontará de tu saldo las NetCoins correspondientes.</p>
-            <p>b) Leer noticias en la sección correspondiente.</p>
+            <p>b) Leer noticias en la sección correspondiente, con un límite de 100 noticias con recompensa por día. Si al momento de entrar a las noticias tienes encuestas disponibles en la Plataforma, para recibir recompensa por noticias primero debes completar en su totalidad al menos una encuesta ese día; las encuestas en las que el proveedor te descalifica, aunque otorguen un premio de consolación, no cuentan como completadas, y una encuesta que después sea revertida o cancelada por el proveedor deja de contar. Una vez completada, las noticias con recompensa quedan desbloqueadas hasta el final de ese día (hora del centro de México). Si no tienes encuestas disponibles, puedes recibir recompensa por noticias sin este requisito. Siempre puedes leer noticias sin recompensa.</p>
             <p>c) Girar la Ruleta Diaria: 1 giro gratis por día natural (hora del centro de México), igual para todos los usuarios; ninguna compra ni suscripción da giros adicionales. El premio de cada giro es aleatorio entre los montos mostrados en la ruleta y lo determina el servidor.</p>
             <p>d) Jugar los juegos de la Plataforma, en los que el premio depende de la habilidad del jugador conforme a las reglas publicadas en cada juego. Algunos juegos cobran una entrada en NetCoins y/o vidas al iniciar cada partida; la entrada no es reembolsable una vez iniciada la partida, aunque la abandones. Las partidas que no se terminan dentro del tiempo límite del juego se dan por finalizadas.</p>
             <p>e) Invitar amigos con tu enlace de referido.</p>
@@ -5518,6 +5573,12 @@
             // servidor, el navegador la bloquea como ventana emergente).
             const ventana = window.open('about:blank', '_blank');
             _supabase.functions.invoke('pase-noticias').then(({ data }) => {
+                // Tiene encuestas disponibles y hoy no ha completado ninguna: primero una encuesta.
+                if (data?.bloqueado) {
+                    if (ventana && !ventana.closed) ventana.close();
+                    mostrarCandadoNoticias(data.encuestas);
+                    return;
+                }
                 // El pase va después de # : no viaja al servidor de GitHub y
                 // PulsoMX lo quita de la barra de direcciones al leerlo.
                 const destino = data?.pase ? `${urlNoticias}#pase=${encodeURIComponent(data.pase)}` : urlNoticias;
@@ -5533,6 +5594,34 @@
             });
         }
 
+
+        // ---------- Candado de noticias: primero una encuesta ----------
+        function mostrarCandadoNoticias(total) {
+            const m = document.getElementById('modal-candado-noticias');
+            if (!m) return;
+            const txt = document.getElementById('candado-noticias-cantidad');
+            if (txt) {
+                txt.textContent = (typeof total === 'number' && total > 0)
+                    ? (total === 1 ? 'Ahora mismo tienes 1 encuesta disponible.' : `Ahora mismo tienes ${total} encuestas disponibles.`)
+                    : 'Ahora mismo tienes encuestas disponibles.';
+            }
+            m.classList.remove('hidden');
+            document.documentElement.classList.add('aviso-canje-abierto');
+        }
+        function cerrarCandadoNoticias() {
+            const m = document.getElementById('modal-candado-noticias');
+            if (m) m.classList.add('hidden');
+            document.documentElement.classList.remove('aviso-canje-abierto');
+        }
+        function candadoIrAEncuestas() {
+            cerrarCandadoNoticias();
+            switchTab('tab-ofertas', null);
+            cambiarMuroTab('cpx');
+        }
+        function candadoLeerSinRecompensa() {
+            cerrarCandadoNoticias();
+            window.open('https://pulsomx11.github.io/Pulsomx/#sinpase', '_blank', 'noopener');
+        }
 
         function _avatarColor(id) {
             const paleta = ['#7c3aed','#2563eb','#0891b2','#059669','#d97706','#dc2626','#db2777'];
