@@ -1582,14 +1582,16 @@ function pintarOpiniones() {
                 </div>
                 <div class="text-lg leading-none">${_estrellasHtml(o.estrellas)}</div>
             </div>
-            <p class="mt-3 text-sm text-slate-200 leading-relaxed break-words">${escapeHtml(o.mensaje)}</p>
+            ${o.mensaje
+                ? `<p class="mt-3 text-sm text-slate-200 leading-relaxed break-words">${escapeHtml(o.mensaje)}</p>`
+                : '<p class="mt-3 text-xs italic text-slate-500">Solo calificó con estrellas, sin comentario.</p>'}
             <div class="mt-4 flex gap-2 flex-wrap">
                 <button onclick="marcarOpinionLeida('${o.id}', ${!o.leida})" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
                     <i class="fa-solid ${o.leida ? 'fa-envelope' : 'fa-envelope-open'} mr-1"></i>${o.leida ? 'Marcar como no leída' : 'Marcar como leída'}
                 </button>
-                <button onclick="copiarOpinion('${o.id}')" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
+                ${o.mensaje ? `<button onclick="copiarOpinion('${o.id}')" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
                     <i class="fa-regular fa-copy mr-1"></i>Copiar texto
-                </button>
+                </button>` : ''}
                 <button onclick="eliminarOpinion('${o.id}')" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 transition">
                     <i class="fa-solid fa-trash mr-1"></i>Eliminar
                 </button>
