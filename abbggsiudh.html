@@ -2523,7 +2523,7 @@ async function cargarGananciasUsuario(userId) {
     try {
         const { data, error } = await _supabase
             .from('historial_ganancias')
-            .select('concepto, netcoins, created_at')  
+            .select('concepto, netcoins, saldo_despues, created_at')
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .limit(50);
@@ -2541,6 +2541,9 @@ async function cargarGananciasUsuario(userId) {
             const fecha = new Date(g.created_at);
             const fechaStr = fecha.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' });
             const horaStr  = fecha.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
+            const nc = Number(g.netcoins) || 0;
+            const negativo = nc < 0;
+            const tieneSaldo = g.saldo_despues !== null && g.saldo_despues !== undefined;
             return `<div class="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 hover:border-slate-600 transition">
                 <div class="flex items-center gap-3 min-w-0">
                     <div class="w-9 h-9 bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0 text-base">${escapeHtml(String(g.concepto || '').split(' ')[0])}</div>
@@ -2549,7 +2552,12 @@ async function cargarGananciasUsuario(userId) {
                         <p class="text-xs text-slate-500">${fechaStr} · ${horaStr}</p>
                     </div>
                 </div>
-                <span class="text-amber-400 font-extrabold text-sm shrink-0 ml-3">+${Number(g.netcoins).toLocaleString('en-US')} NC</span>
+                <div class="shrink-0 ml-3 text-right">
+                    <p class="${negativo ? 'text-rose-400' : 'text-amber-400'} font-extrabold text-sm leading-tight">${negativo ? '−' : '+'}${Math.abs(nc).toLocaleString('en-US')} NC</p>
+                    ${tieneSaldo
+                        ? `<p class="text-[11px] text-slate-400 mt-1 leading-tight" title="Saldo del usuario justo después de este movimiento">Nuevo saldo: <span class="font-bold text-slate-200">${Number(g.saldo_despues).toLocaleString('en-US')} NC</span></p>`
+                        : `<p class="text-[11px] text-slate-600 mt-1 leading-tight" title="Este movimiento es anterior a que se empezara a guardar el saldo">Saldo no registrado</p>`}
+                </div>
             </div>`;
         }).join('');
 
