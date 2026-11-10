@@ -4231,13 +4231,22 @@
 
         function obtenerMensajeCompartir() {
             const enlace = document.getElementById("referral-link-input").value;
-            return `¡Únete a NetGamer y gana dinero real jugando, leyendo noticias y completando tareas! Usa mi enlace y ambos recibimos 6,000 NetCoins de regalo 🎮💰 ${enlace}`;
+            return `${textoInvitacion()}\n\n👉 ${enlace}`;
+        }
+        // Texto de invitación (sin el enlace), igual para WhatsApp y Telegram.
+        function textoInvitacion() {
+            return '🎮 Te invito a NetGamer: gana NetCoins contestando encuestas, girando la ruleta diaria y leyendo noticias, y cámbialas por PayPal, transferencia bancaria, Robux o Diamantes de Free Fire.\n\n'
+                + '🎁 Regístrate con mi enlace y recibe tu bono de bienvenida de 20,000 NC + 6,000 NC extra por mi invitación. ¡Es gratis!';
+        }
+        // X tiene límite de caracteres: versión corta.
+        function textoInvitacionCorto() {
+            return '🎮 Gana NetCoins con encuestas, la ruleta diaria y noticias, y cámbialas por PayPal, Robux o Diamantes de Free Fire. Regístrate gratis con mi enlace y recibe 20,000 NC de bienvenida + 6,000 NC extra 🎁';
         }
 
         function compartirWhatsApp() { window.open(`https://wa.me/?text=${encodeURIComponent(obtenerMensajeCompartir())}`, '_blank', 'noopener'); }
-        function compartirTelegram() { window.open(`https://t.me/share/url?url=${encodeURIComponent(document.getElementById("referral-link-input").value)}&text=${encodeURIComponent("¡Únete a NetGamer y gana dinero real! 🎮💰")}`, '_blank', 'noopener'); }
+        function compartirTelegram() { window.open(`https://t.me/share/url?url=${encodeURIComponent(document.getElementById("referral-link-input").value)}&text=${encodeURIComponent(textoInvitacion())}`, '_blank', 'noopener'); }
         function compartirFacebook() { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(document.getElementById("referral-link-input").value)}`, '_blank', 'noopener'); }
-        function compartirTwitter() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(obtenerMensajeCompartir())}`, '_blank', 'noopener'); }
+        function compartirTwitter() { window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(textoInvitacionCorto())}&url=${encodeURIComponent(document.getElementById("referral-link-input").value)}`, '_blank', 'noopener'); }
 
         // ---------- Aviso de canje entregado + opinión ----------
         // Cuando el admin marca un canje como Procesado, al usuario le aparece un
