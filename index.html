@@ -5376,17 +5376,23 @@
             });
         }
 
+        // Correo público de contacto de NetGamer. Si está vacío, solo se menciona el chat de soporte.
+        const CORREO_CONTACTO = 'soporte@netgamermx.com';
+        const _correoLegal = CORREO_CONTACTO
+            ? ` o por correo electrónico a <a href="mailto:${CORREO_CONTACTO}" class="text-purple-400 hover:underline">${CORREO_CONTACTO}</a>`
+            : '';
+
         const textoPrivacidad = `
-            <p class="text-slate-400 text-xs mb-4">Última actualización: 4 de noviembre de 2026</p>
+            <p class="text-slate-400 text-xs mb-4">Última actualización: 10 de noviembre de 2026</p>
             <h3 class="font-bold text-white mb-2">1. Responsable de tus datos</h3>
-            <p>El presente Aviso de Privacidad se emite conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares y su normatividad aplicable. El responsable del tratamiento de tus datos personales es el titular y operador de NetGamer ("NetGamer", "la Plataforma" o "nosotros"), sitio disponible en netgamermx.com, con domicilio en México. Para cualquier asunto relacionado con tus datos personales puedes contactarnos a través del chat de soporte integrado en la Plataforma.</p>
+            <p>El presente Aviso de Privacidad se emite conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares y su normatividad aplicable. El responsable del tratamiento de tus datos personales es el titular y operador de NetGamer ("NetGamer", "la Plataforma" o "nosotros"), sitio disponible en netgamermx.com, con domicilio en México. Para cualquier asunto relacionado con tus datos personales puedes contactarnos a través del chat de soporte integrado en la Plataforma${_correoLegal}.</p>
             <h3 class="font-bold text-white mb-2 mt-4">2. Datos personales que recabamos</h3>
             <p>Recabamos únicamente los datos necesarios para operar la Plataforma:</p>
             <p><strong>a) Datos de identificación y contacto:</strong> correo electrónico y nombre de usuario. Tu contraseña la administra nuestro proveedor de autenticación y se guarda cifrada; nadie en NetGamer puede verla.</p>
-            <p><strong>b) Datos técnicos:</strong> dirección IP al registrarte, fecha de tu última conexión e información técnica básica del navegador y dispositivo, utilizados para seguridad y prevención de fraude.</p>
+            <p><strong>b) Datos técnicos:</strong> dirección IP (al registrarte y al consultar las encuestas disponibles para ti), fecha de tu última conexión e información técnica básica del navegador y dispositivo, utilizados para seguridad, prevención de fraude y para mostrarte las encuestas que corresponden a tu país y dispositivo.</p>
             <p><strong>c) Datos de actividad:</strong> saldo e historial de NetCoins, canjes solicitados, ofertas y encuestas completadas en los muros de ofertas, noticias leídas, uso de la ruleta diaria, vidas, suscripción Premium y referidos.</p>
             <p><strong>d) Datos de juego:</strong> resultados de cada partida (altura, perfectos, duración, premio) y, solo en partidas que requieren revisión de seguridad, los tiempos de cada toque.</p>
-            <p><strong>e) Datos de soporte:</strong> mensajes, imágenes y archivos que nos envíes por el chat de soporte.</p>
+            <p><strong>e) Datos de soporte y opiniones:</strong> mensajes, imágenes y archivos que nos envíes por el chat de soporte, así como las calificaciones y comentarios que nos dejes después de recibir un canje.</p>
             <p><strong>f) Datos patrimoniales o financieros:</strong> cuando solicitas un canje, los datos necesarios para enviarlo: banco, nombre del beneficiario y CLABE (SPEI), correo de PayPal o ID de jugador (Robux, Free Fire). Al capturarlos y enviar tu solicitud nos otorgas tu consentimiento expreso para tratarlos con ese único fin.</p>
             <p><strong>g) Datos de pago:</strong> las compras se procesan directamente en MercadoPago o PayPal. NetGamer no recibe ni guarda números de tarjeta; solo recibe la confirmación, el monto y el identificador del pago.</p>
             <p>No recabamos datos personales sensibles (salud, origen étnico, creencias, preferencias sexuales, datos biométricos, etc.). Te pedimos no enviarlos por el chat de soporte.</p>
@@ -5394,7 +5400,8 @@
             <p><strong>Finalidades primarias</strong> (necesarias para darte el servicio): (i) crear y administrar tu cuenta; (ii) acreditar bonos, recompensas de referidos, de ofertas, de noticias, de la ruleta y de los juegos; (iii) procesar y enviar tus canjes; (iv) procesar tus compras de vidas o Premium; (v) prevenir fraude, uso de múltiples cuentas, bots y abuso de bonos, incluida la revisión de partidas y canjes; (vi) atenderte por el chat de soporte; y (vii) cumplir obligaciones legales y atender requerimientos de autoridad.</p>
             <p><strong>Finalidades secundarias</strong> (no necesarias para el servicio): (i) generar estadísticas de uso para mejorar la Plataforma; y (ii) mostrar en la sección pública de "Canjes recientes" un nombre o alias abreviado, el método y el monto de canjes aprobados. Puedes pedirnos por el chat de soporte que no usemos tus datos para estas finalidades; tu negativa no afectará tu cuenta ni tus canjes.</p>
             <h3 class="font-bold text-white mb-2 mt-4">4. Transferencias y encargados</h3>
-            <p>No vendemos ni rentamos tus datos personales. Para operar, compartimos información con proveedores que la tratan por nuestra cuenta (encargados): Supabase (base de datos, autenticación y servidores, con infraestructura que puede ubicarse fuera de México); MercadoPago y PayPal (pagos); los muros de ofertas y encuestas CPX Research, AdGem y BitLabs, a los que solo enviamos tu identificador interno de usuario para acreditar las ofertas que completes; y redes publicitarias que muestran anuncios en la Plataforma. Cuando sea necesario para enviar un canje, compartimos los datos de destino con el banco, PayPal o la plataforma de juego correspondiente.</p>
+            <p>No vendemos ni rentamos tus datos personales. Para operar, compartimos información con proveedores que la tratan por nuestra cuenta (encargados): Supabase (base de datos, autenticación y servidores, con infraestructura que puede ubicarse fuera de México); MercadoPago y PayPal (pagos); los muros de ofertas y encuestas CPX Research, AdGem y BitLabs, a los que enviamos tu identificador interno de usuario para acreditar las ofertas que completes y, en el caso de CPX Research, también tu dirección IP y la información de tu navegador para consultar qué encuestas están disponibles para ti; y redes publicitarias que muestran anuncios en la Plataforma. Cuando sea necesario para enviar un canje, compartimos los datos de destino con el banco, PayPal o la plataforma de juego correspondiente.</p>
+            <p>Las respuestas que des dentro de una encuesta u oferta las recaba directamente el proveedor correspondiente (y, en su caso, el cliente que realiza el estudio), conforme a su propio aviso de privacidad, que te recomendamos leer antes de participar. NetGamer no recibe tus respuestas; solo recibe la confirmación de que completaste la encuesta u oferta y la recompensa correspondiente.</p>
             <p>También podremos compartir datos con autoridades competentes cuando la ley lo exija. Estas comunicaciones no requieren tu consentimiento conforme a la ley aplicable.</p>
             <h3 class="font-bold text-white mb-2 mt-4">5. Cookies y tecnologías similares</h3>
             <p>NetGamer usa el almacenamiento local del navegador (localStorage y sessionStorage) para mantener tu sesión iniciada, recordar tu código de referido durante el registro y guardar preferencias como el sonido de los juegos o el menú lateral. No usamos cookies de rastreo propias. Las redes publicitarias y los muros de ofertas que se muestran dentro de la Plataforma pueden usar sus propias cookies conforme a sus políticas; puedes bloquearlas o borrarlas desde la configuración de tu navegador.</p>
@@ -5402,7 +5409,7 @@
             <p>Aplicamos medidas de seguridad administrativas, técnicas y físicas razonables: conexión cifrada (HTTPS), contraseñas cifradas, reglas de acceso a nivel de base de datos y operaciones sensibles (saldo, canjes, partidas, Premium) procesadas solo en el servidor. Ningún sistema es 100% infalible; si ocurriera una vulneración que afecte de forma significativa tus derechos, te lo informaremos.</p>
             <p>Conservamos tus datos mientras tu cuenta esté activa. Al eliminar tu cuenta, borraremos o anonimizaremos tus datos, salvo los registros de canjes, pagos y prevención de fraude que debamos conservar por obligaciones legales o para atender disputas, durante el plazo que la ley señale.</p>
             <h3 class="font-bold text-white mb-2 mt-4">7. Derechos ARCO y revocación del consentimiento</h3>
-            <p>Tienes derecho a Acceder a tus datos, Rectificarlos, Cancelarlos u Oponerte a su tratamiento (derechos ARCO), así como a revocar tu consentimiento y a pedir la eliminación de tu cuenta. Para ejercerlos, escríbenos por el chat de soporte desde tu cuenta indicando: tu nombre de usuario y correo, el derecho que deseas ejercer, los datos a los que se refiere tu solicitud y, en su caso, los documentos que la respalden.</p>
+            <p>Tienes derecho a Acceder a tus datos, Rectificarlos, Cancelarlos u Oponerte a su tratamiento (derechos ARCO), así como a revocar tu consentimiento y a pedir la eliminación de tu cuenta. Para ejercerlos, escríbenos por el chat de soporte desde tu cuenta${_correoLegal} indicando: tu nombre de usuario y correo, el derecho que deseas ejercer, los datos a los que se refiere tu solicitud y, en su caso, los documentos que la respalden.</p>
             <p>Te responderemos en un plazo máximo de 20 días hábiles y, si procede, la haremos efectiva dentro de los 15 días hábiles siguientes. La revocación del consentimiento o la cancelación de datos necesarios para el servicio puede implicar que no podamos seguir prestándotelo (por ejemplo, procesar canjes pendientes). Si consideras que tu solicitud no fue atendida, puedes acudir a la autoridad en materia de protección de datos personales.</p>
             <h3 class="font-bold text-white mb-2 mt-4">8. Menores de edad</h3>
             <p>La Plataforma está dirigida a personas de 13 años o más. Si eres menor de 18 años, solo puedes usarla con el consentimiento y la supervisión de tu madre, padre o tutor, quien deberá autorizar cualquier compra y cualquier canje. Si detectamos que un menor de 13 años se registró, eliminaremos su cuenta y sus datos.</p>
@@ -5411,13 +5418,14 @@
         `;
 
         const textoTerminos = `
-            <p class="text-slate-400 text-xs mb-4">Última actualización: 4 de noviembre de 2026</p>
+            <p class="text-slate-400 text-xs mb-4">Última actualización: 10 de noviembre de 2026</p>
             <h3 class="font-bold text-white mb-2">1. Aceptación</h3>
             <p>Estos Términos y Condiciones regulan el uso de NetGamer (netgamermx.com, "la Plataforma"). Al crear una cuenta o usar la Plataforma aceptas estos Términos y el Aviso de Privacidad. Si no estás de acuerdo, no te registres ni uses la Plataforma.</p>
             <p>Debes tener al menos 13 años. Si eres menor de 18 años, necesitas el consentimiento y la supervisión de tu madre, padre o tutor, quien deberá autorizar cualquier compra y cualquier canje, y es responsable del uso que hagas de la Plataforma.</p>
             <h3 class="font-bold text-white mb-2 mt-4">2. Qué es NetGamer</h3>
             <p>NetGamer es una plataforma de recompensas y entretenimiento donde puedes acumular <strong>NetCoins (NC)</strong>, un sistema interno de puntos, mediante actividades como:</p>
             <p>a) Completar ofertas, encuestas y tareas en los muros de ofertas de proveedores asociados (por ejemplo, CPX Research, AdGem y BitLabs). La acreditación depende de que el proveedor confirme que completaste la oferta.</p>
+            <p>En las encuestas debes responder con información verdadera y con atención. El proveedor decide si calificas para cada encuesta: puede terminarla antes si no cumples el perfil buscado, en cuyo caso puede no haber recompensa o solo un premio menor. Si el proveedor revierte o cancela después una encuesta u oferta ya acreditada (por ejemplo, por respuestas inconsistentes, apresuradas o fraudulentas), NetGamer descontará de tu saldo las NetCoins correspondientes.</p>
             <p>b) Leer noticias en la sección correspondiente.</p>
             <p>c) Girar la Ruleta Diaria: 1 giro gratis por día natural (hora del centro de México), igual para todos los usuarios; ninguna compra ni suscripción da giros adicionales. El premio de cada giro es aleatorio entre los montos mostrados en la ruleta y lo determina el servidor.</p>
             <p>d) Jugar los juegos de la Plataforma, en los que el premio depende de la habilidad del jugador conforme a las reglas publicadas en cada juego. Algunos juegos cobran una entrada en NetCoins y/o vidas al iniciar cada partida; la entrada no es reembolsable una vez iniciada la partida, aunque la abandones. Las partidas que no se terminan dentro del tiempo límite del juego se dan por finalizadas.</p>
@@ -5447,13 +5455,14 @@
             <p>d) Falsificar o alterar comprobantes, capturas de pantalla o cualquier evidencia enviada a soporte o en un canje.</p>
             <p>e) Acceder, modificar o interferir sin autorización con los sistemas, bases de datos o servidores de la Plataforma, o aprovechar errores en lugar de reportarlos.</p>
             <p>f) Enviar contenido ilegal, ofensivo, fraudulento o que infrinja derechos de terceros por el chat de soporte o en tu nombre de usuario.</p>
+            <p>g) Dar respuestas falsas, aleatorias o contradictorias en las encuestas, o completar ofertas y encuestas a nombre de otra persona.</p>
             <p>Si detectamos una infracción, podremos anular las NetCoins obtenidas indebidamente, rechazar canjes y suspender o cancelar la cuenta. En casos graves (fraude, múltiples cuentas, bots o manipulación) la cancelación será definitiva y se perderá el saldo de NetCoins. Si consideras que se trata de un error, puedes aclararlo por el chat de soporte.</p>
             <h3 class="font-bold text-white mb-2 mt-4">10. Publicidad y sitios de terceros</h3>
             <p>La Plataforma muestra publicidad (banners, anuncios de imagen o video y anuncios de redes publicitarias), que ayuda a financiar las recompensas. Registramos impresiones y clics con fines estadísticos y de facturación. Los anuncios, muros de ofertas y enlaces externos pertenecen a terceros: sus productos, ofertas y políticas son responsabilidad de cada tercero.</p>
             <h3 class="font-bold text-white mb-2 mt-4">11. Marcas de terceros</h3>
             <p>NetGamer no está afiliado, patrocinado ni respaldado por Roblox Corporation, Garena, PayPal, MercadoPago ni ninguna otra marca mencionada en la Plataforma. Robux, Roblox, Free Fire, PayPal, MercadoPago y demás nombres y logotipos son marcas de sus respectivos titulares y se usan solo para identificar las recompensas y métodos de pago disponibles.</p>
             <h3 class="font-bold text-white mb-2 mt-4">12. Soporte</h3>
-            <p>Puedes contactarnos por el chat de soporte integrado para dudas, aclaraciones, problemas con tu cuenta o canjes, y para ejercer tus derechos sobre tus datos personales.</p>
+            <p>Puedes contactarnos por el chat de soporte integrado${_correoLegal} para dudas, aclaraciones, problemas con tu cuenta o canjes, y para ejercer tus derechos sobre tus datos personales.</p>
             <h3 class="font-bold text-white mb-2 mt-4">13. Disponibilidad y responsabilidad</h3>
             <p>Hacemos nuestro mejor esfuerzo para que la Plataforma funcione correctamente, pero no garantizamos que esté libre de errores o interrupciones. Si un error técnico acredita NetCoins de forma incorrecta, podremos corregir el saldo. NetGamer no es responsable por fallas de tu conexión o dispositivo, ni por interrupciones de proveedores externos (muros de ofertas, pasarelas de pago, redes publicitarias, plataformas de juego). Nada en estos Términos limita los derechos que te otorgan las leyes de protección al consumidor.</p>
             <h3 class="font-bold text-white mb-2 mt-4">14. Cambios a la Plataforma y a estos Términos</h3>
@@ -5478,7 +5487,20 @@
 
         function cerrarModalLegal() {
             document.getElementById('modal-legal').classList.add('hidden');
+            // Si se abrió con netgamermx.com/#terminos o /#privacidad, se limpia el link al cerrar.
+            if (/^#(terminos|privacidad)$/i.test(location.hash)) {
+                history.replaceState(null, '', location.pathname + location.search);
+            }
         }
+
+        // Links directos: netgamermx.com/#terminos y netgamermx.com/#privacidad abren el texto legal.
+        function abrirLegalPorLink() {
+            const h = (location.hash || '').toLowerCase();
+            if (h === '#terminos') abrirTerminos();
+            else if (h === '#privacidad') abrirPrivacidad();
+        }
+        window.addEventListener('hashchange', abrirLegalPorLink);
+        document.addEventListener('DOMContentLoaded', abrirLegalPorLink);
 
         function irANoticias() {
             if (!currentUser) {
