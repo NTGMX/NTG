@@ -870,7 +870,8 @@
         .cpx-tj:active { transform: scale(.98); }
         .cpx-tj-nc { display: flex; align-items: baseline; gap: 5px; color: #fbbf24; font-size: 22px; font-weight: 900; line-height: 1; }
         .cpx-tj-nc small { color: #fcd34d; font-size: 12px; font-weight: 800; }
-        .cpx-tj-info { display: flex; align-items: center; justify-content: space-between; gap: 6px; color: #94a3b8; font-size: 12px; font-weight: 700; }
+        .cpx-tj-info { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; color: #94a3b8; font-size: 12px; font-weight: 700; }
+        .cpx-tj-etiqueta { display: block; margin-bottom: 2px; color: #64748b; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
         .cpx-tj-estrellas { color: #facc15; font-size: 10px; letter-spacing: 1px; white-space: nowrap; }
         .cpx-tj-estrellas .off { color: #475569; }
         .cpx-tj-btn { margin-top: 2px; padding: 8px 0; border-radius: 10px; background: #0f766e; color: #fff; font-size: 12px; font-weight: 800; text-align: center; }
@@ -4909,7 +4910,7 @@
             const info = document.createElement('div');
             info.className = 'cpx-tj-info';
             const min = document.createElement('span');
-            min.innerHTML = '<i class="fa-regular fa-clock" style="margin-right:4px;"></i>';
+            min.innerHTML = '<span class="cpx-tj-etiqueta">Duración</span><i class="fa-regular fa-clock" style="margin-right:4px;"></i>';
             min.append(e.minutos + ' min');
             const est = document.createElement('span');
             est.className = 'cpx-tj-estrellas';
