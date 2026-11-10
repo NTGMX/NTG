@@ -4920,7 +4920,11 @@
             const btn = document.createElement('div');
             btn.className = 'cpx-tj-btn';
             btn.innerHTML = 'Empezar <i class="fa-solid fa-arrow-up-right-from-square" style="margin-left:4px; font-size:10px;"></i>';
-            a.append(nc, info, btn);
+            const recompensa = document.createElement('div');
+            recompensa.className = 'cpx-tj-etiqueta';
+            recompensa.style.marginBottom = '-4px';
+            recompensa.textContent = 'Recompensa';
+            a.append(recompensa, nc, info, btn);
             return a;
         }
         async function cargarTarjetasCpx(forzar) {
