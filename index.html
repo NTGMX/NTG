@@ -789,6 +789,22 @@
         #modal-aviso-canje .estrella-opinion { color: #475569; transition: transform .15s, color .15s; }
         #modal-aviso-canje .estrella-opinion:hover { transform: scale(1.15); }
         #modal-aviso-canje .estrella-opinion.activa { color: #fbbf24; }
+        /* Mientras el aviso está abierto, el fondo no se mueve: el scroll solo es de la tarjeta. */
+        #modal-aviso-canje { overscroll-behavior: contain; }
+        #modal-aviso-canje .aviso-tarjeta { max-height: 92vh; max-height: 92dvh; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+        html.aviso-canje-abierto, html.aviso-canje-abierto body, html.aviso-canje-abierto main { overflow: hidden !important; }
+        @media (max-width: 640px) {
+            #aviso-canje-paso-1 { padding: 20px 16px 14px; }
+            #modal-aviso-canje .aviso-check { width: 48px; height: 48px; font-size: 22px; }
+            #modal-aviso-canje .aviso-etiqueta { margin-top: 10px; }
+            #aviso-canje-titulo { font-size: 20px; }
+            #modal-aviso-canje .aviso-texto { margin-top: 6px; font-size: 14px; }
+            #modal-aviso-canje .aviso-destino { margin-top: 12px; padding: 10px 12px; }
+            #modal-aviso-canje .aviso-separador { margin: 14px 0; }
+            #modal-aviso-canje .aviso-opinion-titulo { font-size: 16px; }
+            #modal-aviso-canje .aviso-opinion-desc { font-size: 13px; }
+            #aviso-canje-mensaje { min-height: 64px; }
+        }
         /* Utilidades que el CSS precompilado de la página no traía */
         .z-\[6500\]{z-index:6500}
         .max-h-\[92vh\]{max-height:92vh}
@@ -947,7 +963,7 @@
 
     <!-- Aviso: tu canje ya fue entregado + opinión -->
     <div id="modal-aviso-canje" class="hidden fixed inset-0 z-[6500] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="aviso-canje-titulo">
-        <div class="aviso-tarjeta relative w-full max-w-md max-h-[92vh] overflow-y-auto bg-slate-900 border border-emerald-500/40 rounded-3xl shadow-2xl shadow-emerald-900/30">
+        <div class="aviso-tarjeta relative w-full max-w-md overflow-y-auto bg-slate-900 border border-emerald-500/40 rounded-3xl shadow-2xl shadow-emerald-900/30">
             <div class="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-emerald-500/20 to-transparent pointer-events-none rounded-t-3xl"></div>
 
             <div id="aviso-canje-paso-1" class="relative px-5 sm:px-7 pt-7 pb-6">
@@ -955,14 +971,14 @@
                     <div class="aviso-check w-16 h-16 mx-auto rounded-full bg-emerald-500 flex items-center justify-center text-white text-3xl shadow-lg shadow-emerald-500/40">
                         <i class="fa-solid fa-check"></i>
                     </div>
-                    <p class="mt-4 text-[11px] font-black tracking-[.2em] uppercase text-emerald-400">Canje entregado</p>
+                    <p class="aviso-etiqueta mt-4 text-[11px] font-black tracking-[.2em] uppercase text-emerald-400">Canje entregado</p>
                     <h2 id="aviso-canje-titulo" class="mt-1 text-2xl font-black text-white leading-tight">¡Tu premio ya está en tu cuenta! 🎉</h2>
-                    <p class="mt-3 text-[15px] text-slate-300 leading-relaxed">
+                    <p class="aviso-texto mt-3 text-[15px] text-slate-300 leading-relaxed">
                         <span id="aviso-canje-detalle" class="font-black text-white"></span><span id="aviso-canje-texto"></span><span id="aviso-canje-medio" class="font-black text-emerald-300"></span>.
                     </p>
                 </div>
 
-                <div class="mt-5 bg-slate-800/70 border border-slate-700 rounded-2xl p-3.5 flex items-center gap-3">
+                <div class="aviso-destino mt-5 bg-slate-800/70 border border-slate-700 rounded-2xl p-3.5 flex items-center gap-3">
                     <div id="aviso-canje-icono" class="w-11 h-11 shrink-0 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-300 text-lg"><i class="fa-solid fa-gift"></i></div>
                     <div class="min-w-0 flex-1">
                         <p class="text-[11px] text-slate-400">Enviado a</p>
@@ -972,13 +988,13 @@
                 </div>
                 <p class="mt-2 text-[11px] text-slate-500 text-center">Si todavía no lo ves, espera unos minutos o escríbenos desde Soporte.</p>
 
-                <div class="my-6 h-px bg-slate-800"></div>
+                <div class="aviso-separador my-6 h-px bg-slate-800"></div>
 
                 <div>
-                    <h3 class="text-lg font-black text-white">Tu opinión nos ayuda a crecer 💬</h3>
-                    <p class="mt-1.5 text-sm text-slate-400 leading-relaxed">¿Qué te pareció NetGamer? Cuéntanos tu experiencia y si nos consideras una plataforma confiable. Tu comentario ayuda a que más personas se animen a usarla.</p>
+                    <h3 class="aviso-opinion-titulo text-lg font-black text-white">Tu opinión nos ayuda a crecer 💬</h3>
+                    <p class="aviso-opinion-desc mt-1.5 text-sm text-slate-400 leading-relaxed">¿Qué te pareció NetGamer? Tu calificación ayuda a que más personas se animen a usarla.</p>
 
-                    <p class="mt-4 text-xs font-bold text-slate-300">¿Cómo calificarías a NetGamer? <span class="font-normal text-slate-500">(opcional)</span></p>
+                    <p class="mt-4 text-xs font-bold text-slate-300">¿Cómo calificarías a NetGamer?</p>
                     <div id="aviso-canje-estrellas" class="mt-1.5 flex gap-1.5" role="radiogroup" aria-label="Calificación">
                         <button type="button" role="radio" class="estrella-opinion text-3xl leading-none" data-valor="1" aria-label="1 estrella" onclick="elegirEstrellasOpinion(1)">★</button>
                         <button type="button" role="radio" class="estrella-opinion text-3xl leading-none" data-valor="2" aria-label="2 estrellas" onclick="elegirEstrellasOpinion(2)">★</button>
@@ -987,8 +1003,8 @@
                         <button type="button" role="radio" class="estrella-opinion text-3xl leading-none" data-valor="5" aria-label="5 estrellas" onclick="elegirEstrellasOpinion(5)">★</button>
                     </div>
 
-                    <label for="aviso-canje-mensaje" class="block mt-4 text-xs font-bold text-slate-300">Tu opinión</label>
-                    <textarea id="aviso-canje-mensaje" rows="4" maxlength="800" oninput="actualizarContadorOpinion()"
+                    <label for="aviso-canje-mensaje" class="block mt-4 text-xs font-bold text-slate-300">Comentario <span class="font-normal text-slate-500">(opcional)</span></label>
+                    <textarea id="aviso-canje-mensaje" rows="3" maxlength="800" oninput="actualizarContadorOpinion()"
                         placeholder="Ej. Me llegó mi pago rápido, NetGamer sí es confiable y lo recomiendo…"
                         class="mt-1.5 w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition resize-none"></textarea>
                     <div class="mt-1 flex justify-between gap-3 text-[11px] text-slate-500">
@@ -4254,6 +4270,7 @@
             const modal = document.getElementById('modal-aviso-canje');
             if (modal.parentElement !== document.body) document.body.appendChild(modal);   // encima de todo
             modal.classList.remove('hidden');
+            document.documentElement.classList.add('aviso-canje-abierto');
             modal.querySelector('.aviso-tarjeta').scrollTop = 0;
         }
 
@@ -4263,20 +4280,31 @@
                 b.classList.toggle('activa', Number(b.dataset.valor) <= n);
                 b.setAttribute('aria-checked', Number(b.dataset.valor) === n ? 'true' : 'false');
             });
+            const btn = document.getElementById('btn-enviar-opinion');
+            if (btn) btn.disabled = !_opinionLista();
+        }
+
+        // Se puede enviar con solo estrellas, solo comentario (3+ letras) o ambos.
+        function _opinionLista() {
+            const txt = (document.getElementById('aviso-canje-mensaje')?.value || '').trim();
+            return _estrellasOpinion > 0 || txt.length >= 3;
         }
 
         function actualizarContadorOpinion() {
             const txt = document.getElementById('aviso-canje-mensaje').value;
             document.getElementById('aviso-canje-contador').textContent = txt.length;
-            document.getElementById('btn-enviar-opinion').disabled = txt.trim().length < 3;
+            document.getElementById('btn-enviar-opinion').disabled = !_opinionLista();
             document.getElementById('aviso-canje-error').textContent = '';
         }
 
         async function enviarOpinionCanje() {
-            if (!_avisoCanjeActual) return;
+            if (!_avisoCanjeActual || !_opinionLista()) return;
             const btn = document.getElementById('btn-enviar-opinion');
             const mensaje = document.getElementById('aviso-canje-mensaje').value.trim();
-            if (mensaje.length < 3) return;
+            if (mensaje.length > 0 && mensaje.length < 3) {
+                document.getElementById('aviso-canje-error').textContent = 'Escribe al menos 3 letras o deja el comentario vacío.';
+                return;
+            }
             btn.disabled = true;
             const original = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
@@ -4294,13 +4322,17 @@
                     return;
                 }
                 if (data && data.error === 'ya_opinaste') { cerrarModalAvisoCanje(); return; }
-                const msgs = { mensaje_invalido: 'Escribe al menos 3 caracteres.', canje_no_valido: 'Este canje ya no está disponible.' };
+                const msgs = {
+                    mensaje_invalido: 'Escribe al menos 3 letras o deja el comentario vacío.',
+                    sin_contenido: 'Elige tus estrellas o escribe un comentario.',
+                    canje_no_valido: 'Este canje ya no está disponible.'
+                };
                 error = msgs[data && data.error] || 'No se pudo enviar. Intenta de nuevo.';
             } catch (e) {
                 error = 'No se pudo enviar. Revisa tu conexión e intenta de nuevo.';
             } finally {
                 btn.innerHTML = original;
-                btn.disabled = document.getElementById('aviso-canje-mensaje').value.trim().length < 3;
+                btn.disabled = !_opinionLista();
                 document.getElementById('aviso-canje-error').textContent = error;
             }
         }
@@ -4308,6 +4340,7 @@
         async function cerrarAvisoCanje() {
             const r = _avisoCanjeActual;
             document.getElementById('modal-aviso-canje').classList.add('hidden');
+            document.documentElement.classList.remove('aviso-canje-abierto');
             _avisoCanjeActual = null;
             if (r) {
                 _avisosCerrados.add(r.id);
@@ -4318,6 +4351,7 @@
 
         function cerrarModalAvisoCanje() {
             document.getElementById('modal-aviso-canje').classList.add('hidden');
+            document.documentElement.classList.remove('aviso-canje-abierto');
             if (_avisoCanjeActual) _avisosCerrados.add(_avisoCanjeActual.id);
             _avisoCanjeActual = null;
             setTimeout(revisarCanjesEntregados, 600);
