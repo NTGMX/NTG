@@ -1800,21 +1800,87 @@
 
                     
 
-                    <div class="bg-slate-800 border border-amber-500/30 rounded-2xl p-5 sm:p-6">
-                        <div class="flex items-center justify-between mb-4">
+                    <style>
+                        .ruleta-card { background:
+                            radial-gradient(120% 70% at 50% 0%, rgba(124,58,237,.28), transparent 60%),
+                            radial-gradient(90% 60% at 50% 100%, rgba(245,158,11,.14), transparent 60%),
+                            linear-gradient(160deg, #120b24 0%, #0b0a17 55%, #140a1f 100%); }
+                        .ruleta-card::before { content:''; position:absolute; inset:0; pointer-events:none; opacity:.35;
+                            background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 14px 14px; }
+                        .ruleta-escenario { width: min(290px, 78vw); aspect-ratio: 1 / 1; }
+                        .ruleta-halo { position:absolute; inset:-14%; border-radius:9999px; pointer-events:none;
+                            background: radial-gradient(circle, rgba(245,158,11,.30) 0%, rgba(124,58,237,.22) 45%, transparent 70%);
+                            filter: blur(6px); transition: opacity .4s, transform .4s; opacity:.7; }
+                        .ruleta-escenario.girando .ruleta-halo { opacity:1; transform: scale(1.05); animation: ruletaHalo 1.2s ease-in-out infinite alternate; }
+                        @keyframes ruletaHalo { from { filter: blur(6px) hue-rotate(0deg); } to { filter: blur(10px) hue-rotate(-25deg); } }
+                        .ruleta-puntero { position:absolute; top:-4%; left:50%; width:15%; transform: translateX(-50%); transform-origin: 50% 22%; z-index:10;
+                            filter: drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
+                        .ruleta-puntero.tick { animation: ruletaTick .16s ease-out; }
+                        @keyframes ruletaTick { 0% { transform: translateX(-50%) rotate(0); } 35% { transform: translateX(-50%) rotate(-16deg); } 100% { transform: translateX(-50%) rotate(0); } }
+                        .ruleta-escenario.gano .ruleta-halo { animation: ruletaGano .45s ease-in-out 6 alternate; }
+                        @keyframes ruletaGano { from { opacity:.6; transform: scale(1); } to { opacity:1; transform: scale(1.1); } }
+                        .ruleta-premio { position:relative; overflow:hidden; border:1px solid rgba(255,255,255,.07); background: rgba(15,10,31,.7); }
+                        .ruleta-premio .bola { width:10px; height:10px; border-radius:9999px; display:inline-block; box-shadow: 0 0 8px currentColor; }
+                        .ruleta-jackpot { background: linear-gradient(110deg, #3b0a0a 0%, #7f1d1d 40%, #b45309 100%); border:1px solid rgba(253,224,71,.45); }
+                        .ruleta-jackpot::after { content:''; position:absolute; inset:0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.22) 50%, transparent 70%);
+                            transform: translateX(-100%); animation: ruletaBrillo 3.2s ease-in-out infinite; }
+                        @keyframes ruletaBrillo { 0%,55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+                        .ruleta-card { box-shadow: 0 25px 50px -12px rgba(59,7,100,.45); }
+                        .rl-kicker { font-size:10px; font-weight:800; letter-spacing:.25em; text-transform:uppercase; color:rgba(252,211,77,.7); margin-bottom:2px; }
+                        .rl-titulo { font-size:1.2rem; font-weight:900; line-height:1.2; color:#fbbf24;
+                            background: linear-gradient(90deg,#fde68a,#facc15,#f59e0b); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+                        .rl-titulo i { -webkit-text-fill-color:#fbbf24; margin-right:.45rem; }
+                        .rl-reloj { text-align:right; background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.1); border-radius:.75rem; padding:.4rem .75rem; flex-shrink:0; }
+                        .rl-reloj #ruleta-countdown-label { font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
+                        .rl-reloj #ruleta-countdown { color:#fcd34d; font-weight:900; font-variant-numeric: tabular-nums; }
+                        .rl-cuerpo { display:flex; flex-direction:column; align-items:center; gap:1.25rem; position:relative; }
+                        .rl-premios { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; margin-top:1rem; }
+                        .rl-premios .ruleta-premio { border-radius:.75rem; padding:.6rem; text-align:center; }
+                        .rl-monto { color:#fff; font-weight:900; font-size:.875rem; margin-top:.25rem; }
+                        .rl-nc { color:#64748b; font-size:10px; font-weight:700; letter-spacing:.05em; }
+                        .ruleta-jackpot { grid-column: 1 / -1; display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem !important; text-align:left !important; }
+                        .ruleta-jackpot > * { position:relative; z-index:1; }
+                        .rl-jp-kicker { font-size:10px; font-weight:800; letter-spacing:.25em; text-transform:uppercase; color:rgba(254,240,138,.8); }
+                        .rl-jp-monto { color:#fde047; font-weight:900; font-size:1.3rem; line-height:1.2; text-shadow:0 2px 6px rgba(0,0,0,.5); }
+                        .rl-jp-monto span { font-size:.75rem; color:rgba(254,249,195,.8); }
+                        .rl-jp-corona { font-size:1.9rem; color:#fde047; filter: drop-shadow(0 0 10px rgba(253,224,71,.6)); }
+                        .rl-btn-girar { background: linear-gradient(180deg,#fde047 0%,#fbbf24 45%,#d97706 100%); color:#0c0a09; font-weight:900; text-transform:uppercase; letter-spacing:.04em;
+                            padding:.85rem 2.5rem; border-radius:1rem; border:1px solid rgba(254,240,138,.7); cursor:pointer;
+                            box-shadow: 0 6px 0 #92400e, 0 10px 25px rgba(245,158,11,.45); transition: transform .1s, box-shadow .1s, filter .2s; }
+                        .rl-btn-girar:hover { filter: brightness(1.08); }
+                        .rl-btn-girar:active { transform: translateY(4px); box-shadow: 0 2px 0 #92400e, 0 4px 12px rgba(245,158,11,.4); }
+                        @media (prefers-reduced-motion: reduce) { .ruleta-jackpot::after, .ruleta-escenario.girando .ruleta-halo { animation:none; } }
+                    </style>
+                    <div class="ruleta-card relative overflow-hidden border border-amber-500/30 rounded-2xl p-5 sm:p-6">
+                        <div class="relative flex items-center justify-between gap-3 mb-4">
                             <div>
-                                <h3 class="text-base sm:text-lg font-extrabold text-amber-400"><i class="fa-solid fa-rotate mr-2"></i>Ruleta Diaria</h3>
+                                <p class="rl-kicker">NetGamer · Diario</p>
+                                <h3 class="rl-titulo"><i class="fa-solid fa-dharmachakra"></i>Ruleta de la Fortuna</h3>
                                 <p id="ruleta-subtitulo" class="text-slate-400 text-xs mt-0.5">Gira gratis una vez al día y gana NetCoins</p>
                             </div>
-                            <div class="text-right">
-                                <p id="ruleta-countdown-label" class="text-xs text-slate-400">Próximo giro en:</p>
-                                <p id="ruleta-countdown" class="text-amber-400 font-extrabold text-sm">--:--:--</p>
+                            <div class="rl-reloj">
+                                <p id="ruleta-countdown-label" class="text-slate-400">Próximo giro en:</p>
+                                <p id="ruleta-countdown" class="text-sm">--:--:--</p>
                             </div>
                         </div>
-                        <div class="flex flex-col items-center gap-4">
-                            <div class="relative" style="width:220px;height:220px;">
-                                <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10 text-2xl">▼</div>
-                                <canvas id="ruleta-canvas" width="220" height="220" class="rounded-full shadow-xl shadow-purple-900/50 cursor-pointer"></canvas>
+                        <div class="rl-cuerpo">
+                            <div id="ruleta-escenario" class="ruleta-escenario relative" style="margin-top:.5rem">
+                                <div class="ruleta-halo"></div>
+                                <svg id="ruleta-puntero" class="ruleta-puntero" viewBox="0 0 60 80" aria-hidden="true">
+                                    <defs>
+                                        <linearGradient id="rpOro" x1="0" y1="0" x2="1" y2="1">
+                                            <stop offset="0" stop-color="#fef3c7"/><stop offset=".45" stop-color="#f59e0b"/><stop offset=".7" stop-color="#b45309"/><stop offset="1" stop-color="#fde68a"/>
+                                        </linearGradient>
+                                        <radialGradient id="rpGema" cx=".35" cy=".35" r=".7">
+                                            <stop offset="0" stop-color="#fecaca"/><stop offset=".5" stop-color="#dc2626"/><stop offset="1" stop-color="#7f1d1d"/>
+                                        </radialGradient>
+                                    </defs>
+                                    <path d="M30 78 L8 26 A24 24 0 1 1 52 26 Z" fill="url(#rpOro)" stroke="#78350f" stroke-width="2"/>
+                                    <circle cx="30" cy="22" r="11" fill="url(#rpGema)" stroke="#fde68a" stroke-width="2"/>
+                                    <circle cx="26" cy="18" r="3" fill="#fff" opacity=".75"/>
+                                </svg>
+                                <canvas id="ruleta-canvas" class="relative w-full h-full rounded-full cursor-pointer" aria-label="Ruleta de premios"
+                                    onclick="if (!document.getElementById('btn-girar').disabled) girarRuleta()"></canvas>
                             </div>
                             <button id="btn-girar" onclick="girarRuleta()" disabled
                                 class="bg-gradient-to-r from-slate-700 to-slate-600 text-slate-400 cursor-not-allowed font-extrabold px-8 py-3 rounded-2xl shadow-lg transition text-sm sm:text-base">
@@ -1822,11 +1888,17 @@
                             </button>
                             <p id="ruleta-resultado" class="text-sm font-bold text-center min-h-[20px]"></p>
                         </div>
-                        <div class="grid grid-cols-4 gap-2 mt-5">
-                            <div class="bg-slate-900/60 rounded-xl p-2 text-center"><p class="text-amber-400 font-black text-sm">500</p><p class="text-slate-500 text-xs">NC</p></div>
-                            <div class="bg-slate-900/60 rounded-xl p-2 text-center"><p class="text-amber-400 font-black text-sm">1000</p><p class="text-slate-500 text-xs">NC</p></div>
-                            <div class="bg-slate-900/60 rounded-xl p-2 text-center"><p class="text-amber-400 font-black text-sm">2500</p><p class="text-slate-500 text-xs">NC</p></div>
-                            <div class="bg-slate-900/60 rounded-xl p-2 text-center"><p class="text-emerald-400 font-black text-sm">200,000</p><p class="text-slate-500 text-xs">NC</p></div>
+                        <div class="rl-premios">
+                            <div class="ruleta-premio"><span class="bola" style="color:#a855f7;background:linear-gradient(135deg,#c084fc,#6d28d9)"></span><p class="rl-monto">500</p><p class="rl-nc">NC</p></div>
+                            <div class="ruleta-premio"><span class="bola" style="color:#3b82f6;background:linear-gradient(135deg,#60a5fa,#1d4ed8)"></span><p class="rl-monto">1,000</p><p class="rl-nc">NC</p></div>
+                            <div class="ruleta-premio"><span class="bola" style="color:#10b981;background:linear-gradient(135deg,#34d399,#047857)"></span><p class="rl-monto">2,500</p><p class="rl-nc">NC</p></div>
+                            <div class="ruleta-premio ruleta-jackpot">
+                                <div>
+                                    <p class="rl-jp-kicker">★ Premio mayor</p>
+                                    <p class="rl-jp-monto">200,000 <span>NC</span></p>
+                                </div>
+                                <i class="fa-solid fa-crown rl-jp-corona"></i>
+                            </div>
                         </div>
                     </div>
 
@@ -4851,57 +4923,187 @@
             volverCatalogo();
         }
 
+        // Solo es el dibujo: el premio real lo decide el servidor (girar-ruleta),
+        // que devuelve el índice; el orden aquí debe ser el mismo que allá.
         const RULETA_PREMIOS = [
-            { label: '500 NC',  nc: 50,  color: '#7c3aed' },
-            { label: '1000 NC', nc: 100, color: '#2563eb' },
-            { label: '500 NC',  nc: 50,  color: '#0891b2' },
-            { label: '2500 NC', nc: 250, color: '#059669' },
-            { label: '500 NC',  nc: 50,  color: '#7c3aed' },
-            { label: '1000 NC', nc: 100, color: '#d97706' },
-            { label: '200,000 NC', nc: 200000, color: '#dc2626' },
-            { label: '500 NC',  nc: 50,  color: '#7c3aed' },
+            { texto: '500',   centro: '#4c1d95', borde: '#a855f7' },
+            { texto: '1,000', centro: '#172554', borde: '#3b82f6' },
+            { texto: '500',   centro: '#500724', borde: '#db2777' },
+            { texto: '2,500', centro: '#022c22', borde: '#10b981' },
+            { texto: '500',   centro: '#4c1d95', borde: '#a855f7' },
+            { texto: '1,000', centro: '#083344', borde: '#06b6d4' },
+            { texto: '200K',  centro: '#450a0a', borde: '#ef4444', jackpot: true },
+            { texto: '500',   centro: '#500724', borde: '#db2777' },
         ];
         let ruletaGirando = false;
         let ruletaAngulo = 0;
+        let ruletaFocos = 0;          // fase de las luces del borde
+        let ruletaModoFocos = 'idle'; // idle | giro | gano
+        let ruletaGanador = null;     // índice que se resalta al terminar
+        let _timerFocosRuleta = null;
+        const RULETA_TAM = 300;       // tamaño lógico; se escala con devicePixelRatio
+
+        function prepararCanvasRuleta(canvas) {
+            const dpr = Math.min(window.devicePixelRatio || 1, 3);
+            const px = Math.round(RULETA_TAM * dpr);
+            if (canvas.width !== px) { canvas.width = px; canvas.height = px; }
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(px / RULETA_TAM, 0, 0, px / RULETA_TAM, 0, 0);
+            return ctx;
+        }
 
         function dibujarRuleta(angulo) {
             const canvas = document.getElementById('ruleta-canvas');
             if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            const cx = canvas.width / 2, cy = canvas.height / 2, r = cx - 4;
-            const slice = (2 * Math.PI) / RULETA_PREMIOS.length;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const ctx = prepararCanvasRuleta(canvas);
+            const c = RULETA_TAM / 2;
+            const R_ARO = 147, R_ARO_IN = 133, R_RUEDA = 127, R_CENTRO = 30;
+            const n = RULETA_PREMIOS.length;
+            const slice = (2 * Math.PI) / n;
+            ctx.clearRect(0, 0, RULETA_TAM, RULETA_TAM);
 
-            RULETA_PREMIOS.forEach((p, i) => {
-                const start = angulo + i * slice;
-                const end   = start + slice;
-                ctx.beginPath();
-                ctx.moveTo(cx, cy);
-                ctx.arc(cx, cy, r, start, end);
-                ctx.closePath();
-                ctx.fillStyle = p.color;
+            // Aro exterior dorado
+            const oro = ctx.createLinearGradient(0, 0, RULETA_TAM, RULETA_TAM);
+            oro.addColorStop(0, '#fef3c7'); oro.addColorStop(0.25, '#f59e0b');
+            oro.addColorStop(0.5, '#92400e'); oro.addColorStop(0.75, '#fbbf24'); oro.addColorStop(1, '#78350f');
+            ctx.beginPath(); ctx.arc(c, c, R_ARO, 0, 2 * Math.PI);
+            ctx.fillStyle = oro; ctx.fill();
+            ctx.beginPath(); ctx.arc(c, c, R_ARO_IN, 0, 2 * Math.PI);
+            ctx.fillStyle = '#140b26'; ctx.fill();
+            ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.stroke();
+
+            // Focos del aro
+            const FOCOS = 24;
+            for (let i = 0; i < FOCOS; i++) {
+                const a = (i / FOCOS) * 2 * Math.PI;
+                const x = c + Math.cos(a) * 140, y = c + Math.sin(a) * 140;
+                let encendido;
+                if (ruletaModoFocos === 'gano') encendido = ruletaFocos % 2 === 0;
+                else if (ruletaModoFocos === 'giro') encendido = (i + ruletaFocos) % 4 === 0;
+                else encendido = (i + ruletaFocos) % 2 === 0;
+                ctx.beginPath(); ctx.arc(x, y, 3.4, 0, 2 * Math.PI);
+                if (encendido) {
+                    const g = ctx.createRadialGradient(x - 1, y - 1, 0, x, y, 4);
+                    g.addColorStop(0, '#ffffff'); g.addColorStop(0.5, '#fde047'); g.addColorStop(1, '#f59e0b');
+                    ctx.fillStyle = g; ctx.shadowColor = '#fde047'; ctx.shadowBlur = 10;
+                } else {
+                    ctx.fillStyle = '#5b3a12'; ctx.shadowBlur = 0;
+                }
                 ctx.fill();
-                ctx.strokeStyle = '#1e293b';
-                ctx.lineWidth = 2;
-                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
 
+            // Gajos
+            RULETA_PREMIOS.forEach((p, i) => {
+                const ini = angulo + i * slice, fin = ini + slice;
+                const g = ctx.createRadialGradient(c, c, R_CENTRO, c, c, R_RUEDA);
+                g.addColorStop(0, p.centro); g.addColorStop(0.75, p.borde); g.addColorStop(1, p.centro);
+                ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, R_RUEDA, ini, fin); ctx.closePath();
+                ctx.fillStyle = g; ctx.fill();
+                if (p.jackpot) {
+                    // destellos dentro del gajo del premio mayor
+                    ctx.save(); ctx.clip();
+                    for (let k = 0; k < 7; k++) {
+                        const aa = ini + slice * (0.15 + 0.7 * ((k * 37) % 10) / 10);
+                        const rr = 50 + ((k * 53) % 70);
+                        ctx.beginPath(); ctx.arc(c + Math.cos(aa) * rr, c + Math.sin(aa) * rr, 1.1, 0, 2 * Math.PI);
+                        ctx.fillStyle = 'rgba(254,240,138,.8)'; ctx.fill();
+                    }
+                    ctx.restore();
+                }
+                if (ruletaGanador === i) {
+                    ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, R_RUEDA, ini, fin); ctx.closePath();
+                    ctx.fillStyle = ruletaFocos % 2 === 0 ? 'rgba(255,255,255,.28)' : 'rgba(255,255,255,.1)';
+                    ctx.fill();
+                    ctx.lineWidth = 3; ctx.strokeStyle = '#fde047'; ctx.stroke();
+                }
+            });
+
+            // Sombra interior y brillo (dan volumen)
+            const sombra = ctx.createRadialGradient(c, c, R_RUEDA * 0.55, c, c, R_RUEDA);
+            sombra.addColorStop(0, 'rgba(0,0,0,0)'); sombra.addColorStop(1, 'rgba(0,0,0,.45)');
+            ctx.beginPath(); ctx.arc(c, c, R_RUEDA, 0, 2 * Math.PI); ctx.fillStyle = sombra; ctx.fill();
+
+            // Separadores dorados y clavijas
+            for (let i = 0; i < n; i++) {
+                const a = angulo + i * slice;
+                ctx.beginPath();
+                ctx.moveTo(c + Math.cos(a) * R_CENTRO, c + Math.sin(a) * R_CENTRO);
+                ctx.lineTo(c + Math.cos(a) * R_RUEDA, c + Math.sin(a) * R_RUEDA);
+                ctx.lineWidth = 2.5; ctx.strokeStyle = '#fbbf24'; ctx.stroke();
+                const px = c + Math.cos(a) * (R_RUEDA - 5), py = c + Math.sin(a) * (R_RUEDA - 5);
+                const gp = ctx.createRadialGradient(px - 1, py - 1, 0, px, py, 4);
+                gp.addColorStop(0, '#fffbeb'); gp.addColorStop(1, '#b45309');
+                ctx.beginPath(); ctx.arc(px, py, 3.6, 0, 2 * Math.PI); ctx.fillStyle = gp; ctx.fill();
+            }
+            ctx.beginPath(); ctx.arc(c, c, R_RUEDA, 0, 2 * Math.PI);
+            ctx.lineWidth = 3; ctx.strokeStyle = '#f59e0b'; ctx.stroke();
+
+            // Textos
+            RULETA_PREMIOS.forEach((p, i) => {
                 ctx.save();
-                ctx.translate(cx, cy);
-                ctx.rotate(start + slice / 2);
-                ctx.textAlign = 'right';
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 13px sans-serif';
-                ctx.fillText(p.label, r - 10, 5);
+                ctx.translate(c, c);
+                ctx.rotate(angulo + i * slice + slice / 2);
+                ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
+                const x = R_RUEDA - 16;
+                if (p.jackpot) {
+                    ctx.font = '900 22px Inter, system-ui, sans-serif';
+                    const gt = ctx.createLinearGradient(x - 60, -10, x, 10);
+                    gt.addColorStop(0, '#fef9c3'); gt.addColorStop(0.5, '#facc15'); gt.addColorStop(1, '#f59e0b');
+                    ctx.fillStyle = gt;
+                    ctx.fillText(p.texto, x, 0);
+                    const w = ctx.measureText(p.texto).width;
+                    ctx.font = '900 15px Inter, system-ui, sans-serif';
+                    ctx.fillStyle = '#fde047';
+                    ctx.fillText('★', x - w - 5, 0);
+                } else {
+                    ctx.font = '900 18px Inter, system-ui, sans-serif';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(p.texto, x, 0);
+                    const w = ctx.measureText(p.texto).width;
+                    ctx.font = '800 9px Inter, system-ui, sans-serif';
+                    ctx.fillStyle = 'rgba(255,255,255,.75)';
+                    ctx.fillText('NC', x - w - 4, 1);
+                }
                 ctx.restore();
             });
 
-            ctx.beginPath();
-            ctx.arc(cx, cy, 18, 0, 2 * Math.PI);
-            ctx.fillStyle = '#0f172a';
-            ctx.fill();
-            ctx.strokeStyle = '#7c3aed';
-            ctx.lineWidth = 3;
-            ctx.stroke();
+            // Brillo de cristal en la mitad de arriba
+            const brillo = ctx.createLinearGradient(0, c - R_RUEDA, 0, c);
+            brillo.addColorStop(0, 'rgba(255,255,255,.16)'); brillo.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.beginPath(); ctx.ellipse(c, c - R_RUEDA * 0.35, R_RUEDA * 0.85, R_RUEDA * 0.6, 0, Math.PI, 2 * Math.PI);
+            ctx.fillStyle = brillo; ctx.fill();
+
+            // Centro metálico
+            ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 8;
+            const gc = ctx.createLinearGradient(c - R_CENTRO, c - R_CENTRO, c + R_CENTRO, c + R_CENTRO);
+            gc.addColorStop(0, '#fef3c7'); gc.addColorStop(0.5, '#d97706'); gc.addColorStop(1, '#78350f');
+            ctx.beginPath(); ctx.arc(c, c, R_CENTRO, 0, 2 * Math.PI); ctx.fillStyle = gc; ctx.fill();
+            ctx.shadowBlur = 0;
+            const gi = ctx.createRadialGradient(c - 6, c - 8, 2, c, c, R_CENTRO - 6);
+            gi.addColorStop(0, '#3b2a6b'); gi.addColorStop(1, '#0c0618');
+            ctx.beginPath(); ctx.arc(c, c, R_CENTRO - 6, 0, 2 * Math.PI); ctx.fillStyle = gi; ctx.fill();
+            ctx.font = '900 15px Inter, system-ui, sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#fbbf24';
+            ctx.fillText('NG', c, c + 1);
+        }
+
+        // Índice del gajo que está debajo del puntero (arriba, ángulo -90°).
+        function gajoBajoPuntero(angulo) {
+            const slice = (2 * Math.PI) / RULETA_PREMIOS.length;
+            const rel = ((1.5 * Math.PI - angulo) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+            return Math.floor(rel / slice);
+        }
+
+        function iniciarFocosRuleta() {
+            if (_timerFocosRuleta) return;
+            _timerFocosRuleta = setInterval(() => {
+                if (ruletaGirando) return; // durante el giro las mueve la animación
+                ruletaFocos++;
+                if (document.getElementById('ruleta-canvas')?.offsetParent) dibujarRuleta(ruletaAngulo);
+            }, 650);
         }
 
         function cambiarMuroTab(muro) {
@@ -5108,7 +5310,8 @@
         }
 
         function inicializarRuleta() {
-            dibujarRuleta(0);
+            dibujarRuleta(ruletaAngulo);
+            iniciarFocosRuleta();
             verificarEstadoRuleta();
         }
 
@@ -5148,7 +5351,7 @@
             } else {
                 btn.disabled = false;
                 btn.innerText = limiteGiros > 1 ? `🎰 ¡Girar Gratis! (${girosRestantes}/${limiteGiros})` : '🎰 ¡Girar Gratis!';
-                btn.className = 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-900 font-extrabold px-8 py-3 rounded-2xl shadow-lg shadow-amber-500/30 transition active:scale-95 text-sm sm:text-base';
+                btn.className = 'rl-btn-girar text-sm sm:text-base';
             }
         }
 
@@ -5201,29 +5404,61 @@
             btn.innerText = '🎰 Girando...';
 
             const slice = (2 * Math.PI) / RULETA_PREMIOS.length;
-            const destinoBase = -(idxGanador * slice) - (slice / 2) + (Math.PI * 1.5);
+            // Cae en un punto al azar dentro del gajo (no siempre en el centro),
+            // sin acercarse a las orillas para que no parezca que cayó en el de al lado.
+            const desfase = (Math.random() - 0.5) * slice * 0.6;
+            const destinoBase = -(idxGanador * slice) - (slice / 2) + (Math.PI * 1.5) + desfase;
             const inicio = ruletaAngulo;
             let anguloDestino = destinoBase;
             while (anguloDestino <= inicio) anguloDestino += 2 * Math.PI;
-            anguloDestino += 2 * Math.PI * 5;
-            const duracion = 4000;
+            anguloDestino += 2 * Math.PI * 6;
+            const duracion = 5500;
             const startTime = performance.now();
+            const escenario = document.getElementById('ruleta-escenario');
+            const puntero = document.getElementById('ruleta-puntero');
+            let gajoAnterior = gajoBajoPuntero(inicio);
+            ruletaGanador = null;
+            ruletaModoFocos = 'giro';
+            escenario?.classList.remove('gano');
+            escenario?.classList.add('girando');
 
             function animar(now) {
                 const elapsed = now - startTime;
                 const progress = Math.min(elapsed / duracion, 1);
                 const ease = 1 - Math.pow(1 - progress, 4);
                 ruletaAngulo = inicio + (anguloDestino - inicio) * ease;
+                ruletaFocos = Math.floor(elapsed / 90);
+                const gajo = gajoBajoPuntero(ruletaAngulo);
+                if (gajo !== gajoAnterior && puntero) {
+                    gajoAnterior = gajo;
+                    puntero.classList.remove('tick'); void puntero.getBoundingClientRect(); puntero.classList.add('tick');
+                }
                 dibujarRuleta(ruletaAngulo);
-                
-                if (progress < 1) { 
-                    requestAnimationFrame(animar); 
-                } else { 
+
+                if (progress < 1) {
+                    requestAnimationFrame(animar);
+                } else {
                     ruletaGirando = false;
-                    document.getElementById('ruleta-resultado').innerHTML =
-                        `🎉 <span class="text-amber-400 font-extrabold">+${ncGanadas} NetCoins</span> acreditados`;
-                    
-                    mostrarNotificacion(`¡Ganaste ${ncGanadas} NetCoins en la ruleta!`, "success");
+                    ruletaAngulo = ruletaAngulo % (2 * Math.PI);
+                    ruletaGanador = idxGanador;
+                    ruletaModoFocos = 'gano';
+                    escenario?.classList.remove('girando');
+                    escenario?.classList.add('gano');
+                    dibujarRuleta(ruletaAngulo);
+                    setTimeout(() => {
+                        ruletaModoFocos = 'idle';
+                        ruletaGanador = null;
+                        escenario?.classList.remove('gano');
+                        dibujarRuleta(ruletaAngulo);
+                    }, 4000);
+
+                    const ncTexto = Number(ncGanadas).toLocaleString('es-MX');
+                    const esJackpot = RULETA_PREMIOS[idxGanador]?.jackpot;
+                    document.getElementById('ruleta-resultado').innerHTML = esJackpot
+                        ? `👑 <span style="color:#fde047;font-weight:900;font-size:1rem">¡PREMIO MAYOR! +${ncTexto} NetCoins</span>`
+                        : `🎉 <span class="text-amber-400 font-extrabold">+${ncTexto} NetCoins</span> acreditados`;
+
+                    mostrarNotificacion(`¡Ganaste ${ncTexto} NetCoins en la ruleta!`, "success");
 
                     setTimeout(() => {
                         verificarEstadoRuleta();
