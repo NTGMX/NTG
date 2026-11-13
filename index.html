@@ -1908,6 +1908,8 @@
                         .rl-reloj { text-align:right; background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.1); border-radius:.75rem; padding:.4rem .75rem; flex-shrink:0; }
                         .rl-reloj #ruleta-countdown-label { font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
                         .rl-reloj #ruleta-countdown { color:#fcd34d; font-weight:900; font-variant-numeric: tabular-nums; }
+                        .rl-renueva { font-size:10px; line-height:1.3; color:#94a3b8; margin-top:2px; max-width:8.5rem; margin-left:auto; }
+                        .rl-renueva[hidden] { display:none; }
                         .rl-cuerpo { display:flex; flex-direction:column; align-items:center; gap:1.25rem; position:relative; }
                         .rl-premios { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; margin-top:1rem; }
                         .rl-premios .ruleta-premio { border-radius:.75rem; padding:.6rem; text-align:center; }
@@ -1936,6 +1938,7 @@
                             <div class="rl-reloj">
                                 <p id="ruleta-countdown-label" class="text-slate-400">Próximo giro en:</p>
                                 <p id="ruleta-countdown" class="text-sm">--:--:--</p>
+                                <p id="ruleta-renueva" class="rl-renueva" hidden></p>
                             </div>
                         </div>
                         <div class="rl-cuerpo">
@@ -5491,27 +5494,50 @@
             }
         }
 
+        // ---------- Hora de reinicio diario (medianoche del centro de México) ----------
+        // El servidor reinicia ruleta y misiones a medianoche de CDMX. Los relojes
+        // cuentan hasta ese momento sin importar la zona horaria del celular.
+        function msHastaMedianocheCDMX() {
+            const ahora = new Date();
+            const partes = {};
+            new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                .formatToParts(ahora).forEach(p => { partes[p.type] = Number(p.value); });
+            const transcurridos = ((partes.hour % 24) * 3600 + partes.minute * 60 + partes.second) * 1000 + ahora.getMilliseconds();
+            return Math.max(0, 86400000 - transcurridos);
+        }
+        // Texto con la hora del reinicio en la zona del usuario.
+        // CDMX (o misma hora): "a medianoche" · otra zona: "a las 8:00 a. m. (tu hora)".
+        function textoHoraReinicio(msRestantes) {
+            const ms = (typeof msRestantes === 'number' && msRestantes >= 0) ? msRestantes : msHastaMedianocheCDMX();
+            const reinicio = new Date(Math.round((Date.now() + ms) / 60000) * 60000);
+            const opc = { hour: 'numeric', minute: '2-digit' };
+            let enCdmx, local;
+            try {
+                enCdmx = reinicio.toLocaleTimeString('es-MX', { ...opc, timeZone: 'America/Mexico_City' });
+                local = reinicio.toLocaleTimeString('es-MX', opc);
+            } catch (e) { return 'a medianoche (hora del centro de México)'; }
+            return enCdmx === local ? 'a medianoche' : `a las ${local} (tu hora)`;
+        }
+
         let _timerCuentaRegresivaRuleta = null;
         function iniciarCuentaRegresiva() {
             const el = document.getElementById('ruleta-countdown');
             if (!el) return;
             clearInterval(_timerCuentaRegresivaRuleta);
-            // El giro se renueva a medianoche del centro de México (como en el servidor),
-            // no a la medianoche del celular: así el reloj es correcto en cualquier zona horaria.
-            function msHastaMedianocheCDMX() {
-                const ahora = new Date();
-                const partes = {};
-                new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                    .formatToParts(ahora).forEach(p => { partes[p.type] = Number(p.value); });
-                const transcurridos = ((partes.hour % 24) * 3600 + partes.minute * 60 + partes.second) * 1000 + ahora.getMilliseconds();
-                return Math.max(0, 86400000 - transcurridos);
-            }
+            const nota = document.getElementById('ruleta-renueva');
+            if (nota) { nota.textContent = 'Se renueva ' + textoHoraReinicio(); nota.hidden = false; }
             function actualizar() {
                 const diff = msHastaMedianocheCDMX();
                 const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
                 const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
                 const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
                 el.innerText = `${h}:${m}:${s}`;
+                // Llegó la hora: se vuelve a preguntar al servidor y el botón se reactiva solo.
+                if (diff < 1000) {
+                    clearInterval(_timerCuentaRegresivaRuleta);
+                    if (nota) nota.hidden = true;
+                    setTimeout(() => { if (typeof verificarEstadoRuleta === 'function') verificarEstadoRuleta(); }, 3000);
+                }
             }
             actualizar();
             _timerCuentaRegresivaRuleta = setInterval(actualizar, 1000);
@@ -7415,7 +7441,8 @@
     function pintarReloj() {
         const el = document.getElementById('pp-reloj');
         if (modo !== 'diaria') { clearInterval(timerReloj); timerReloj = null; return; }
-        el.innerHTML = `<i class="fa-regular fa-clock"></i> Nuevas misiones en <b>${relojTexto()}</b>`;
+        const cuando = typeof textoHoraReinicio === 'function' ? textoHoraReinicio(Math.max(0, reinicioEn - Date.now())) : '';
+        el.innerHTML = `<i class="fa-regular fa-clock"></i> Nuevas misiones en <b>${relojTexto()}</b>${cuando ? ` <span style="opacity:.75">· ${cuando}</span>` : ''}`;
         document.querySelectorAll('.pp-reloj-fin').forEach(x => { x.textContent = relojTexto(); });
         if (!timerReloj) timerReloj = setInterval(() => {
             if (document.getElementById('pp-modal').hidden) return;
@@ -7564,7 +7591,7 @@
                 <h5>¿Cómo funciona?</h5>
                 <ul class="pp-pasos">
                     <li><b>Todos los usuarios</b> tienen <b>1 giro gratis cada día</b>. No se compran giros: es igual para todos.</li>
-                    <li>El giro se renueva <b>a medianoche (hora del centro de México)</b>. El reloj de la ruleta te dice cuánto falta para el siguiente.</li>
+                    <li>El giro se renueva <b>a medianoche (hora del centro de México)</b>${(() => { const t = typeof textoHoraReinicio === 'function' ? textoHoraReinicio() : 'a medianoche'; return t === 'a medianoche' ? '' : `, o sea <b>${t}</b>`; })()}. El reloj de la ruleta te dice cuánto falta para el siguiente.</li>
                     <li>Toca el botón dorado <b>“¡Girar gratis!”</b> (o la rueda) y espera a que se detenga.</li>
                     <li>El premio lo elige nuestro servidor al azar y <b>se suma solo a tu saldo</b> en ese momento.</li>
                 </ul>
