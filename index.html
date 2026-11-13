@@ -7076,7 +7076,7 @@
 <div id="pp-intro" hidden onclick="ppIntroCerrar(false)"></div>
 <div id="pp-intro-globo" hidden role="dialog" aria-label="Primeros pasos">
     <h4>🚀 ¡Bienvenido a NetGamer!</h4>
-    <p>Tienes <b style="color:#fde047">tareas de bienvenida</b>: complétalas en orden y gana hasta <b style="color:#fde047">30,000 NC extra</b>. Toca el botón dorado para empezar.</p>
+    <p>Tienes <b style="color:#fde047">tareas de bienvenida</b>: complétalas en orden y gana hasta <b style="color:#fde047">46,000 NC extra</b>. Toca el botón dorado para empezar.</p>
     <div class="pp-intro-acciones">
         <button type="button" class="pp-btn pp-btn-gris" onclick="ppIntroCerrar(false)">Ahora no</button>
         <span class="pp-mano">👇</span>
@@ -7091,9 +7091,9 @@
             <button type="button" class="pp-x" onclick="ppCerrar()" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
             <p class="pp-kicker">Misión de bienvenida</p>
             <h2 id="pp-titulo" class="pp-titulo">🚀 Primeros pasos</h2>
-            <p class="pp-sub">Completa las tareas <b>en orden</b> y reclama tu premio en cada una. En total ganas hasta <b>30,000 NC</b> extra.</p>
+            <p class="pp-sub">Completa las tareas <b>en orden</b> y reclama tu premio en cada una. En total ganas hasta <b>46,000 NC</b> extra.</p>
             <div class="pp-barra"><span id="pp-barra-fill"></span></div>
-            <div class="pp-progreso-txt"><span id="pp-progreso-tareas">0 de 4 tareas</span><span><b id="pp-progreso-nc">0</b> / 30,000 NC</span></div>
+            <div class="pp-progreso-txt"><span id="pp-progreso-tareas">0 de 5 tareas</span><span><b id="pp-progreso-nc">0</b> / 46,000 NC</span></div>
         </div>
         <div id="pp-lista" class="pp-lista"></div>
         <p class="pp-nota">Cada tarea se revisa automáticamente en nuestro servidor. Solo puedes reclamar cada premio una vez por cuenta.</p>
@@ -7124,10 +7124,12 @@
           texto: 'Juega una partida de Torre NetGamer y apila al menos 5 pisos.' },
         { id: 'encuesta', titulo: 'Completa tu primera encuesta',  icono: 'fa-clipboard-check', fondo: 'linear-gradient(135deg,#14b8a6,#0f766e)',
           texto: 'Contesta una encuesta de CPX hasta el final. Solo cuenta si se completa correctamente.' },
+        { id: 'noticia',  titulo: 'Lee una noticia completa',      icono: 'fa-newspaper',       fondo: 'linear-gradient(135deg,#0ea5e9,#0369a1)',
+          texto: 'Abre una noticia en PulsoMX y léela hasta que se llene la barra de lectura.' },
         { id: 'final',    titulo: 'Bono por completar todo',       icono: 'fa-trophy',          fondo: 'linear-gradient(135deg,#ef4444,#b45309)',
-          texto: 'Reclama las 3 tareas anteriores y desbloquea este bono final.' },
+          texto: 'Reclama las 4 tareas anteriores y desbloquea este bono final.' },
     ];
-    const NC_TOTAL = 30000;
+    const NC_TOTAL = 46000;
     const fmt = n => Number(n || 0).toLocaleString('es-MX');
 
     let estado = null;          // respuesta de primeros_pasos_estado
@@ -7210,11 +7212,13 @@
             } else if (actual && actual.id === p.id) {
                 clase = 'actual';
                 if (p.id === 'final') {
-                    extra = `<span class="pp-estado candado"><i class="fa-solid fa-lock"></i> Reclama las 3 tareas anteriores</span>`;
+                    extra = `<span class="pp-estado candado"><i class="fa-solid fa-lock"></i> Reclama las 4 tareas anteriores</span>`;
                 } else {
                     const espera = p.id === 'encuesta'
-                        ? `<span class="pp-estado espera"><i class="fa-solid fa-hourglass-half"></i> Se revisa sola cuando completes una encuesta</span>` : '';
-                    const boton = { ruleta: 'Ver cómo funciona e ir a la ruleta', torre: 'Ver cómo se juega e ir a la Torre', encuesta: 'Ver cómo funciona e ir a encuestas' }[p.id];
+                        ? `<span class="pp-estado espera"><i class="fa-solid fa-hourglass-half"></i> Se revisa sola cuando completes una encuesta</span>`
+                        : p.id === 'noticia'
+                        ? `<span class="pp-estado espera"><i class="fa-solid fa-hourglass-half"></i> Se revisa sola cuando termines de leer</span>` : '';
+                    const boton = { ruleta: 'Ver cómo funciona e ir a la ruleta', torre: 'Ver cómo se juega e ir a la Torre', encuesta: 'Ver cómo funciona e ir a encuestas', noticia: 'Ver cómo funciona e ir a noticias' }[p.id];
                     extra = `${espera}<div class="pp-acciones"><button type="button" class="pp-btn pp-btn-oro" onclick="ppAbrirGuia('${p.id}')">
                         <i class="fa-solid fa-arrow-right"></i> ${boton}</button></div>`;
                 }
@@ -7336,6 +7340,20 @@
                 </div>`,
             ir: 'Ir a jugar Torre'
         };
+        if (id === 'noticia') return {
+            titulo: '📰 Noticias que pagan',
+            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu tarea:</b> lee <b>1 noticia completa</b> en PulsoMX y gana <b>+16,000 NC</b>, además de lo que paga la noticia.</p></div>
+                <h5>Cómo funciona</h5>
+                <ul class="pp-pasos">
+                    <li>Te llevamos a la tarjeta <b>“Entérate y Gana”</b> en Inicio. Toca <b>“Leer noticias”</b>: se abre <b>PulsoMX</b>, nuestro portal de noticias, en una pestaña nueva y ya conectado a tu cuenta.</li>
+                    <li>Elige la noticia que quieras y ábrela.</li>
+                    <li>Abajo aparece una <b>barra de lectura que se llena en unos 40 segundos</b>. Solo avanza mientras tienes la noticia <b>a la vista</b>: si cambias de pestaña o de app, se pausa.</li>
+                    <li>Cuando la barra se llena, sale <b>“¡NetCoins acreditadas!”</b> y la noticia queda leída. Cada noticia paga una sola vez.</li>
+                    <li>Regresa a NetGamer: esta pantalla se abrirá sola para que reclames tus <b>+16,000 NC</b>.</li>
+                </ul>
+                <div class="pp-aviso" style="color:#bae6fd;background:rgba(3,105,161,.18);border-color:rgba(56,189,248,.35)"><b>Recuerda:</b> para ganar con noticias, primero debes completar una encuesta en el día cuando hay encuestas disponibles. Como ya completaste tu encuesta, ¡estás listo!</div>`,
+            ir: 'Ir a leer noticias'
+        };
         return {
             titulo: '📋 Encuestas pagadas',
             html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu tarea:</b> completa <b>correctamente</b> 1 encuesta de CPX y gana <b>+15,000 NC</b>, además de lo que pague la encuesta.</p></div>
@@ -7408,6 +7426,13 @@
                 setTimeout(buscar, 400);
             };
             setTimeout(buscar, 500);
+        } else if (id === 'noticia') {
+            switchTab('tab-inicio', null);
+            setTimeout(() => {
+                const tarjeta = document.getElementById('seccion-noticias');
+                tarjeta?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                ponerFoco(tarjeta?.querySelector('button[onclick*="irANoticias"]') || tarjeta, '👇 Toca para leer noticias');
+            }, 450);
         }
     };
 
@@ -7482,10 +7507,10 @@
         return true;
     }
 
-    // Mientras la tarea actual es la encuesta, se revisa cada 45 s (y al volver a la pestaña).
+    // Mientras la tarea actual es la encuesta o la noticia, se revisa cada 45 s (y al volver a la pestaña).
     function programarRevision() {
         const p = pasoActual();
-        const esperar = p && p.id === 'encuesta' && !estado.encuesta?.hecha;
+        const esperar = p && (p.id === 'encuesta' || p.id === 'noticia') && !estado[p.id]?.hecha;
         if (esperar && !timerRevision) {
             timerRevision = setInterval(async () => {
                 if (document.hidden) return;
