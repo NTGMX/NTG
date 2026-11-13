@@ -4026,6 +4026,7 @@
                 iniciarEncuestasDisponibles();
                 setTimeout(revisarCanjesEntregados, 1800);
                 verificarBadgeSoporte(currentUser.id);
+                if (typeof ppIniciar === 'function') ppIniciar();
             } else {
                 document.getElementById("landing-container").classList.remove("hidden");
                 document.getElementById("auth-container").classList.add("hidden");
@@ -5460,6 +5461,7 @@
                         : `🎉 <span class="text-amber-400 font-extrabold">+${ncTexto} NetCoins</span> acreditados`;
 
                     mostrarNotificacion(`¡Ganaste ${ncTexto} NetCoins en la ruleta!`, "success");
+                    if (typeof ppTrasAccion === 'function') ppTrasAccion('ruleta');
 
                     setTimeout(() => {
                         verificarEstadoRuleta();
@@ -5673,6 +5675,7 @@
             mostrarSplashYluego(async () => {
                 await _supabase.auth.signOut({ scope: 'local' });
                 currentUser = null;
+                if (typeof ppReiniciar === 'function') ppReiniciar();
                 document.getElementById("auth-container").classList.remove("hidden");
                 document.getElementById("app-container").classList.add("hidden");
                 setTimeout(() => location.reload(), 500);
@@ -6021,6 +6024,7 @@
                 cargarVidas();
                 refrescarPerfilLigero();
                 TorreJuego.abrir();
+                if (typeof ppEnTorre === 'function') ppEnTorre(true);
             } catch (e) {
                 mostrarNotificacion('⚠️ No se pudo iniciar la partida. Revisa tu conexión.', 'error');
             } finally {
@@ -6074,6 +6078,7 @@
             document.getElementById('modal-torre').classList.add('hidden');
             document.body.style.overflow = '';
             cargarTorreResumen();
+            if (typeof ppEnTorre === 'function') ppEnTorre(false);
         }
 
         function torreAlternarSonido() {
@@ -6190,6 +6195,7 @@
 
             _torreCapa('torre-capa-resultado');
             if (res && res.nuevo_record) _torreTono(880, 0.5, 'triangle', 0.12, 1320);
+            if (res && !codigoError && !res.sospechosa && typeof ppTrasAccion === 'function') ppTrasAccion('torre', { altura: res.altura });
         }
 
         // Reglas de Torre en enteros (milésimas de unidad). Supabase usa exactamente
@@ -6925,6 +6931,626 @@
     })();
     </script>
 
+
+<!-- ================== PRIMEROS PASOS (usuarios nuevos) ==================
+     Las tareas se revisan y se pagan en Supabase (primeros_pasos_estado /
+     primeros_pasos_reclamar). Esta parte solo muestra, guía y pide reclamar. -->
+<style>
+    #pp-burbuja { position:fixed; right:1rem; bottom:calc(8rem + 4.25rem); z-index:50; width:3.5rem; height:3.5rem; border-radius:9999px;
+        display:flex; align-items:center; justify-content:center; color:#1c1206; font-size:1.3rem; cursor:pointer;
+        background: radial-gradient(circle at 30% 25%, #fef08a, #f59e0b 55%, #b45309); border:2px solid rgba(254,240,138,.6);
+        box-shadow: 0 10px 25px rgba(245,158,11,.45), inset 0 -3px 0 rgba(120,53,15,.35); transition: transform .2s; }
+    #pp-burbuja:hover { transform: scale(1.08); } #pp-burbuja:active { transform: scale(.94); }
+    #pp-burbuja[hidden] { display:none; }
+    #pp-burbuja .pp-badge { position:absolute; top:-4px; right:-4px; min-width:1.3rem; height:1.3rem; padding:0 .3rem; border-radius:9999px;
+        background:#7c3aed; color:#fff; font-size:.7rem; font-weight:900; display:flex; align-items:center; justify-content:center; border:2px solid #0f172a; }
+    #pp-burbuja .pp-badge.listo { background:#10b981; animation: ppLatido 1s ease-in-out infinite; }
+    #pp-burbuja::after { content:''; position:absolute; inset:-6px; border-radius:9999px; border:2px solid rgba(251,191,36,.55); animation: ppOnda 2s ease-out infinite; pointer-events:none; }
+    @media (min-width:640px) { #pp-burbuja { right:1.5rem; bottom:calc(2rem + 4.6rem); } }
+    @keyframes ppOnda { from { transform:scale(1); opacity:1; } to { transform:scale(1.45); opacity:0; } }
+    @keyframes ppLatido { 0%,100% { transform:scale(1); } 50% { transform:scale(1.18); } }
+
+    /* Presentación del botón la primera vez */
+    #pp-intro { position:fixed; inset:0; z-index:60; background:rgba(2,6,23,.78); backdrop-filter: blur(2px); }
+    #pp-intro[hidden] { display:none; }
+    body.pp-intro-activa #pp-burbuja { z-index:61; }
+    #pp-intro-globo { position:fixed; right:1rem; bottom:calc(8rem + 4.25rem + 4.6rem); z-index:61; width:min(300px, calc(100vw - 2rem));
+        background:linear-gradient(160deg,#1e1338,#0f0a1f); border:1px solid rgba(251,191,36,.45); border-radius:1rem; padding:1rem 1rem .85rem;
+        color:#e2e8f0; box-shadow:0 20px 40px rgba(0,0,0,.5); animation: ppEntra .35s ease-out; }
+    #pp-intro-globo::after { content:''; position:absolute; right:1.35rem; bottom:-9px; width:16px; height:16px; background:#100b21;
+        border-right:1px solid rgba(251,191,36,.45); border-bottom:1px solid rgba(251,191,36,.45); transform:rotate(45deg); }
+    @media (min-width:640px) { #pp-intro-globo { right:1.5rem; bottom:calc(2rem + 4.6rem + 4.6rem); } }
+    #pp-intro-globo h4 { font-weight:900; color:#fde047; font-size:1rem; margin-bottom:.3rem; }
+    #pp-intro-globo p { font-size:.82rem; line-height:1.45; color:#cbd5e1; }
+    #pp-intro-globo .pp-intro-acciones { display:flex; justify-content:space-between; align-items:center; margin-top:.75rem; gap:.5rem; }
+    #pp-intro-globo .pp-mano { font-size:1.4rem; animation: ppMano 1s ease-in-out infinite; display:inline-block; }
+    @keyframes ppMano { 0%,100% { transform: translate(0,0); } 50% { transform: translate(4px,5px); } }
+    @keyframes ppEntra { from { opacity:0; transform: translateY(10px) scale(.97); } to { opacity:1; transform:none; } }
+
+    /* Pantalla de tareas y guías */
+    .pp-capa { position:fixed; inset:0; z-index:8000; display:flex; align-items:flex-end; justify-content:center; }
+    .pp-capa[hidden] { display:none; }
+    @media (min-width:640px) { .pp-capa { align-items:center; padding:1rem; } }
+    .pp-fondo { position:absolute; inset:0; background:rgba(2,6,23,.8); backdrop-filter: blur(3px); }
+    .pp-panel { position:relative; width:100%; max-width:470px; max-height:92dvh; overflow-y:auto; color:#e2e8f0;
+        background: radial-gradient(120% 50% at 50% 0%, rgba(124,58,237,.3), transparent 60%), linear-gradient(170deg,#140c28,#0b0a17 60%);
+        border:1px solid rgba(251,191,36,.3); border-radius:1.4rem 1.4rem 0 0; box-shadow:0 -10px 50px rgba(0,0,0,.6); animation: ppSube .35s ease-out;
+        padding-bottom: env(safe-area-inset-bottom); }
+    @media (min-width:640px) { .pp-panel { border-radius:1.4rem; } }
+    @keyframes ppSube { from { transform: translateY(40px); opacity:0; } to { transform:none; opacity:1; } }
+    .pp-cabeza { padding:1.4rem 1.25rem 1rem; position:relative; }
+    .pp-x { position:absolute; top:.9rem; right:.9rem; width:2.1rem; height:2.1rem; border-radius:9999px; background:rgba(255,255,255,.08); color:#cbd5e1; font-size:1rem; display:flex; align-items:center; justify-content:center; }
+    .pp-x:hover { background:rgba(255,255,255,.16); }
+    .pp-kicker { font-size:10px; font-weight:800; letter-spacing:.25em; text-transform:uppercase; color:rgba(252,211,77,.75); }
+    .pp-titulo { font-size:1.45rem; font-weight:900; color:#fff; margin-top:.15rem; }
+    .pp-sub { font-size:.83rem; color:#94a3b8; margin-top:.25rem; line-height:1.45; padding-right:1.5rem; }
+    .pp-sub b { color:#fcd34d; }
+    .pp-barra { height:.6rem; border-radius:9999px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:1rem; }
+    .pp-barra span { display:block; height:100%; width:0; border-radius:9999px; background:linear-gradient(90deg,#f59e0b,#fde047); transition: width .8s cubic-bezier(.2,.8,.2,1); box-shadow:0 0 12px rgba(250,204,21,.5); }
+    .pp-progreso-txt { display:flex; justify-content:space-between; font-size:.72rem; color:#94a3b8; margin-top:.4rem; font-weight:700; }
+    .pp-progreso-txt b { color:#fde047; }
+    .pp-lista { padding:0 1rem 1.2rem; display:flex; flex-direction:column; gap:.65rem; }
+    .pp-item { position:relative; display:flex; gap:.8rem; padding:.9rem; border-radius:1rem; background:rgba(15,10,31,.75); border:1px solid rgba(255,255,255,.07); }
+    .pp-item.actual, .pp-item.reclamar { border-color: rgba(251,191,36,.55); background: linear-gradient(160deg, rgba(120,53,15,.28), rgba(15,10,31,.85)); box-shadow: 0 0 0 1px rgba(251,191,36,.15), 0 8px 24px rgba(245,158,11,.12); }
+    .pp-item.reclamar { border-color: rgba(16,185,129,.7); background: linear-gradient(160deg, rgba(6,78,59,.45), rgba(15,10,31,.85)); }
+    .pp-item.bloqueada { opacity:.55; }
+    .pp-item.reclamada { opacity:.8; }
+    .pp-icono { width:2.7rem; height:2.7rem; flex-shrink:0; border-radius:.85rem; display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#fff; position:relative; }
+    .pp-icono .pp-n { position:absolute; bottom:-5px; right:-5px; width:1.2rem; height:1.2rem; border-radius:9999px; background:#0f172a; border:1px solid rgba(255,255,255,.2); font-size:.62rem; font-weight:900; display:flex; align-items:center; justify-content:center; color:#e2e8f0; }
+    .pp-info { flex:1; min-width:0; }
+    .pp-item-titulo { font-weight:900; color:#fff; font-size:.92rem; line-height:1.25; }
+    .pp-item-txt { font-size:.76rem; color:#94a3b8; margin-top:.2rem; line-height:1.45; }
+    .pp-estado { display:inline-flex; align-items:center; gap:.35rem; font-size:.68rem; font-weight:800; margin-top:.45rem; padding:.18rem .55rem; border-radius:9999px; }
+    .pp-estado.ok { color:#6ee7b7; background:rgba(16,185,129,.12); }
+    .pp-estado.candado { color:#94a3b8; background:rgba(148,163,184,.1); }
+    .pp-estado.espera { color:#fcd34d; background:rgba(245,158,11,.12); }
+    .pp-premio { text-align:right; flex-shrink:0; font-weight:900; color:#fde047; font-size:.95rem; line-height:1.1; }
+    .pp-premio small { display:block; font-size:.6rem; color:#a8a29e; letter-spacing:.1em; }
+    .pp-item.reclamada .pp-premio { color:#6ee7b7; }
+    .pp-acciones { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.65rem; }
+    .pp-btn { display:inline-flex; align-items:center; gap:.45rem; font-size:.78rem; font-weight:900; padding:.6rem .95rem; border-radius:.75rem; cursor:pointer; transition: transform .1s, filter .2s; border:1px solid transparent; }
+    .pp-btn:active { transform: translateY(2px); }
+    .pp-btn:disabled { opacity:.6; cursor:wait; }
+    .pp-btn-oro { color:#1c1206; background:linear-gradient(180deg,#fde047,#f59e0b); border-color:rgba(254,240,138,.7); box-shadow:0 4px 0 #92400e; }
+    .pp-btn-verde { color:#022c22; background:linear-gradient(180deg,#6ee7b7,#10b981); border-color:rgba(167,243,208,.7); box-shadow:0 4px 0 #065f46; animation: ppBrillo 1.6s ease-in-out infinite; }
+    .pp-btn-gris { color:#e2e8f0; background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.12); }
+    .pp-btn:hover { filter:brightness(1.08); }
+    @keyframes ppBrillo { 0%,100% { box-shadow:0 4px 0 #065f46, 0 0 0 0 rgba(16,185,129,.5); } 50% { box-shadow:0 4px 0 #065f46, 0 0 0 7px rgba(16,185,129,0); } }
+    .pp-nota { font-size:.7rem; color:#64748b; text-align:center; padding:0 1.25rem 1.2rem; line-height:1.5; }
+    .pp-fin { margin:0 1rem 1rem; padding:1.1rem; border-radius:1rem; text-align:center; background:linear-gradient(110deg,#3b0a0a,#7f1d1d 40%,#b45309); border:1px solid rgba(253,224,71,.45); }
+    .pp-fin p:first-child { font-size:2rem; }
+    .pp-fin h4 { font-weight:900; color:#fde047; font-size:1.05rem; }
+    .pp-fin p { font-size:.8rem; color:#fef3c7; }
+
+    /* Celebración al reclamar */
+    .pp-celebra { position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none;
+        background: radial-gradient(circle, rgba(15,10,31,.92) 0%, rgba(15,10,31,.75) 70%); animation: ppCelebraFuera 2.2s ease forwards; border-radius:inherit; overflow:hidden; }
+    .pp-celebra .pp-celebra-nc { font-size:2.6rem; font-weight:900; color:#fde047; text-shadow:0 0 25px rgba(250,204,21,.6); animation: ppPop .6s cubic-bezier(.2,1.6,.4,1); }
+    .pp-celebra .pp-celebra-txt { color:#e2e8f0; font-weight:800; font-size:.9rem; margin-top:.2rem; }
+    .pp-confeti { position:absolute; top:-10px; width:8px; height:12px; border-radius:2px; animation: ppCae 1.8s ease-in forwards; }
+    @keyframes ppPop { from { transform: scale(.3); opacity:0; } to { transform: scale(1); opacity:1; } }
+    @keyframes ppCae { to { transform: translateY(110vh) rotate(720deg); } }
+    @keyframes ppCelebraFuera { 0%,75% { opacity:1; } 100% { opacity:0; } }
+
+    /* Guía de cada tarea */
+    .pp-guia-cuerpo { padding:0 1.25rem 1.25rem; }
+    .pp-guia-meta { display:flex; align-items:center; gap:.75rem; padding:.85rem 1rem; border-radius:1rem; margin-bottom:1rem;
+        background:linear-gradient(110deg, rgba(120,53,15,.5), rgba(15,10,31,.6)); border:1px solid rgba(251,191,36,.4); }
+    .pp-guia-meta i { font-size:1.35rem; color:#fde047; }
+    .pp-guia-meta p { font-size:.8rem; color:#fef3c7; line-height:1.4; }
+    .pp-guia-meta b { color:#fde047; }
+    .pp-guia-cuerpo h5 { font-size:.72rem; font-weight:900; letter-spacing:.15em; text-transform:uppercase; color:#a78bfa; margin:1rem 0 .55rem; }
+    .pp-pasos { display:flex; flex-direction:column; gap:.5rem; counter-reset: pp; }
+    .pp-pasos li { position:relative; padding:.6rem .75rem .6rem 2.6rem; border-radius:.8rem; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); font-size:.8rem; color:#cbd5e1; line-height:1.45; }
+    .pp-pasos li::before { counter-increment: pp; content: counter(pp); position:absolute; left:.6rem; top:.6rem; width:1.4rem; height:1.4rem; border-radius:.45rem;
+        background:rgba(124,58,237,.25); border:1px solid rgba(167,139,250,.4); color:#c4b5fd; font-size:.7rem; font-weight:900; display:flex; align-items:center; justify-content:center; }
+    .pp-pasos li b { color:#fff; }
+    .pp-datos { display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; }
+    .pp-dato { padding:.6rem .7rem; border-radius:.8rem; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); }
+    .pp-dato p:first-child { font-size:.95rem; font-weight:900; color:#fde047; }
+    .pp-dato p:last-child { font-size:.68rem; color:#94a3b8; line-height:1.3; margin-top:.1rem; }
+    .pp-aviso { margin-top:1rem; padding:.7rem .85rem; border-radius:.8rem; font-size:.76rem; line-height:1.45; color:#fecaca; background:rgba(127,29,29,.25); border:1px solid rgba(248,113,113,.3); }
+    .pp-aviso b { color:#fff; }
+    .pp-guia-botones { display:flex; gap:.5rem; margin-top:1.1rem; }
+    .pp-guia-botones .pp-btn { flex:1; justify-content:center; padding:.8rem; font-size:.85rem; }
+
+    /* Señalar en la página dónde tocar */
+    .pp-foco { position:relative; z-index:3; animation: ppFoco 1.3s ease-in-out infinite !important; }
+    @keyframes ppFoco { 0%,100% { box-shadow: 0 0 0 3px #fbbf24, 0 0 0 8px rgba(251,191,36,.25); } 50% { box-shadow: 0 0 0 3px #fde047, 0 0 0 14px rgba(251,191,36,0); } }
+    #pp-tip { position:fixed; z-index:55; pointer-events:none; transform: translate(-50%, -100%); padding:.5rem .8rem; border-radius:.75rem; max-width:240px; text-align:center;
+        background:linear-gradient(180deg,#fde047,#f59e0b); color:#1c1206; font-size:.78rem; font-weight:900; box-shadow:0 10px 25px rgba(0,0,0,.45); animation: ppTip 1s ease-in-out infinite; }
+    #pp-tip::after { content:''; position:absolute; left:50%; bottom:-6px; width:12px; height:12px; background:#f59e0b; transform: translateX(-50%) rotate(45deg); }
+    #pp-tip[hidden] { display:none; }
+    @keyframes ppTip { 0%,100% { margin-top:-10px; } 50% { margin-top:-16px; } }
+    #pp-meta-torre { position:fixed; left:50%; bottom:calc(1rem + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:7001; pointer-events:none;
+        padding:.45rem .9rem; border-radius:9999px; background:rgba(15,10,31,.85); border:1px solid rgba(251,191,36,.5); color:#fde047; font-size:.75rem; font-weight:900; white-space:nowrap; }
+    #pp-meta-torre[hidden] { display:none; }
+    @media (prefers-reduced-motion: reduce) { #pp-burbuja::after, .pp-foco, #pp-tip, .pp-btn-verde, .pp-confeti { animation:none !important; } }
+</style>
+
+<button id="pp-burbuja" type="button" hidden onclick="ppAbrir()" title="Primeros pasos" aria-label="Primeros pasos: tareas con premio">
+    <i class="fa-solid fa-rocket"></i>
+    <span id="pp-badge" class="pp-badge">3</span>
+</button>
+
+<div id="pp-intro" hidden onclick="ppIntroCerrar(false)"></div>
+<div id="pp-intro-globo" hidden role="dialog" aria-label="Primeros pasos">
+    <h4>🚀 ¡Bienvenido a NetGamer!</h4>
+    <p>Tienes <b style="color:#fde047">tareas de bienvenida</b>: complétalas en orden y gana hasta <b style="color:#fde047">30,000 NC extra</b>. Toca el botón dorado para empezar.</p>
+    <div class="pp-intro-acciones">
+        <button type="button" class="pp-btn pp-btn-gris" onclick="ppIntroCerrar(false)">Ahora no</button>
+        <span class="pp-mano">👇</span>
+        <button type="button" class="pp-btn pp-btn-oro" onclick="ppIntroCerrar(true)">Ver tareas</button>
+    </div>
+</div>
+
+<div id="pp-modal" class="pp-capa" hidden>
+    <div class="pp-fondo" onclick="ppCerrar()"></div>
+    <div class="pp-panel" role="dialog" aria-modal="true" aria-labelledby="pp-titulo">
+        <div class="pp-cabeza">
+            <button type="button" class="pp-x" onclick="ppCerrar()" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+            <p class="pp-kicker">Misión de bienvenida</p>
+            <h2 id="pp-titulo" class="pp-titulo">🚀 Primeros pasos</h2>
+            <p class="pp-sub">Completa las tareas <b>en orden</b> y reclama tu premio en cada una. En total ganas hasta <b>30,000 NC</b> extra.</p>
+            <div class="pp-barra"><span id="pp-barra-fill"></span></div>
+            <div class="pp-progreso-txt"><span id="pp-progreso-tareas">0 de 4 tareas</span><span><b id="pp-progreso-nc">0</b> / 30,000 NC</span></div>
+        </div>
+        <div id="pp-lista" class="pp-lista"></div>
+        <p class="pp-nota">Cada tarea se revisa automáticamente en nuestro servidor. Solo puedes reclamar cada premio una vez por cuenta.</p>
+    </div>
+</div>
+
+<div id="pp-guia" class="pp-capa" hidden>
+    <div class="pp-fondo" onclick="ppGuiaCerrar()"></div>
+    <div class="pp-panel" role="dialog" aria-modal="true" aria-labelledby="pp-guia-titulo">
+        <div class="pp-cabeza">
+            <button type="button" class="pp-x" onclick="ppGuiaCerrar()" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+            <p class="pp-kicker" id="pp-guia-kicker">Tarea 1 de 4</p>
+            <h2 id="pp-guia-titulo" class="pp-titulo"></h2>
+        </div>
+        <div id="pp-guia-cuerpo" class="pp-guia-cuerpo"></div>
+    </div>
+</div>
+
+<div id="pp-tip" hidden></div>
+<div id="pp-meta-torre" hidden>🎯 Tarea de bienvenida: llega a 5 pisos</div>
+
+<script>
+(function () {
+    const PP_PASOS = [
+        { id: 'ruleta',   titulo: 'Gira la Ruleta de la Fortuna',  icono: 'fa-dharmachakra',    fondo: 'linear-gradient(135deg,#f59e0b,#b45309)',
+          texto: 'Usa tu giro gratis del día por primera vez.' },
+        { id: 'torre',    titulo: 'Llega a 5 pisos en la Torre',   icono: 'fa-cubes-stacked',   fondo: 'linear-gradient(135deg,#a855f7,#6d28d9)',
+          texto: 'Juega una partida de Torre NetGamer y apila al menos 5 pisos.' },
+        { id: 'encuesta', titulo: 'Completa tu primera encuesta',  icono: 'fa-clipboard-check', fondo: 'linear-gradient(135deg,#14b8a6,#0f766e)',
+          texto: 'Contesta una encuesta de CPX hasta el final. Solo cuenta si se completa correctamente.' },
+        { id: 'final',    titulo: 'Bono por completar todo',       icono: 'fa-trophy',          fondo: 'linear-gradient(135deg,#ef4444,#b45309)',
+          texto: 'Reclama las 3 tareas anteriores y desbloquea este bono final.' },
+    ];
+    const NC_TOTAL = 30000;
+    const fmt = n => Number(n || 0).toLocaleString('es-MX');
+
+    let estado = null;          // respuesta de primeros_pasos_estado
+    let cargando = null;
+    let reclamando = false;
+    let timerRevision = null;
+    const abiertoAuto = {};     // pasos que ya abrieron la pantalla sola en esta visita
+    let focoActual = null, focoRaf = null, focoTexto = '';
+
+    function uid() { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null; }
+    function guardar(tipo, clave, valor) { try { (tipo === 's' ? sessionStorage : localStorage).setItem(clave, valor); } catch (e) {} }
+    function leer(tipo, clave) { try { return (tipo === 's' ? sessionStorage : localStorage).getItem(clave); } catch (e) { return null; } }
+
+    // Paso en el que va el usuario (el primero sin reclamar) y si ya puede reclamarlo.
+    function pasoActual() {
+        if (!estado || !estado.elegible) return null;
+        return PP_PASOS.find(p => !estado[p.id]?.reclamada) || null;
+    }
+    function puedeReclamar() {
+        const p = pasoActual();
+        return p && estado[p.id]?.hecha ? p : null;
+    }
+    function terminado() { return estado && estado.elegible && estado.final?.reclamada; }
+
+    async function ppCargar() {
+        if (!uid()) return null;
+        if (cargando) return cargando;
+        cargando = (async () => {
+            try {
+                const { data, error } = await _supabase.rpc('primeros_pasos_estado');
+                if (!error && data && !data.error) estado = data;
+            } catch (e) {}
+            cargando = null;
+            pintarBurbuja();
+            if (!document.getElementById('pp-modal').hidden) pintarLista();
+            programarRevision();
+            return estado;
+        })();
+        return cargando;
+    }
+
+    function pintarBurbuja() {
+        const b = document.getElementById('pp-burbuja');
+        const visible = !!(uid() && estado && estado.elegible && !terminado());
+        b.hidden = !visible;
+        if (!visible) return;
+        const badge = document.getElementById('pp-badge');
+        const listo = puedeReclamar();
+        const faltan = PP_PASOS.filter(p => !estado[p.id]?.reclamada).length;
+        badge.textContent = listo ? '!' : String(faltan);
+        badge.classList.toggle('listo', !!listo);
+        b.title = listo ? '¡Tienes un premio listo para reclamar!' : 'Primeros pasos';
+    }
+
+    function pintarLista() {
+        if (!estado || !estado.elegible) return;
+        const actual = pasoActual();
+        const reclamadas = PP_PASOS.filter(p => estado[p.id]?.reclamada);
+        const ncGanadas = reclamadas.reduce((s, p) => s + (estado[p.id]?.nc || 0), 0);
+        document.getElementById('pp-barra-fill').style.width = (ncGanadas / NC_TOTAL * 100) + '%';
+        document.getElementById('pp-progreso-tareas').textContent = `${reclamadas.length} de ${PP_PASOS.length} tareas`;
+        document.getElementById('pp-progreso-nc').textContent = fmt(ncGanadas);
+
+        let html = '';
+        if (terminado()) {
+            html += `<div class="pp-fin"><p>🏆</p><h4>¡Completaste tus primeros pasos!</h4>
+                <p>Ganaste ${fmt(NC_TOTAL)} NC extra. Ya conoces todo NetGamer: sigue girando la ruleta cada día, jugando y contestando encuestas.</p></div>`;
+        }
+        PP_PASOS.forEach((p, i) => {
+            const e = estado[p.id] || {};
+            let clase, extra = '';
+            if (e.reclamada) {
+                clase = 'reclamada';
+                extra = `<span class="pp-estado ok"><i class="fa-solid fa-circle-check"></i> Premio reclamado</span>`;
+            } else if (actual && actual.id === p.id && e.hecha) {
+                clase = 'reclamar';
+                extra = `<span class="pp-estado ok"><i class="fa-solid fa-circle-check"></i> ¡Tarea completada!</span>
+                    <div class="pp-acciones"><button type="button" class="pp-btn pp-btn-verde" data-pp-reclamar="${p.id}" onclick="ppReclamar('${p.id}', this)">
+                        <i class="fa-solid fa-gift"></i> Reclamar +${fmt(e.nc)} NC</button></div>`;
+            } else if (actual && actual.id === p.id) {
+                clase = 'actual';
+                if (p.id === 'final') {
+                    extra = `<span class="pp-estado candado"><i class="fa-solid fa-lock"></i> Reclama las 3 tareas anteriores</span>`;
+                } else {
+                    const espera = p.id === 'encuesta'
+                        ? `<span class="pp-estado espera"><i class="fa-solid fa-hourglass-half"></i> Se revisa sola cuando completes una encuesta</span>` : '';
+                    const boton = { ruleta: 'Ver cómo funciona e ir a la ruleta', torre: 'Ver cómo se juega e ir a la Torre', encuesta: 'Ver cómo funciona e ir a encuestas' }[p.id];
+                    extra = `${espera}<div class="pp-acciones"><button type="button" class="pp-btn pp-btn-oro" onclick="ppAbrirGuia('${p.id}')">
+                        <i class="fa-solid fa-arrow-right"></i> ${boton}</button></div>`;
+                }
+            } else {
+                clase = 'bloqueada';
+                extra = `<span class="pp-estado candado"><i class="fa-solid fa-lock"></i> Se desbloquea al reclamar la tarea ${i}</span>`;
+            }
+            const numero = e.reclamada ? '<i class="fa-solid fa-check" style="font-size:.55rem"></i>' : (i + 1);
+            html += `<div class="pp-item ${clase}">
+                <div class="pp-icono" style="background:${p.fondo}"><i class="fa-solid ${p.icono}"></i><span class="pp-n">${numero}</span></div>
+                <div class="pp-info"><p class="pp-item-titulo">${p.titulo}</p><p class="pp-item-txt">${p.texto}</p>${extra}</div>
+                <div class="pp-premio">+${fmt(e.nc)}<small>NC</small></div>
+            </div>`;
+        });
+        document.getElementById('pp-lista').innerHTML = html;
+    }
+
+    function bloquearScroll(si) { document.body.style.overflow = si ? 'hidden' : ''; }
+
+    window.ppAbrir = async function () {
+        ppIntroCerrar(null);
+        guardar('l', 'pp_intro_' + uid(), '1');
+        const modal = document.getElementById('pp-modal');
+        if (!estado) await ppCargar();
+        if (!estado || !estado.elegible) return;
+        pintarLista();
+        modal.hidden = false;
+        bloquearScroll(true);
+        ppCargar(); // revisa de nuevo por si algo cambió
+    };
+    window.ppCerrar = function () {
+        document.getElementById('pp-modal').hidden = true;
+        bloquearScroll(false);
+        if (terminado()) pintarBurbuja();
+    };
+
+    window.ppReclamar = async function (paso, btn) {
+        if (reclamando) return;
+        reclamando = true;
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Reclamando...'; }
+        let data = null;
+        try {
+            ({ data } = await _supabase.rpc('primeros_pasos_reclamar', { p_paso: paso }));
+        } catch (e) {}
+        reclamando = false;
+        if (data && data.ok) {
+            celebrar(data.nc, paso);
+            mostrarNotificacion(`🎁 ¡Recibiste ${fmt(data.nc)} NC por tus primeros pasos!`, 'success');
+            if (typeof refrescarPerfilLigero === 'function') refrescarPerfilLigero();
+            if (typeof historialCargado !== 'undefined') historialCargado.ganancias = false;
+            await ppCargar();
+            pintarLista();
+            return;
+        }
+        const mensajes = {
+            no_hecha: 'Todavía no se registra esta tarea. Si la acabas de completar, espera unos minutos.',
+            en_orden: 'Primero reclama las tareas anteriores.',
+            ya_reclamada: 'Ya reclamaste este premio.',
+            no_elegible: 'Estas tareas son solo para cuentas nuevas.',
+        };
+        mostrarNotificacion(mensajes[data && data.error] || 'No se pudo reclamar. Revisa tu conexión e intenta de nuevo.', 'error');
+        await ppCargar();
+        pintarLista();
+    };
+
+    function celebrar(nc, paso) {
+        const panel = document.querySelector('#pp-modal .pp-panel');
+        if (!panel) return;
+        const capa = document.createElement('div');
+        capa.className = 'pp-celebra';
+        const colores = ['#fde047', '#f59e0b', '#a855f7', '#10b981', '#3b82f6', '#ef4444'];
+        let confeti = '';
+        for (let i = 0; i < 28; i++) {
+            confeti += `<span class="pp-confeti" style="left:${Math.random() * 100}%;background:${colores[i % colores.length]};animation-delay:${(Math.random() * .5).toFixed(2)}s"></span>`;
+        }
+        capa.innerHTML = `${confeti}<div class="pp-celebra-nc">+${fmt(nc)} NC</div>
+            <div class="pp-celebra-txt">${paso === 'final' ? '🏆 ¡Primeros pasos completados!' : '¡Premio reclamado!'}</div>`;
+        panel.scrollTop = 0;
+        panel.appendChild(capa);
+        setTimeout(() => capa.remove(), 2300);
+    }
+
+    // ---------- Guías ----------
+    function contenidoGuia(id) {
+        const tc = (typeof _torreCfg !== 'undefined' && _torreCfg) ? _torreCfg : { costo_entrada: 1000, nc_por_piso: 20, nc_por_perfecto: 10 };
+        if (id === 'ruleta') return {
+            titulo: '🎰 Ruleta de la Fortuna',
+            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu tarea:</b> gira la ruleta 1 vez. Además de lo que salga en la ruleta, ganas <b>+2,000 NC</b> de premio por la tarea.</p></div>
+                <h5>¿Cómo funciona?</h5>
+                <ul class="pp-pasos">
+                    <li><b>Todos los usuarios</b> tienen <b>1 giro gratis cada día</b>. No se compran giros: es igual para todos.</li>
+                    <li>El giro se renueva <b>a medianoche (hora del centro de México)</b>. El reloj de la ruleta te dice cuánto falta para el siguiente.</li>
+                    <li>Toca el botón dorado <b>“¡Girar gratis!”</b> (o la rueda) y espera a que se detenga.</li>
+                    <li>El premio lo elige nuestro servidor al azar y <b>se suma solo a tu saldo</b> en ese momento.</li>
+                </ul>
+                <h5>Premios posibles</h5>
+                <div class="pp-datos">
+                    <div class="pp-dato"><p>500 · 1,000</p><p>NC, los más comunes</p></div>
+                    <div class="pp-dato"><p>2,500</p><p>NC</p></div>
+                    <div class="pp-dato" style="grid-column:1/-1"><p>👑 200,000 NC</p><p>Premio mayor: muy difícil, ¡pero alguien se lo puede llevar!</p></div>
+                </div>`,
+            ir: 'Ir a girar la ruleta'
+        };
+        if (id === 'torre') return {
+            titulo: '🧱 Torre NetGamer',
+            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu tarea:</b> llega a <b>5 pisos</b> en una sola partida y gana <b>+3,000 NC</b>. Si no lo logras a la primera, puedes intentarlo otra vez.</p></div>
+                <h5>Cómo se juega</h5>
+                <ul class="pp-pasos">
+                    <li>Toca <b>“Jugar ahora”</b>. Cada partida cuesta <b>${fmt(tc.costo_entrada)} NC y 1 vida ❤️</b> (tienes 3 vidas gratis al día).</li>
+                    <li>Un bloque se mueve de lado a lado. <b>Toca la pantalla</b> (o la barra espaciadora) para soltarlo encima de la torre.</li>
+                    <li>Lo que sobresale se corta y tu siguiente bloque será más pequeño: <b>suéltalo lo más alineado posible</b>.</li>
+                    <li>Si lo dejas exacto es <b>Perfecto</b>: no se corta y ganas extra. Con 3 perfectos seguidos el bloque crece.</li>
+                    <li>La partida termina cuando un bloque cae fuera. Al llegar a 5 pisos, se abrirá esta pantalla para que reclames tu premio.</li>
+                </ul>
+                <h5>Lo que ganas al jugar</h5>
+                <div class="pp-datos">
+                    <div class="pp-dato"><p>+${fmt(tc.nc_por_piso)} NC</p><p>por cada piso</p></div>
+                    <div class="pp-dato"><p>+${fmt(tc.nc_por_perfecto)} NC</p><p>extra por cada bloque perfecto</p></div>
+                </div>`,
+            ir: 'Ir a jugar Torre'
+        };
+        return {
+            titulo: '📋 Encuestas pagadas',
+            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu tarea:</b> completa <b>correctamente</b> 1 encuesta de CPX y gana <b>+15,000 NC</b>, además de lo que pague la encuesta.</p></div>
+                <h5>Paso a paso</h5>
+                <ul class="pp-pasos">
+                    <li>Te llevamos a <b>Ofertas → Encuestas CPX</b>. Ahí verás tarjetas con encuestas, cuántos minutos duran y cuántas NC pagan.</li>
+                    <li><b>Toca una tarjeta</b>. La encuesta se abre en una pestaña nueva. Las primeras preguntas pueden salir en inglés; después sigue en español.</li>
+                    <li>Primero te hacen unas preguntas para ver si <b>calificas</b> (edad, estado, intereses...). Contesta <b>con la verdad y con calma</b>.</li>
+                    <li>Si calificas, contesta la encuesta <b>hasta el final</b>. Las NC se suman solas a tu saldo (a veces tarda unos minutos).</li>
+                    <li>Cuando vuelvas a NetGamer, esta pantalla se abrirá sola para que reclames tus <b>+15,000 NC</b>.</li>
+                </ul>
+                <div class="pp-aviso"><b>Importante:</b> la tarea <b>solo cuenta cuando completas la encuesta correctamente</b>. Si no calificas, CPX te da un pequeño premio de consolación, pero <b>esa no cuenta</b> para esta tarea: simplemente prueba con otra encuesta. Contestar al azar o muy rápido puede hacer que la encuesta se rechace.</div>`,
+            ir: 'Ir a las encuestas'
+        };
+    }
+
+    window.ppAbrirGuia = function (id) {
+        const g = contenidoGuia(id);
+        const i = PP_PASOS.findIndex(p => p.id === id);
+        document.getElementById('pp-guia-kicker').textContent = `Tarea ${i + 1} de ${PP_PASOS.length}`;
+        document.getElementById('pp-guia-titulo').textContent = g.titulo;
+        document.getElementById('pp-guia-cuerpo').innerHTML = g.html +
+            `<div class="pp-guia-botones">
+                <button type="button" class="pp-btn pp-btn-gris" onclick="ppGuiaCerrar(true)"><i class="fa-solid fa-arrow-left"></i> Volver</button>
+                <button type="button" class="pp-btn pp-btn-oro" onclick="ppIr('${id}')">${g.ir} <i class="fa-solid fa-arrow-right"></i></button>
+            </div>`;
+        document.getElementById('pp-modal').hidden = true;
+        const guia = document.getElementById('pp-guia');
+        guia.hidden = false;
+        guia.querySelector('.pp-panel').scrollTop = 0;
+        bloquearScroll(true);
+    };
+    window.ppGuiaCerrar = function (volverALista) {
+        document.getElementById('pp-guia').hidden = true;
+        if (volverALista) { document.getElementById('pp-modal').hidden = false; pintarLista(); }
+        else bloquearScroll(false);
+    };
+
+    window.ppIr = function (id) {
+        document.getElementById('pp-guia').hidden = true;
+        document.getElementById('pp-modal').hidden = true;
+        bloquearScroll(false);
+        if (id === 'ruleta') {
+            switchTab('tab-inicio', null);
+            setTimeout(() => {
+                document.querySelector('.ruleta-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                ponerFoco(document.getElementById('btn-girar'), '👇 Toca aquí para girar gratis');
+            }, 450);
+        } else if (id === 'torre') {
+            switchTab('tab-juegos', null);
+            if (typeof cargarTorreResumen === 'function') cargarTorreResumen();
+            setTimeout(() => {
+                const btn = document.getElementById('btn-torre-jugar');
+                btn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                ponerFoco(btn, '👇 Toca para jugar · meta: 5 pisos');
+            }, 450);
+        } else if (id === 'encuesta') {
+            switchTab('tab-ofertas', null);
+            if (typeof cambiarMuroTab === 'function') cambiarMuroTab('cpx');
+            let intentos = 0;
+            const buscar = () => {
+                const tarjeta = document.querySelector('#cpx-tj-lista > :not(.cpx-tj-cargando)');
+                const visible = tarjeta && tarjeta.offsetParent;
+                if (visible || intentos++ > 16) {
+                    const destino = visible ? tarjeta : document.getElementById('muro-cpx');
+                    destino?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    ponerFoco(destino, visible ? '👇 Toca una encuesta para empezar' : '👇 Aquí aparecen tus encuestas');
+                    return;
+                }
+                setTimeout(buscar, 400);
+            };
+            setTimeout(buscar, 500);
+        }
+    };
+
+    // ---------- Señalar un elemento ----------
+    function ponerFoco(el, texto) {
+        quitarFoco();
+        if (!el) return;
+        focoActual = el; focoTexto = texto;
+        el.classList.add('pp-foco');
+        const tip = document.getElementById('pp-tip');
+        tip.textContent = texto;
+        const mover = () => {
+            if (!focoActual) return;
+            const r = focoActual.getBoundingClientRect();
+            const enPantalla = r.width > 0 && r.bottom > 0 && r.top < window.innerHeight && focoActual.offsetParent;
+            tip.hidden = !enPantalla;
+            if (enPantalla) {
+                tip.style.left = Math.min(Math.max(r.left + r.width / 2, 130), window.innerWidth - 130) + 'px';
+                tip.style.top = Math.max(r.top - 4, 50) + 'px';
+            }
+            focoRaf = requestAnimationFrame(mover);
+        };
+        mover();
+        // Se quita al tocar el elemento, o al minuto y medio.
+        const quitar = () => quitarFoco();
+        el.addEventListener('click', quitar, { once: true, capture: true });
+        clearTimeout(ponerFoco._t);
+        ponerFoco._t = setTimeout(quitar, 90000);
+    }
+    function quitarFoco() {
+        if (focoActual) focoActual.classList.remove('pp-foco');
+        focoActual = null;
+        cancelAnimationFrame(focoRaf);
+        const tip = document.getElementById('pp-tip');
+        if (tip) tip.hidden = true;
+    }
+
+    // ---------- Presentación del botón ----------
+    function mostrarIntro() {
+        const u = uid();
+        if (!u || leer('l', 'pp_intro_' + u) || leer('s', 'pp_intro_luego_' + u)) return;
+        if (document.getElementById('pp-burbuja').hidden) return;
+        document.body.classList.add('pp-intro-activa');
+        document.getElementById('pp-intro').hidden = false;
+        document.getElementById('pp-intro-globo').hidden = false;
+    }
+    // abrir: true = Ver tareas · false = Ahora no · null = solo cerrar
+    window.ppIntroCerrar = function (abrir) {
+        const intro = document.getElementById('pp-intro');
+        if (intro.hidden) { if (abrir) ppAbrir(); return; }
+        intro.hidden = true;
+        document.getElementById('pp-intro-globo').hidden = true;
+        document.body.classList.remove('pp-intro-activa');
+        if (abrir === false) guardar('s', 'pp_intro_luego_' + uid(), '1');
+        if (abrir) ppAbrir();
+    };
+
+    // ---------- Aperturas automáticas ----------
+    function hayOtraVentanaAbierta() {
+        const torre = document.getElementById('modal-torre');
+        return (torre && !torre.classList.contains('hidden')) || !document.getElementById('pp-guia').hidden;
+    }
+    function abrirSiHayPremio(forzar) {
+        const p = puedeReclamar();
+        if (!p) return false;
+        if (!forzar && abiertoAuto[p.id]) return false;
+        if (!document.getElementById('pp-modal').hidden) { pintarLista(); return true; }
+        if (hayOtraVentanaAbierta()) return false;
+        abiertoAuto[p.id] = true;
+        quitarFoco();
+        ppAbrir();
+        return true;
+    }
+
+    // Mientras la tarea actual es la encuesta, se revisa cada 45 s (y al volver a la pestaña).
+    function programarRevision() {
+        const p = pasoActual();
+        const esperar = p && p.id === 'encuesta' && !estado.encuesta?.hecha;
+        if (esperar && !timerRevision) {
+            timerRevision = setInterval(async () => {
+                if (document.hidden) return;
+                await ppCargar();
+                abrirSiHayPremio(false);
+            }, 45000);
+        } else if (!esperar && timerRevision) {
+            clearInterval(timerRevision); timerRevision = null;
+        }
+    }
+    document.addEventListener('visibilitychange', async () => {
+        if (document.hidden || !uid() || !estado || !estado.elegible || terminado()) return;
+        await ppCargar();
+        abrirSiHayPremio(false);
+    });
+
+    // Lo llaman la ruleta y la Torre al terminar.
+    window.ppTrasAccion = function (accion, datos) {
+        if (!estado || !estado.elegible || terminado()) return;
+        if (accion === 'torre' && !(datos && datos.altura >= 5)) return;
+        if (estado[accion]?.reclamada) return;
+        quitarFoco();
+        setTimeout(async () => {
+            await ppCargar();
+            if (!puedeReclamar()) return;
+            if (accion === 'torre' && typeof torreCerrar === 'function') {
+                const torre = document.getElementById('modal-torre');
+                if (torre && !torre.classList.contains('hidden')) torreCerrar();
+            }
+            abrirSiHayPremio(true);
+        }, accion === 'torre' ? 2600 : 2200);
+    };
+    window.ppEnTorre = function (abierta) {
+        const p = pasoActual();
+        document.getElementById('pp-meta-torre').hidden = !(abierta && p && p.id === 'torre' && !estado.torre?.hecha);
+    };
+
+    // Al entrar a NetGamer con sesión.
+    window.ppIniciar = async function () {
+        if (!uid()) return;
+        await ppCargar();
+        if (!estado || !estado.elegible || terminado()) return;
+        setTimeout(() => {
+            if (!abrirSiHayPremio(false)) mostrarIntro();
+        }, 1400);
+    };
+    window.ppReiniciar = function () {
+        estado = null;
+        quitarFoco();
+        clearInterval(timerRevision); timerRevision = null;
+        ['pp-modal', 'pp-guia', 'pp-intro', 'pp-intro-globo', 'pp-meta-torre'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; });
+        document.body.classList.remove('pp-intro-activa');
+        pintarBurbuja();
+    };
+
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if (!document.getElementById('pp-guia').hidden) ppGuiaCerrar(true);
+        else if (!document.getElementById('pp-modal').hidden) ppCerrar();
+    });
+
+    // Por si la sesión ya se abrió antes de que cargara esta parte.
+    if (uid() && !estado) ppIniciar();
+})();
+</script>
 
 <button id="support-bubble" onclick="abrirSoporte()"
     class="hidden fixed bottom-32 right-4 sm:bottom-8 sm:right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 shadow-2xl shadow-purple-500/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 border-2 border-purple-400/30"
