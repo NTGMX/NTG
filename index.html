@@ -5496,11 +5496,18 @@
             const el = document.getElementById('ruleta-countdown');
             if (!el) return;
             clearInterval(_timerCuentaRegresivaRuleta);
-            function actualizar() {
+            // El giro se renueva a medianoche del centro de México (como en el servidor),
+            // no a la medianoche del celular: así el reloj es correcto en cualquier zona horaria.
+            function msHastaMedianocheCDMX() {
                 const ahora = new Date();
-                const manana = new Date();
-                manana.setHours(24, 0, 0, 0);
-                const diff = manana - ahora;
+                const partes = {};
+                new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                    .formatToParts(ahora).forEach(p => { partes[p.type] = Number(p.value); });
+                const transcurridos = ((partes.hour % 24) * 3600 + partes.minute * 60 + partes.second) * 1000 + ahora.getMilliseconds();
+                return Math.max(0, 86400000 - transcurridos);
+            }
+            function actualizar() {
+                const diff = msHastaMedianocheCDMX();
                 const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
                 const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
                 const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
@@ -5823,13 +5830,13 @@
             : '';
 
         const textoPrivacidad = `
-            <p class="text-slate-400 text-xs mb-4">Última actualización: 10 de noviembre de 2026</p>
+            <p class="text-slate-400 text-xs mb-4">Última actualización: 13 de noviembre de 2026</p>
             <h3 class="font-bold text-white mb-2">1. Responsable de tus datos</h3>
             <p>El presente Aviso de Privacidad se emite conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares y su normatividad aplicable. El responsable del tratamiento de tus datos personales es el titular y operador de NetGamer ("NetGamer", "la Plataforma" o "nosotros"), sitio disponible en netgamermx.com, con domicilio en México. Para cualquier asunto relacionado con tus datos personales puedes contactarnos a través del chat de soporte integrado en la Plataforma${_correoLegal}.</p>
             <h3 class="font-bold text-white mb-2 mt-4">2. Datos personales que recabamos</h3>
             <p>Recabamos únicamente los datos necesarios para operar la Plataforma:</p>
             <p><strong>a) Datos de identificación y contacto:</strong> correo electrónico y nombre de usuario. Tu contraseña la administra nuestro proveedor de autenticación y se guarda cifrada; nadie en NetGamer puede verla.</p>
-            <p><strong>b) Datos técnicos:</strong> dirección IP (al registrarte y al consultar las encuestas disponibles para ti), fecha de tu última conexión e información técnica básica del navegador y dispositivo, utilizados para seguridad, prevención de fraude y para mostrarte las encuestas que corresponden a tu país y dispositivo.</p>
+            <p><strong>b) Datos técnicos:</strong> dirección IP (al registrarte y al consultar las encuestas disponibles para ti), fecha de tu última conexión e información técnica básica del navegador y dispositivo, utilizados para seguridad, prevención de fraude (incluida la detección y el bloqueo de cuentas duplicadas en una misma conexión) y para mostrarte las encuestas que corresponden a tu país y dispositivo.</p>
             <p><strong>c) Datos de actividad:</strong> saldo e historial de NetCoins, canjes solicitados, ofertas y encuestas completadas en los muros de ofertas, noticias leídas, uso de la ruleta diaria, vidas, suscripción Premium y referidos.</p>
             <p><strong>d) Datos de juego:</strong> resultados de cada partida (altura, perfectos, duración, premio) y, solo en partidas que requieren revisión de seguridad, los tiempos de cada toque.</p>
             <p><strong>e) Datos de soporte y opiniones:</strong> mensajes, imágenes y archivos que nos envíes por el chat de soporte, así como las calificaciones y comentarios que nos dejes después de recibir un canje.</p>
@@ -5858,7 +5865,7 @@
         `;
 
         const textoTerminos = `
-            <p class="text-slate-400 text-xs mb-4">Última actualización: 10 de noviembre de 2026</p>
+            <p class="text-slate-400 text-xs mb-4">Última actualización: 13 de noviembre de 2026</p>
             <h3 class="font-bold text-white mb-2">1. Aceptación</h3>
             <p>Estos Términos y Condiciones regulan el uso de NetGamer (netgamermx.com, "la Plataforma"). Al crear una cuenta o usar la Plataforma aceptas estos Términos y el Aviso de Privacidad. Si no estás de acuerdo, no te registres ni uses la Plataforma.</p>
             <p>Debes tener al menos 13 años. Si eres menor de 18 años, necesitas el consentimiento y la supervisión de tu madre, padre o tutor, quien deberá autorizar cualquier compra y cualquier canje, y es responsable del uso que hagas de la Plataforma.</p>
@@ -5871,13 +5878,15 @@
             <p>d) Jugar los juegos de la Plataforma, en los que el premio depende de la habilidad del jugador conforme a las reglas publicadas en cada juego. Algunos juegos cobran una entrada en NetCoins y/o vidas al iniciar cada partida; la entrada no es reembolsable una vez iniciada la partida, aunque la abandones. Las partidas que no se terminan dentro del tiempo límite del juego se dan por finalizadas.</p>
             <p>e) Invitar amigos con tu enlace de referido.</p>
             <p>f) Reclamar el bono de bienvenida al registrarte por primera vez.</p>
+            <p>g) Completar las <strong>tareas de Primeros pasos</strong> (solo cuentas nuevas, una sola vez por cuenta) y las <strong>Misiones diarias</strong>. Las tareas y misiones se realizan en el orden indicado y cada premio se reclama una sola vez. Las Misiones diarias se reinician cada día a medianoche (hora del centro de México); su meta y su premio pueden variar cada día y entre usuarios, y los determina el servidor. Solo cuentan las actividades válidas realizadas en el periodo correspondiente (por ejemplo, encuestas completadas correctamente y no revertidas, noticias leídas con recompensa y partidas validadas). Los montos y metas pueden cambiar; aplica lo vigente al momento de reclamar.</p>
             <h3 class="font-bold text-white mb-2 mt-4">3. Naturaleza de las NetCoins</h3>
             <p>Las NetCoins son puntos de lealtad sin valor monetario fuera de la Plataforma. <strong>No son dinero, ni dinero electrónico, ni un depósito, ni una inversión</strong>; no generan intereses, no se pueden comprar con dinero y no se pueden transferir, vender ni intercambiar entre usuarios. Solo pueden canjearse por las recompensas disponibles en la Plataforma, conforme a la sección 7. Las NetCoins de una cuenta cancelada por incumplimiento, o de una cuenta eliminada a petición del usuario, se pierden. Si NetGamer decide cerrar definitivamente la Plataforma, lo anunciará con al menos 30 días naturales de anticipación para que puedas solicitar el canje de tu saldo canjeable.</p>
             <h3 class="font-bold text-white mb-2 mt-4">4. Tu cuenta</h3>
             <p>Para registrarte debes dar un correo válido, un nombre de usuario y una contraseña, y verificar tu correo con un código de un solo uso. Cada persona puede tener <strong>una sola cuenta</strong>. Eres responsable de la información que proporcionas, de cuidar tus credenciales y de la actividad realizada desde tu cuenta. Tu nombre de usuario no debe ser ofensivo, suplantar a otra persona ni infringir derechos de terceros.</p>
             <h3 class="font-bold text-white mb-2 mt-4">5. Bono de bienvenida y referidos</h3>
             <p>Al registrarte y verificar tu cuenta por primera vez puedes reclamar un bono de bienvenida de <strong>20,000 NetCoins</strong>, una sola vez por persona. Al invitar amigos con tu enlace, tú y la persona invitada pueden recibir <strong>10,000 NetCoins</strong> cada uno cuando el registro del referido se valide.</p>
-            <p>Para evitar abusos, NetGamer verifica la dirección IP de cada cuenta: <strong>solo se otorga un bono de bienvenida y un bono de referido por dirección IP</strong>. Si ya se otorgó uno desde la misma IP, la nueva cuenta no lo recibirá, pero podrá usar las demás funciones. Los montos de los bonos pueden cambiar; el monto aplicable es el vigente al momento de reclamarlo.</p>
+            <p>Para evitar abusos, NetGamer verifica la dirección IP de cada cuenta: <strong>solo se otorga un bono de bienvenida y un bono de referido por dirección IP</strong>. Los montos de los bonos pueden cambiar; el monto aplicable es el vigente al momento de reclamarlo.</p>
+            <p><strong>Una cuenta por conexión:</strong> si creas una cuenta nueva desde una dirección IP que ya pertenece a otra cuenta que recibió el bono de bienvenida, la cuenta nueva <strong>quedará bloqueada automáticamente</strong> y no podrá usarse ni generar NetCoins, ya que los proveedores de encuestas y ofertas pueden cancelar los pagos cuando detectan varias cuentas en la misma conexión. Debes usar tu cuenta original. Si compartes internet con otras personas (familia, escuela o trabajo) y nunca habías creado una cuenta, escríbenos a soporte con el correo de la cuenta bloqueada para revisar tu caso.</p>
             <h3 class="font-bold text-white mb-2 mt-4">6. Vidas, Premium y compras</h3>
             <p>Los juegos usan "vidas" que se consumen al iniciar cada partida y se recargan diariamente. Puedes comprar <strong>Vidas Ilimitadas</strong> (pago único) o la suscripción <strong>Premium</strong> (vidas ilimitadas, distintivo Premium y soporte prioritario durante el periodo pagado; no incluye giros adicionales en la Ruleta Diaria). Premium <strong>no se renueva automáticamente</strong>: al terminar el periodo, puedes renovarlo si lo deseas. Las Vidas Ilimitadas se mantienen mientras tu cuenta y la Plataforma estén activas.</p>
             <p>El precio que se muestra antes de pagar es el total a pagar, en pesos mexicanos o, si pagas desde fuera de México con PayPal, en dólares estadounidenses. Los pagos se procesan en MercadoPago o PayPal. Al ser contenido digital que se activa de inmediato, las compras no son reembolsables una vez activado el beneficio, salvo cobro duplicado, cobro sin que se active el beneficio o falla atribuible a NetGamer, casos en que lo corregiremos o te reembolsaremos. Esto no limita los derechos que te otorga la Ley Federal de Protección al Consumidor. Comprar vidas o Premium no otorga NetCoins.</p>
