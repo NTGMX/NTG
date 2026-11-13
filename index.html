@@ -6945,6 +6945,15 @@
     #pp-burbuja .pp-badge { position:absolute; top:-4px; right:-4px; min-width:1.3rem; height:1.3rem; padding:0 .3rem; border-radius:9999px;
         background:#7c3aed; color:#fff; font-size:.7rem; font-weight:900; display:flex; align-items:center; justify-content:center; border:2px solid #0f172a; }
     #pp-burbuja .pp-badge.listo { background:#10b981; animation: ppLatido 1s ease-in-out infinite; }
+    #pp-burbuja .pp-badge[hidden] { display:none; }
+    .pp-reloj { margin-top:.65rem; font-size:.75rem; color:#94a3b8; display:flex; align-items:center; gap:.4rem; }
+    .pp-reloj[hidden] { display:none; }
+    .pp-reloj b { color:#fde047; font-variant-numeric: tabular-nums; }
+    .pp-mini { margin-top:.5rem; }
+    .pp-mini-barra { height:.35rem; border-radius:9999px; background:rgba(255,255,255,.08); overflow:hidden; }
+    .pp-mini-barra span { display:block; height:100%; border-radius:9999px; background:linear-gradient(90deg,#a855f7,#f59e0b); transition: width .6s ease; }
+    .pp-mini > span { display:block; font-size:.68rem; color:#94a3b8; margin-top:.3rem; }
+    .pp-mini b { color:#fff; }
     #pp-burbuja::after { content:''; position:absolute; inset:-6px; border-radius:9999px; border:2px solid rgba(251,191,36,.55); animation: ppOnda 2s ease-out infinite; pointer-events:none; }
     @media (min-width:640px) { #pp-burbuja { right:1.5rem; bottom:calc(2rem + 4.6rem); } }
     @keyframes ppOnda { from { transform:scale(1); opacity:1; } to { transform:scale(1.45); opacity:0; } }
@@ -7068,19 +7077,19 @@
     @media (prefers-reduced-motion: reduce) { #pp-burbuja::after, .pp-foco, #pp-tip, .pp-btn-verde, .pp-confeti { animation:none !important; } }
 </style>
 
-<button id="pp-burbuja" type="button" hidden onclick="ppAbrir()" title="Primeros pasos" aria-label="Primeros pasos: tareas con premio">
+<button id="pp-burbuja" type="button" hidden onclick="ppAbrir()" title="Misiones" aria-label="Misiones con premio">
     <i class="fa-solid fa-rocket"></i>
     <span id="pp-badge" class="pp-badge">3</span>
 </button>
 
 <div id="pp-intro" hidden onclick="ppIntroCerrar(false)"></div>
-<div id="pp-intro-globo" hidden role="dialog" aria-label="Primeros pasos">
-    <h4>🚀 ¡Bienvenido a NetGamer!</h4>
-    <p>Tienes <b style="color:#fde047">tareas de bienvenida</b>: complétalas en orden y gana hasta <b style="color:#fde047">46,000 NC extra</b>. Toca el botón dorado para empezar.</p>
+<div id="pp-intro-globo" hidden role="dialog" aria-label="Misiones">
+    <h4 id="pp-intro-titulo">🚀 ¡Bienvenido a NetGamer!</h4>
+    <p id="pp-intro-texto"></p>
     <div class="pp-intro-acciones">
         <button type="button" class="pp-btn pp-btn-gris" onclick="ppIntroCerrar(false)">Ahora no</button>
         <span class="pp-mano">👇</span>
-        <button type="button" class="pp-btn pp-btn-oro" onclick="ppIntroCerrar(true)">Ver tareas</button>
+        <button type="button" class="pp-btn pp-btn-oro" onclick="ppIntroCerrar(true)">Ver misiones</button>
     </div>
 </div>
 
@@ -7089,14 +7098,15 @@
     <div class="pp-panel" role="dialog" aria-modal="true" aria-labelledby="pp-titulo">
         <div class="pp-cabeza">
             <button type="button" class="pp-x" onclick="ppCerrar()" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
-            <p class="pp-kicker">Misión de bienvenida</p>
+            <p class="pp-kicker" id="pp-kicker">Misión de bienvenida</p>
             <h2 id="pp-titulo" class="pp-titulo">🚀 Primeros pasos</h2>
-            <p class="pp-sub">Completa las tareas <b>en orden</b> y reclama tu premio en cada una. En total ganas hasta <b>46,000 NC</b> extra.</p>
+            <p class="pp-sub" id="pp-sub"></p>
             <div class="pp-barra"><span id="pp-barra-fill"></span></div>
-            <div class="pp-progreso-txt"><span id="pp-progreso-tareas">0 de 5 tareas</span><span><b id="pp-progreso-nc">0</b> / 46,000 NC</span></div>
+            <div class="pp-progreso-txt"><span id="pp-progreso-tareas">0 de 5 tareas</span><span><b id="pp-progreso-nc">0</b> / <span id="pp-progreso-total">0</span> NC</span></div>
+            <p id="pp-reloj" class="pp-reloj" hidden></p>
         </div>
         <div id="pp-lista" class="pp-lista"></div>
-        <p class="pp-nota">Cada tarea se revisa automáticamente en nuestro servidor. Solo puedes reclamar cada premio una vez por cuenta.</p>
+        <p class="pp-nota" id="pp-nota"></p>
     </div>
 </div>
 
@@ -7113,100 +7123,190 @@
 </div>
 
 <div id="pp-tip" hidden></div>
-<div id="pp-meta-torre" hidden>🎯 Tarea de bienvenida: llega a 5 pisos</div>
+<div id="pp-meta-torre" hidden></div>
 
 <script>
+// Misiones: dos modos que usan el mismo botón y la misma pantalla.
+//  · "bienvenida": Primeros pasos, solo cuentas nuevas, una sola vez.
+//  · "diaria": Misiones diarias para todos (y para las cuentas nuevas
+//    cuando terminan sus primeros pasos). Se reinician a medianoche (CDMX).
+// Supabase decide todo (metas, avance y premios); aquí solo se muestra y se guía.
 (function () {
-    const PP_PASOS = [
-        { id: 'ruleta',   titulo: 'Gira la Ruleta de la Fortuna',  icono: 'fa-dharmachakra',    fondo: 'linear-gradient(135deg,#f59e0b,#b45309)',
-          texto: 'Usa tu giro gratis del día por primera vez.' },
-        { id: 'torre',    titulo: 'Llega a 5 pisos en la Torre',   icono: 'fa-cubes-stacked',   fondo: 'linear-gradient(135deg,#a855f7,#6d28d9)',
-          texto: 'Juega una partida de Torre NetGamer y apila al menos 5 pisos.' },
-        { id: 'encuesta', titulo: 'Completa tu primera encuesta',  icono: 'fa-clipboard-check', fondo: 'linear-gradient(135deg,#14b8a6,#0f766e)',
-          texto: 'Contesta una encuesta de CPX hasta el final. Solo cuenta si se completa correctamente.' },
-        { id: 'noticia',  titulo: 'Lee una noticia completa',      icono: 'fa-newspaper',       fondo: 'linear-gradient(135deg,#0ea5e9,#0369a1)',
-          texto: 'Abre una noticia en PulsoMX y léela hasta que se llene la barra de lectura.' },
-        { id: 'final',    titulo: 'Bono por completar todo',       icono: 'fa-trophy',          fondo: 'linear-gradient(135deg,#ef4444,#b45309)',
-          texto: 'Reclama las 4 tareas anteriores y desbloquea este bono final.' },
+    const PASOS_BIENVENIDA = [
+        { id: 'ruleta',   icono: 'fa-dharmachakra',    fondo: 'linear-gradient(135deg,#f59e0b,#b45309)' },
+        { id: 'torre',    icono: 'fa-cubes-stacked',   fondo: 'linear-gradient(135deg,#a855f7,#6d28d9)' },
+        { id: 'encuesta', icono: 'fa-clipboard-check', fondo: 'linear-gradient(135deg,#14b8a6,#0f766e)' },
+        { id: 'noticia',  icono: 'fa-newspaper',       fondo: 'linear-gradient(135deg,#0ea5e9,#0369a1)' },
+        { id: 'final',    icono: 'fa-trophy',          fondo: 'linear-gradient(135deg,#ef4444,#b45309)' },
     ];
-    const NC_TOTAL = 46000;
+    const PASOS_DIARIA = PASOS_BIENVENIDA.filter(p => ['torre', 'encuesta', 'noticia'].includes(p.id));
     const fmt = n => Number(n || 0).toLocaleString('es-MX');
+    const plural = (n, uno, varios) => `${fmt(n)} ${n === 1 ? uno : varios}`;
 
-    let estado = null;          // respuesta de primeros_pasos_estado
+    let modo = null;            // 'bienvenida' | 'diaria'
+    let estadoPP = null;        // primeros_pasos_estado
+    let estadoMD = null;        // misiones_diarias_estado
+    let reinicioEn = 0;         // hora (ms) en que se reinician las diarias
     let cargando = null;
     let reclamando = false;
-    let timerRevision = null;
-    const abiertoAuto = {};     // pasos que ya abrieron la pantalla sola en esta visita
-    let focoActual = null, focoRaf = null, focoTexto = '';
+    let timerRevision = null, timerReloj = null;
+    const abiertoAuto = {};     // misiones que ya abrieron la pantalla sola en esta visita
+    let focoActual = null, focoRaf = null;
 
     function uid() { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null; }
     function guardar(tipo, clave, valor) { try { (tipo === 's' ? sessionStorage : localStorage).setItem(clave, valor); } catch (e) {} }
     function leer(tipo, clave) { try { return (tipo === 's' ? sessionStorage : localStorage).getItem(clave); } catch (e) { return null; } }
 
-    // Paso en el que va el usuario (el primero sin reclamar) y si ya puede reclamarlo.
-    function pasoActual() {
-        if (!estado || !estado.elegible) return null;
-        return PP_PASOS.find(p => !estado[p.id]?.reclamada) || null;
+    // ---------- Datos según el modo ----------
+    function pasos() { return modo === 'bienvenida' ? PASOS_BIENVENIDA : modo === 'diaria' ? PASOS_DIARIA : []; }
+    function datos(id) {
+        if (modo === 'bienvenida') {
+            const e = estadoPP && estadoPP[id];
+            if (!e) return null;
+            const meta = { ruleta: 1, torre: 5, encuesta: 1, noticia: 1, final: 1 }[id];
+            return { ...e, meta, progreso: e.hecha ? meta : 0 };
+        }
+        if (modo === 'diaria') return (estadoMD && estadoMD.misiones && estadoMD.misiones[id]) || null;
+        return null;
     }
-    function puedeReclamar() {
-        const p = pasoActual();
-        return p && estado[p.id]?.hecha ? p : null;
-    }
-    function terminado() { return estado && estado.elegible && estado.final?.reclamada; }
+    function activo() { return !!(uid() && modo && pasos().every(p => datos(p.id))); }
+    function pasoActual() { return activo() ? (pasos().find(p => !datos(p.id).reclamada) || null) : null; }
+    function puedeReclamar() { const p = pasoActual(); return p && datos(p.id).hecha ? p : null; }
+    function terminado() { return activo() && !pasoActual(); }
+    function claveAuto(id) { return (modo === 'diaria' ? (estadoMD?.dia || '') : 'pp') + ':' + id; }
 
+    function textos(p) {
+        const d = datos(p.id) || {};
+        const m = d.meta;
+        if (modo === 'diaria') return {
+            torre:    { titulo: `Llega a ${fmt(m)} pisos en la Torre`, texto: 'En una sola partida de Torre NetGamer, hoy.', unidad: 'pisos' },
+            encuesta: { titulo: `Completa ${plural(m, 'encuesta', 'encuestas')}`, texto: 'Encuestas de CPX completadas correctamente hoy. Las de “no calificaste” no cuentan.', unidad: m === 1 ? 'encuesta' : 'encuestas' },
+            noticia:  { titulo: `Lee ${plural(m, 'noticia completa', 'noticias completas')}`, texto: 'Noticias de PulsoMX leídas hasta llenar la barra de lectura, hoy.', unidad: m === 1 ? 'noticia' : 'noticias' },
+        }[p.id];
+        return {
+            ruleta:   { titulo: 'Gira la Ruleta de la Fortuna', texto: 'Usa tu giro gratis del día por primera vez.' },
+            torre:    { titulo: 'Llega a 5 pisos en la Torre', texto: 'Juega una partida de Torre NetGamer y apila al menos 5 pisos.' },
+            encuesta: { titulo: 'Completa tu primera encuesta', texto: 'Contesta una encuesta de CPX hasta el final. Solo cuenta si se completa correctamente.' },
+            noticia:  { titulo: 'Lee una noticia completa', texto: 'Abre una noticia en PulsoMX y léela hasta que se llene la barra de lectura.' },
+            final:    { titulo: 'Bono por completar todo', texto: 'Reclama las 4 tareas anteriores y desbloquea este bono final.' },
+        }[p.id];
+    }
+    function totalNC() { return pasos().reduce((s, p) => s + (datos(p.id)?.nc || 0), 0); }
+
+    // ---------- Carga ----------
     async function ppCargar() {
         if (!uid()) return null;
         if (cargando) return cargando;
         cargando = (async () => {
             try {
                 const { data, error } = await _supabase.rpc('primeros_pasos_estado');
-                if (!error && data && !data.error) estado = data;
+                if (!error && data && !data.error) estadoPP = data;
             } catch (e) {}
+            const bienvenidaPendiente = !!(estadoPP && estadoPP.elegible && !estadoPP.final?.reclamada);
+            const viendoBienvenida = modo === 'bienvenida' && !document.getElementById('pp-modal').hidden;
+            if (bienvenidaPendiente || viendoBienvenida) {
+                modo = 'bienvenida';
+            } else {
+                try {
+                    const { data, error } = await _supabase.rpc('misiones_diarias_estado');
+                    if (!error && data && !data.error && data.misiones) {
+                        estadoMD = data;
+                        reinicioEn = Date.now() + (Number(data.segundos_para_reinicio) || 0) * 1000;
+                        modo = 'diaria';
+                    }
+                } catch (e) {}
+            }
             cargando = null;
             pintarBurbuja();
             if (!document.getElementById('pp-modal').hidden) pintarLista();
             programarRevision();
-            return estado;
+            return modo;
         })();
         return cargando;
     }
 
     function pintarBurbuja() {
         const b = document.getElementById('pp-burbuja');
-        const visible = !!(uid() && estado && estado.elegible && !terminado());
+        const visible = activo();
         b.hidden = !visible;
         if (!visible) return;
         const badge = document.getElementById('pp-badge');
         const listo = puedeReclamar();
-        const faltan = PP_PASOS.filter(p => !estado[p.id]?.reclamada).length;
+        const faltan = pasos().filter(p => !datos(p.id).reclamada).length;
+        badge.hidden = !listo && faltan === 0;
         badge.textContent = listo ? '!' : String(faltan);
         badge.classList.toggle('listo', !!listo);
-        b.title = listo ? '¡Tienes un premio listo para reclamar!' : 'Primeros pasos';
+        b.querySelector('i').className = 'fa-solid ' + (modo === 'diaria' ? 'fa-calendar-check' : 'fa-rocket');
+        b.title = listo ? '¡Tienes un premio listo para reclamar!' : (modo === 'diaria' ? 'Misiones diarias' : 'Primeros pasos');
+    }
+
+    function pintarCabeza() {
+        const total = totalNC();
+        const reclamadas = pasos().filter(p => datos(p.id).reclamada);
+        const ganadas = reclamadas.reduce((s, p) => s + (datos(p.id).nc || 0), 0);
+        const diaria = modo === 'diaria';
+        document.getElementById('pp-kicker').textContent = diaria ? 'Se reinician cada día' : 'Misión de bienvenida';
+        document.getElementById('pp-titulo').textContent = diaria ? '📅 Misiones diarias' : '🚀 Primeros pasos';
+        document.getElementById('pp-sub').innerHTML = diaria
+            ? `Completa las misiones de hoy <b>en orden</b> y reclama tu premio en cada una. Hoy puedes ganar <b>${fmt(total)} NC</b> extra. Las metas cambian cada día: entre más difíciles, más pagan.`
+            : `Completa las tareas <b>en orden</b> y reclama tu premio en cada una. En total ganas hasta <b>${fmt(total)} NC</b> extra.`;
+        document.getElementById('pp-barra-fill').style.width = (total ? ganadas / total * 100 : 0) + '%';
+        document.getElementById('pp-progreso-tareas').textContent = diaria
+            ? `${reclamadas.length} de ${pasos().length} misiones de hoy` : `${reclamadas.length} de ${pasos().length} tareas`;
+        document.getElementById('pp-progreso-nc').textContent = fmt(ganadas);
+        document.getElementById('pp-progreso-total').textContent = fmt(total);
+        document.getElementById('pp-nota').textContent = diaria
+            ? 'Cada misión se revisa automáticamente en nuestro servidor. Solo cuenta lo que hagas hoy (hora del centro de México), y cada premio se reclama una vez al día.'
+            : 'Cada tarea se revisa automáticamente en nuestro servidor. Solo puedes reclamar cada premio una vez por cuenta.';
+        document.getElementById('pp-reloj').hidden = !diaria;
+        pintarReloj();
+    }
+
+    function relojTexto() {
+        const s = Math.max(0, Math.floor((reinicioEn - Date.now()) / 1000));
+        const h = String(Math.floor(s / 3600)).padStart(2, '0');
+        const m = String(Math.floor(s % 3600 / 60)).padStart(2, '0');
+        const ss = String(s % 60).padStart(2, '0');
+        return `${h}:${m}:${ss}`;
+    }
+    function pintarReloj() {
+        const el = document.getElementById('pp-reloj');
+        if (modo !== 'diaria') { clearInterval(timerReloj); timerReloj = null; return; }
+        el.innerHTML = `<i class="fa-regular fa-clock"></i> Nuevas misiones en <b>${relojTexto()}</b>`;
+        document.querySelectorAll('.pp-reloj-fin').forEach(x => { x.textContent = relojTexto(); });
+        if (!timerReloj) timerReloj = setInterval(() => {
+            if (document.getElementById('pp-modal').hidden) return;
+            if (reinicioEn && Date.now() >= reinicioEn) { reinicioEn = 0; ppCargar(); return; }
+            pintarReloj();
+        }, 1000);
     }
 
     function pintarLista() {
-        if (!estado || !estado.elegible) return;
+        if (!activo()) return;
+        pintarCabeza();
         const actual = pasoActual();
-        const reclamadas = PP_PASOS.filter(p => estado[p.id]?.reclamada);
-        const ncGanadas = reclamadas.reduce((s, p) => s + (estado[p.id]?.nc || 0), 0);
-        document.getElementById('pp-barra-fill').style.width = (ncGanadas / NC_TOTAL * 100) + '%';
-        document.getElementById('pp-progreso-tareas').textContent = `${reclamadas.length} de ${PP_PASOS.length} tareas`;
-        document.getElementById('pp-progreso-nc').textContent = fmt(ncGanadas);
-
+        const lista = pasos();
         let html = '';
         if (terminado()) {
-            html += `<div class="pp-fin"><p>🏆</p><h4>¡Completaste tus primeros pasos!</h4>
-                <p>Ganaste ${fmt(NC_TOTAL)} NC extra. Ya conoces todo NetGamer: sigue girando la ruleta cada día, jugando y contestando encuestas.</p></div>`;
+            html += modo === 'diaria'
+                ? `<div class="pp-fin"><p>🎉</p><h4>¡Completaste las misiones de hoy!</h4>
+                    <p>Ganaste ${fmt(totalNC())} NC extra. Mañana tendrás misiones nuevas: faltan <b class="pp-reloj-fin">${relojTexto()}</b>.</p></div>`
+                : `<div class="pp-fin"><p>🏆</p><h4>¡Completaste tus primeros pasos!</h4>
+                    <p>Ganaste ${fmt(totalNC())} NC extra. Desde ahora tendrás <b>misiones diarias</b> en este mismo botón: cada día, metas nuevas con premio.</p></div>`;
         }
-        PP_PASOS.forEach((p, i) => {
-            const e = estado[p.id] || {};
+        lista.forEach((p, i) => {
+            const e = datos(p.id);
+            const t = textos(p);
             let clase, extra = '';
+            const barra = (modo === 'diaria' && !e.reclamada)
+                ? `<div class="pp-mini"><div class="pp-mini-barra"><span style="width:${Math.min(100, e.progreso / e.meta * 100)}%"></span></div>
+                    <span>${p.id === 'torre' ? 'Mejor partida de hoy: ' : 'Hoy: '}<b>${fmt(e.progreso)}</b> / ${fmt(e.meta)} ${t.unidad}</span></div>` : '';
             if (e.reclamada) {
                 clase = 'reclamada';
                 extra = `<span class="pp-estado ok"><i class="fa-solid fa-circle-check"></i> Premio reclamado</span>`;
             } else if (actual && actual.id === p.id && e.hecha) {
                 clase = 'reclamar';
-                extra = `<span class="pp-estado ok"><i class="fa-solid fa-circle-check"></i> ¡Tarea completada!</span>
+                extra = `${barra}<span class="pp-estado ok"><i class="fa-solid fa-circle-check"></i> ¡${modo === 'diaria' ? 'Misión' : 'Tarea'} completada!</span>
                     <div class="pp-acciones"><button type="button" class="pp-btn pp-btn-verde" data-pp-reclamar="${p.id}" onclick="ppReclamar('${p.id}', this)">
                         <i class="fa-solid fa-gift"></i> Reclamar +${fmt(e.nc)} NC</button></div>`;
             } else if (actual && actual.id === p.id) {
@@ -7215,21 +7315,21 @@
                     extra = `<span class="pp-estado candado"><i class="fa-solid fa-lock"></i> Reclama las 4 tareas anteriores</span>`;
                 } else {
                     const espera = p.id === 'encuesta'
-                        ? `<span class="pp-estado espera"><i class="fa-solid fa-hourglass-half"></i> Se revisa sola cuando completes una encuesta</span>`
+                        ? `<span class="pp-estado espera"><i class="fa-solid fa-hourglass-half"></i> Se revisa sola cuando completes ${modo === 'diaria' && e.meta > 1 ? 'tus encuestas' : 'una encuesta'}</span>`
                         : p.id === 'noticia'
                         ? `<span class="pp-estado espera"><i class="fa-solid fa-hourglass-half"></i> Se revisa sola cuando termines de leer</span>` : '';
                     const boton = { ruleta: 'Ver cómo funciona e ir a la ruleta', torre: 'Ver cómo se juega e ir a la Torre', encuesta: 'Ver cómo funciona e ir a encuestas', noticia: 'Ver cómo funciona e ir a noticias' }[p.id];
-                    extra = `${espera}<div class="pp-acciones"><button type="button" class="pp-btn pp-btn-oro" onclick="ppAbrirGuia('${p.id}')">
+                    extra = `${barra}${espera}<div class="pp-acciones"><button type="button" class="pp-btn pp-btn-oro" onclick="ppAbrirGuia('${p.id}')">
                         <i class="fa-solid fa-arrow-right"></i> ${boton}</button></div>`;
                 }
             } else {
                 clase = 'bloqueada';
-                extra = `<span class="pp-estado candado"><i class="fa-solid fa-lock"></i> Se desbloquea al reclamar la tarea ${i}</span>`;
+                extra = `${barra}<span class="pp-estado candado"><i class="fa-solid fa-lock"></i> Se desbloquea al reclamar la ${modo === 'diaria' ? 'misión' : 'tarea'} ${i}</span>`;
             }
             const numero = e.reclamada ? '<i class="fa-solid fa-check" style="font-size:.55rem"></i>' : (i + 1);
             html += `<div class="pp-item ${clase}">
                 <div class="pp-icono" style="background:${p.fondo}"><i class="fa-solid ${p.icono}"></i><span class="pp-n">${numero}</span></div>
-                <div class="pp-info"><p class="pp-item-titulo">${p.titulo}</p><p class="pp-item-txt">${p.texto}</p>${extra}</div>
+                <div class="pp-info"><p class="pp-item-titulo">${t.titulo}</p><p class="pp-item-txt">${t.texto}</p>${extra}</div>
                 <div class="pp-premio">+${fmt(e.nc)}<small>NC</small></div>
             </div>`;
         });
@@ -7240,33 +7340,38 @@
 
     window.ppAbrir = async function () {
         ppIntroCerrar(null);
-        guardar('l', 'pp_intro_' + uid(), '1');
+        guardar('l', (modo === 'diaria' ? 'md_intro_' : 'pp_intro_') + uid(), '1');
         const modal = document.getElementById('pp-modal');
-        if (!estado) await ppCargar();
-        if (!estado || !estado.elegible) return;
+        if (!activo()) await ppCargar();
+        if (!activo()) return;
         pintarLista();
         modal.hidden = false;
+        modal.querySelector('.pp-panel').scrollTop = 0;
         bloquearScroll(true);
         ppCargar(); // revisa de nuevo por si algo cambió
     };
     window.ppCerrar = function () {
         document.getElementById('pp-modal').hidden = true;
         bloquearScroll(false);
-        if (terminado()) pintarBurbuja();
+        // Al cerrar después de terminar la bienvenida, el botón pasa a misiones diarias.
+        if (modo === 'bienvenida' && terminado()) ppCargar();
     };
 
     window.ppReclamar = async function (paso, btn) {
         if (reclamando) return;
         reclamando = true;
+        const modoReclamo = modo;
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Reclamando...'; }
         let data = null;
         try {
-            ({ data } = await _supabase.rpc('primeros_pasos_reclamar', { p_paso: paso }));
+            ({ data } = await _supabase.rpc(modoReclamo === 'diaria' ? 'misiones_diarias_reclamar' : 'primeros_pasos_reclamar', { p_paso: paso }));
         } catch (e) {}
         reclamando = false;
         if (data && data.ok) {
             celebrar(data.nc, paso);
-            mostrarNotificacion(`🎁 ¡Recibiste ${fmt(data.nc)} NC por tus primeros pasos!`, 'success');
+            mostrarNotificacion(modoReclamo === 'diaria'
+                ? `📅 ¡Recibiste ${fmt(data.nc)} NC por tu misión diaria!`
+                : `🎁 ¡Recibiste ${fmt(data.nc)} NC por tus primeros pasos!`, 'success');
             if (typeof refrescarPerfilLigero === 'function') refrescarPerfilLigero();
             if (typeof historialCargado !== 'undefined') historialCargado.ganancias = false;
             await ppCargar();
@@ -7274,10 +7379,13 @@
             return;
         }
         const mensajes = {
-            no_hecha: 'Todavía no se registra esta tarea. Si la acabas de completar, espera unos minutos.',
-            en_orden: 'Primero reclama las tareas anteriores.',
-            ya_reclamada: 'Ya reclamaste este premio.',
+            no_hecha: modoReclamo === 'diaria'
+                ? 'Todavía no completas esta misión hoy. Si la acabas de terminar, espera unos minutos.'
+                : 'Todavía no se registra esta tarea. Si la acabas de completar, espera unos minutos.',
+            en_orden: 'Primero reclama las anteriores.',
+            ya_reclamada: modoReclamo === 'diaria' ? 'Ya reclamaste esta misión hoy.' : 'Ya reclamaste este premio.',
             no_elegible: 'Estas tareas son solo para cuentas nuevas.',
+            cuenta_suspendida: 'Tu cuenta está suspendida.',
         };
         mostrarNotificacion(mensajes[data && data.error] || 'No se pudo reclamar. Revisa tu conexión e intenta de nuevo.', 'error');
         await ppCargar();
@@ -7304,9 +7412,12 @@
     // ---------- Guías ----------
     function contenidoGuia(id) {
         const tc = (typeof _torreCfg !== 'undefined' && _torreCfg) ? _torreCfg : { costo_entrada: 1000, nc_por_piso: 20, nc_por_perfecto: 10 };
+        const d = datos(id) || {};
+        const diaria = modo === 'diaria';
+        const nc = fmt(d.nc);
         if (id === 'ruleta') return {
             titulo: '🎰 Ruleta de la Fortuna',
-            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu tarea:</b> gira la ruleta 1 vez. Además de lo que salga en la ruleta, ganas <b>+2,000 NC</b> de premio por la tarea.</p></div>
+            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu tarea:</b> gira la ruleta 1 vez. Además de lo que salga en la ruleta, ganas <b>+${nc} NC</b> de premio por la tarea.</p></div>
                 <h5>¿Cómo funciona?</h5>
                 <ul class="pp-pasos">
                     <li><b>Todos los usuarios</b> tienen <b>1 giro gratis cada día</b>. No se compran giros: es igual para todos.</li>
@@ -7324,14 +7435,14 @@
         };
         if (id === 'torre') return {
             titulo: '🧱 Torre NetGamer',
-            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu tarea:</b> llega a <b>5 pisos</b> en una sola partida y gana <b>+3,000 NC</b>. Si no lo logras a la primera, puedes intentarlo otra vez.</p></div>
+            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu ${diaria ? 'misión de hoy' : 'tarea'}:</b> llega a <b>${fmt(d.meta)} pisos</b> en una sola partida y gana <b>+${nc} NC</b>. Si no lo logras a la primera, puedes intentarlo otra vez${diaria ? ' (cuenta tu mejor partida de hoy)' : ''}.</p></div>
                 <h5>Cómo se juega</h5>
                 <ul class="pp-pasos">
                     <li>Toca <b>“Jugar ahora”</b>. Cada partida cuesta <b>${fmt(tc.costo_entrada)} NC y 1 vida ❤️</b> (tienes 3 vidas gratis al día).</li>
                     <li>Un bloque se mueve de lado a lado. <b>Toca la pantalla</b> (o la barra espaciadora) para soltarlo encima de la torre.</li>
                     <li>Lo que sobresale se corta y tu siguiente bloque será más pequeño: <b>suéltalo lo más alineado posible</b>.</li>
                     <li>Si lo dejas exacto es <b>Perfecto</b>: no se corta y ganas extra. Con 3 perfectos seguidos el bloque crece.</li>
-                    <li>La partida termina cuando un bloque cae fuera. Al llegar a 5 pisos, se abrirá esta pantalla para que reclames tu premio.</li>
+                    <li>La partida termina cuando un bloque cae fuera. Al llegar a ${fmt(d.meta)} pisos, se abrirá esta pantalla para que reclames tu premio.</li>
                 </ul>
                 <h5>Lo que ganas al jugar</h5>
                 <div class="pp-datos">
@@ -7342,38 +7453,38 @@
         };
         if (id === 'noticia') return {
             titulo: '📰 Noticias que pagan',
-            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu tarea:</b> lee <b>1 noticia completa</b> en PulsoMX y gana <b>+16,000 NC</b>, además de lo que paga la noticia.</p></div>
+            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu ${diaria ? 'misión de hoy' : 'tarea'}:</b> lee <b>${plural(d.meta, 'noticia completa', 'noticias completas')}</b> en PulsoMX y gana <b>+${nc} NC</b>, además de lo que paga cada noticia.${diaria ? ` Llevas <b>${fmt(d.progreso)}</b> hoy.` : ''}</p></div>
                 <h5>Cómo funciona</h5>
                 <ul class="pp-pasos">
                     <li>Te llevamos a la tarjeta <b>“Entérate y Gana”</b> en Inicio. Toca <b>“Leer noticias”</b>: se abre <b>PulsoMX</b>, nuestro portal de noticias, en una pestaña nueva y ya conectado a tu cuenta.</li>
                     <li>Elige la noticia que quieras y ábrela.</li>
                     <li>Abajo aparece una <b>barra de lectura que se llena en unos 40 segundos</b>. Solo avanza mientras tienes la noticia <b>a la vista</b>: si cambias de pestaña o de app, se pausa.</li>
-                    <li>Cuando la barra se llena, sale <b>“¡NetCoins acreditadas!”</b> y la noticia queda leída. Cada noticia paga una sola vez.</li>
-                    <li>Regresa a NetGamer: esta pantalla se abrirá sola para que reclames tus <b>+16,000 NC</b>.</li>
+                    <li>Cuando la barra se llena, sale <b>“¡NetCoins acreditadas!”</b> y la noticia queda leída. Cada noticia paga una sola vez${d.meta > 1 ? ': lee noticias distintas' : ''}.</li>
+                    <li>Regresa a NetGamer: esta pantalla se abrirá sola para que reclames tus <b>+${nc} NC</b>.</li>
                 </ul>
                 <div class="pp-aviso" style="color:#bae6fd;background:rgba(3,105,161,.18);border-color:rgba(56,189,248,.35)"><b>Recuerda:</b> para ganar con noticias, primero debes completar una encuesta en el día cuando hay encuestas disponibles. Como ya completaste tu encuesta, ¡estás listo!</div>`,
             ir: 'Ir a leer noticias'
         };
         return {
             titulo: '📋 Encuestas pagadas',
-            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu tarea:</b> completa <b>correctamente</b> 1 encuesta de CPX y gana <b>+15,000 NC</b>, además de lo que pague la encuesta.</p></div>
+            html: `<div class="pp-guia-meta"><i class="fa-solid fa-bullseye"></i><p><b>Tu ${diaria ? 'misión de hoy' : 'tarea'}:</b> completa <b>correctamente</b> ${plural(d.meta, 'encuesta', 'encuestas')} de CPX y gana <b>+${nc} NC</b>, además de lo que pague cada encuesta.${diaria ? ` Llevas <b>${fmt(d.progreso)}</b> hoy.` : ''}</p></div>
                 <h5>Paso a paso</h5>
                 <ul class="pp-pasos">
                     <li>Te llevamos a <b>Ofertas → Encuestas CPX</b>. Ahí verás tarjetas con encuestas, cuántos minutos duran y cuántas NC pagan.</li>
                     <li><b>Toca una tarjeta</b>. La encuesta se abre en una pestaña nueva. Las primeras preguntas pueden salir en inglés; después sigue en español.</li>
                     <li>Primero te hacen unas preguntas para ver si <b>calificas</b> (edad, estado, intereses...). Contesta <b>con la verdad y con calma</b>.</li>
                     <li>Si calificas, contesta la encuesta <b>hasta el final</b>. Las NC se suman solas a tu saldo (a veces tarda unos minutos).</li>
-                    <li>Cuando vuelvas a NetGamer, esta pantalla se abrirá sola para que reclames tus <b>+15,000 NC</b>.</li>
+                    <li>Cuando ${d.meta > 1 ? `completes tus ${fmt(d.meta)} encuestas` : 'la completes'} y vuelvas a NetGamer, esta pantalla se abrirá sola para que reclames tus <b>+${nc} NC</b>.</li>
                 </ul>
-                <div class="pp-aviso"><b>Importante:</b> la tarea <b>solo cuenta cuando completas la encuesta correctamente</b>. Si no calificas, CPX te da un pequeño premio de consolación, pero <b>esa no cuenta</b> para esta tarea: simplemente prueba con otra encuesta. Contestar al azar o muy rápido puede hacer que la encuesta se rechace.</div>`,
+                <div class="pp-aviso"><b>Importante:</b> ${diaria ? 'la misión' : 'la tarea'} <b>solo cuenta encuestas completadas correctamente</b>. Si no calificas, CPX te da un pequeño premio de consolación, pero <b>esa no cuenta</b>: simplemente prueba con otra encuesta. Contestar al azar o muy rápido puede hacer que la encuesta se rechace.</div>`,
             ir: 'Ir a las encuestas'
         };
     }
 
     window.ppAbrirGuia = function (id) {
         const g = contenidoGuia(id);
-        const i = PP_PASOS.findIndex(p => p.id === id);
-        document.getElementById('pp-guia-kicker').textContent = `Tarea ${i + 1} de ${PP_PASOS.length}`;
+        const i = pasos().findIndex(p => p.id === id);
+        document.getElementById('pp-guia-kicker').textContent = `${modo === 'diaria' ? 'Misión diaria' : 'Tarea'} ${i + 1} de ${pasos().length}`;
         document.getElementById('pp-guia-titulo').textContent = g.titulo;
         document.getElementById('pp-guia-cuerpo').innerHTML = g.html +
             `<div class="pp-guia-botones">
@@ -7408,7 +7519,7 @@
             setTimeout(() => {
                 const btn = document.getElementById('btn-torre-jugar');
                 btn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                ponerFoco(btn, '👇 Toca para jugar · meta: 5 pisos');
+                ponerFoco(btn, `👇 Toca para jugar · meta: ${fmt(datos('torre')?.meta)} pisos`);
             }, 450);
         } else if (id === 'encuesta') {
             switchTab('tab-ofertas', null);
@@ -7440,7 +7551,7 @@
     function ponerFoco(el, texto) {
         quitarFoco();
         if (!el) return;
-        focoActual = el; focoTexto = texto;
+        focoActual = el;
         el.classList.add('pp-foco');
         const tip = document.getElementById('pp-tip');
         tip.textContent = texto;
@@ -7470,23 +7581,31 @@
         if (tip) tip.hidden = true;
     }
 
-    // ---------- Presentación del botón ----------
+    // ---------- Presentación del botón (una vez por modo) ----------
     function mostrarIntro() {
         const u = uid();
-        if (!u || leer('l', 'pp_intro_' + u) || leer('s', 'pp_intro_luego_' + u)) return;
-        if (document.getElementById('pp-burbuja').hidden) return;
+        if (!u || !activo() || terminado()) return;
+        const clave = (modo === 'diaria' ? 'md_intro_' : 'pp_intro_') + u;
+        if (leer('l', clave) || leer('s', clave + '_luego')) return;
+        if (modo === 'diaria') {
+            document.getElementById('pp-intro-titulo').textContent = '📅 ¡Nuevo! Misiones diarias';
+            document.getElementById('pp-intro-texto').innerHTML = `Cada día tienes <b style="color:#fde047">3 misiones con premio</b>: Torre, encuestas y noticias. Hoy puedes ganar <b style="color:#fde047">${fmt(totalNC())} NC extra</b>. Toca el botón dorado para verlas.`;
+        } else {
+            document.getElementById('pp-intro-titulo').textContent = '🚀 ¡Bienvenido a NetGamer!';
+            document.getElementById('pp-intro-texto').innerHTML = `Tienes <b style="color:#fde047">tareas de bienvenida</b>: complétalas en orden y gana hasta <b style="color:#fde047">${fmt(totalNC())} NC extra</b>. Toca el botón dorado para empezar.`;
+        }
         document.body.classList.add('pp-intro-activa');
         document.getElementById('pp-intro').hidden = false;
         document.getElementById('pp-intro-globo').hidden = false;
     }
-    // abrir: true = Ver tareas · false = Ahora no · null = solo cerrar
+    // abrir: true = Ver misiones · false = Ahora no · null = solo cerrar
     window.ppIntroCerrar = function (abrir) {
         const intro = document.getElementById('pp-intro');
         if (intro.hidden) { if (abrir) ppAbrir(); return; }
         intro.hidden = true;
         document.getElementById('pp-intro-globo').hidden = true;
         document.body.classList.remove('pp-intro-activa');
-        if (abrir === false) guardar('s', 'pp_intro_luego_' + uid(), '1');
+        if (abrir === false) guardar('s', (modo === 'diaria' ? 'md_intro_' : 'pp_intro_') + uid() + '_luego', '1');
         if (abrir) ppAbrir();
     };
 
@@ -7498,19 +7617,19 @@
     function abrirSiHayPremio(forzar) {
         const p = puedeReclamar();
         if (!p) return false;
-        if (!forzar && abiertoAuto[p.id]) return false;
+        if (!forzar && abiertoAuto[claveAuto(p.id)]) return false;
         if (!document.getElementById('pp-modal').hidden) { pintarLista(); return true; }
         if (hayOtraVentanaAbierta()) return false;
-        abiertoAuto[p.id] = true;
+        abiertoAuto[claveAuto(p.id)] = true;
         quitarFoco();
         ppAbrir();
         return true;
     }
 
-    // Mientras la tarea actual es la encuesta o la noticia, se revisa cada 45 s (y al volver a la pestaña).
+    // Mientras la misión actual es de encuestas o noticias, se revisa cada 45 s (y al volver a la pestaña).
     function programarRevision() {
         const p = pasoActual();
-        const esperar = p && (p.id === 'encuesta' || p.id === 'noticia') && !estado[p.id]?.hecha;
+        const esperar = p && (p.id === 'encuesta' || p.id === 'noticia') && !datos(p.id).hecha;
         if (esperar && !timerRevision) {
             timerRevision = setInterval(async () => {
                 if (document.hidden) return;
@@ -7522,16 +7641,16 @@
         }
     }
     document.addEventListener('visibilitychange', async () => {
-        if (document.hidden || !uid() || !estado || !estado.elegible || terminado()) return;
+        if (document.hidden || !activo()) return;
         await ppCargar();
         abrirSiHayPremio(false);
     });
 
     // Lo llaman la ruleta y la Torre al terminar.
-    window.ppTrasAccion = function (accion, datos) {
-        if (!estado || !estado.elegible || terminado()) return;
-        if (accion === 'torre' && !(datos && datos.altura >= 5)) return;
-        if (estado[accion]?.reclamada) return;
+    window.ppTrasAccion = function (accion, datosAccion) {
+        const d = activo() ? datos(accion) : null;
+        if (!d || d.reclamada) return;
+        if (accion === 'torre' && !(datosAccion && datosAccion.altura >= d.meta)) return;
         quitarFoco();
         setTimeout(async () => {
             await ppCargar();
@@ -7544,23 +7663,30 @@
         }, accion === 'torre' ? 2600 : 2200);
     };
     window.ppEnTorre = function (abierta) {
+        const banner = document.getElementById('pp-meta-torre');
         const p = pasoActual();
-        document.getElementById('pp-meta-torre').hidden = !(abierta && p && p.id === 'torre' && !estado.torre?.hecha);
+        const d = datos('torre');
+        const mostrar = !!(abierta && p && p.id === 'torre' && d && !d.hecha);
+        banner.hidden = !mostrar;
+        if (mostrar) banner.textContent = modo === 'diaria'
+            ? `🎯 Misión diaria: llega a ${fmt(d.meta)} pisos (+${fmt(d.nc)} NC)`
+            : `🎯 Tarea de bienvenida: llega a ${fmt(d.meta)} pisos`;
     };
 
     // Al entrar a NetGamer con sesión.
     window.ppIniciar = async function () {
         if (!uid()) return;
         await ppCargar();
-        if (!estado || !estado.elegible || terminado()) return;
+        if (!activo()) return;
         setTimeout(() => {
             if (!abrirSiHayPremio(false)) mostrarIntro();
         }, 1400);
     };
     window.ppReiniciar = function () {
-        estado = null;
+        modo = null; estadoPP = null; estadoMD = null;
         quitarFoco();
         clearInterval(timerRevision); timerRevision = null;
+        clearInterval(timerReloj); timerReloj = null;
         ['pp-modal', 'pp-guia', 'pp-intro', 'pp-intro-globo', 'pp-meta-torre'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; });
         document.body.classList.remove('pp-intro-activa');
         pintarBurbuja();
@@ -7573,7 +7699,7 @@
     });
 
     // Por si la sesión ya se abrió antes de que cargara esta parte.
-    if (uid() && !estado) ppIniciar();
+    if (uid() && !modo) ppIniciar();
 })();
 </script>
 
