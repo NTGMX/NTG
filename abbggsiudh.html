@@ -553,7 +553,36 @@
             <p class="text-sm text-slate-400 mb-5">Estado en línea en tiempo real y suspensión permanente de cuentas.</p>
 
             <input id="usuarios-buscador" type="text" placeholder="Buscar por correo, usuario o país..." oninput="filtrarListaUsuarios()"
-                class="w-full bg-slate-800 border border-slate-700 focus:border-purple-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition placeholder-slate-600 mb-4">
+                class="w-full bg-slate-800 border border-slate-700 focus:border-purple-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition placeholder-slate-600 mb-3">
+
+            <!-- Acordeón: ordenar y filtrar usuarios -->
+            <div id="usuarios-filtros" class="mb-4 bg-slate-800/60 border border-slate-700 rounded-xl overflow-hidden">
+                <button type="button" onclick="alternarFiltrosUsuarios()" aria-expanded="false" aria-controls="usuarios-filtros-cuerpo" id="usuarios-filtros-boton"
+                    class="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-800 transition">
+                    <span class="flex items-center gap-2 min-w-0">
+                        <i class="fa-solid fa-sliders text-purple-400"></i>
+                        <span class="text-sm font-bold text-white">Filtros y orden</span>
+                        <span id="usuarios-filtros-resumen" class="text-xs text-slate-400 truncate"></span>
+                    </span>
+                    <i id="usuarios-filtros-flecha" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+                </button>
+                <div id="usuarios-filtros-cuerpo" class="hidden border-t border-slate-700 px-4 py-4 space-y-4">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2"><i class="fa-solid fa-arrow-down-wide-short mr-1"></i>Ordenar por</p>
+                        <div id="usuarios-orden-opciones" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2"><i class="fa-solid fa-filter mr-1"></i>Mostrar solo</p>
+                        <div id="usuarios-filtro-opciones" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    <div class="flex items-center justify-between gap-3 pt-1">
+                        <span id="usuarios-filtros-conteo" class="text-xs text-slate-400"></span>
+                        <button type="button" onclick="restablecerFiltrosUsuarios()" class="text-xs font-bold text-slate-300 hover:text-white bg-slate-700/60 hover:bg-slate-700 rounded-lg px-3 py-1.5 transition">
+                            <i class="fa-solid fa-rotate-left mr-1"></i>Restablecer
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <div id="usuarios-loading" class="text-center text-slate-500 text-sm py-10">
                 <i class="fa-solid fa-spinner fa-spin mr-2"></i>Cargando usuarios...
@@ -2409,20 +2438,125 @@ function _formatearEncuestas(usuario) {
     return `<span class="font-bold ${color}" title="Última consulta a CPX: ${cuando}"><i class="fa-solid fa-clipboard-list mr-1"></i>${total} ${total === 1 ? 'encuesta' : 'encuestas'} <span class="font-normal text-slate-500">· ${cuando}</span></span>`;
 }
 
+// ---------- Filtros y orden de la lista de usuarios ----------
+const _tiempo = (f) => { const t = f ? new Date(f).getTime() : NaN; return Number.isFinite(t) ? t : null; };
+// Los que no tienen dato siempre quedan al final, en cualquier orden.
+function _compararNulosAlFinal(a, b, desc) {
+    if (a === null && b === null) return 0;
+    if (a === null) return 1;
+    if (b === null) return -1;
+    return desc ? b - a : a - b;
+}
+const ORDENES_USUARIOS = {
+    registro_nuevo:   { texto: 'Registrados m\u00e1s nuevos',  icono: 'fa-user-plus',          fn: (a, b) => _compararNulosAlFinal(_tiempo(a.created_at), _tiempo(b.created_at), true) },
+    conexion_reciente:{ texto: 'Conectados m\u00e1s reciente', icono: 'fa-signal',             fn: (a, b) => _compararNulosAlFinal(_tiempo(a.ultima_conexion), _tiempo(b.ultima_conexion), true) },
+    mas_nc:           { texto: 'Con m\u00e1s NetCoins',        icono: 'fa-coins',              fn: (a, b) => (Number(b.netcoins) || 0) - (Number(a.netcoins) || 0) },
+    menos_nc:         { texto: 'Con menos NetCoins',      icono: 'fa-coins',              fn: (a, b) => (Number(a.netcoins) || 0) - (Number(b.netcoins) || 0) },
+    mas_encuestas:    { texto: 'M\u00e1s encuestas disponibles', icono: 'fa-clipboard-list',   fn: (a, b) => _compararNulosAlFinal(a.encuestas ? Number(a.encuestas.total) || 0 : null, b.encuestas ? Number(b.encuestas.total) || 0 : null, true) },
+    conexion_antigua: { texto: 'M\u00e1s tiempo sin entrar',   icono: 'fa-hourglass-half',     fn: (a, b) => _compararNulosAlFinal(_tiempo(a.ultima_conexion), _tiempo(b.ultima_conexion), false) },
+    registro_antiguo: { texto: 'Registrados m\u00e1s antiguos', icono: 'fa-user-clock',        fn: (a, b) => _compararNulosAlFinal(_tiempo(a.created_at), _tiempo(b.created_at), false) },
+};
+const DIA_MS = 24 * 60 * 60 * 1000;
+const FILTROS_USUARIOS = {
+    todos:        { texto: 'Todos',              icono: 'fa-users',                fn: () => true },
+    en_linea:     { texto: 'En l\u00ednea ahora',     icono: 'fa-circle',               fn: (u) => estaEnLinea(u) },
+    activos_24h:  { texto: 'Entraron hoy (24 h)', icono: 'fa-bolt',                fn: (u) => { const t = _tiempo(u.ultima_conexion); return t !== null && Date.now() - t < DIA_MS; } },
+    nuevos_7d:    { texto: 'Nuevos (7 d\u00edas)',    icono: 'fa-seedling',             fn: (u) => { const t = _tiempo(u.created_at); return t !== null && Date.now() - t < 7 * DIA_MS; } },
+    con_nc:       { texto: 'Con NetCoins',       icono: 'fa-coins',                fn: (u) => (Number(u.netcoins) || 0) > 0 },
+    con_encuestas:{ texto: 'Con encuestas',      icono: 'fa-clipboard-list',       fn: (u) => !!u.encuestas && (Number(u.encuestas.total) || 0) > 0 },
+    celular:      { texto: 'Celular',            icono: 'fa-mobile-screen-button', fn: (u) => u.dispositivo === 'celular' },
+    computadora:  { texto: 'Computadora',        icono: 'fa-laptop',               fn: (u) => u.dispositivo === 'computadora' },
+    suspendidos:  { texto: 'Suspendidos',        icono: 'fa-ban',                  fn: (u) => !!u.suspendido_permanente },
+};
+const _ORDEN_POR_DEFECTO = 'registro_nuevo';
+const _FILTRO_POR_DEFECTO = 'todos';
+let _ordenUsuarios = _ORDEN_POR_DEFECTO;
+let _filtroUsuarios = _FILTRO_POR_DEFECTO;
+try {
+    const guardado = JSON.parse(localStorage.getItem('ng_admin_filtros_usuarios') || 'null');
+    if (guardado && ORDENES_USUARIOS[guardado.orden]) _ordenUsuarios = guardado.orden;
+    if (guardado && FILTROS_USUARIOS[guardado.filtro]) _filtroUsuarios = guardado.filtro;
+} catch (e) {}
+
+function _guardarFiltrosUsuarios() {
+    try { localStorage.setItem('ng_admin_filtros_usuarios', JSON.stringify({ orden: _ordenUsuarios, filtro: _filtroUsuarios })); } catch (e) {}
+}
+
+function _pintarChipsFiltros() {
+    const chip = (grupo, clave, op, activo) => `
+        <button type="button" onclick="${grupo === 'orden' ? 'elegirOrdenUsuarios' : 'elegirFiltroUsuarios'}('${clave}')" aria-pressed="${activo}"
+            class="text-xs font-bold rounded-lg px-3 py-2 border transition ${activo
+                ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-900/30'
+                : 'bg-slate-900/60 border-slate-700 text-slate-300 hover:border-purple-500/60 hover:text-white'}">
+            <i class="fa-solid ${op.icono} mr-1.5 ${clave === 'en_linea' ? 'text-[8px] align-middle ' + (activo ? '' : 'text-emerald-400') : ''}"></i>${op.texto}
+        </button>`;
+    const ord = document.getElementById('usuarios-orden-opciones');
+    const fil = document.getElementById('usuarios-filtro-opciones');
+    if (ord) ord.innerHTML = Object.entries(ORDENES_USUARIOS).map(([k, op]) => chip('orden', k, op, k === _ordenUsuarios)).join('');
+    if (fil) fil.innerHTML = Object.entries(FILTROS_USUARIOS).map(([k, op]) => chip('filtro', k, op, k === _filtroUsuarios)).join('');
+
+    const resumen = document.getElementById('usuarios-filtros-resumen');
+    if (resumen) {
+        const partes = ['\u00b7 ' + ORDENES_USUARIOS[_ordenUsuarios].texto];
+        if (_filtroUsuarios !== 'todos') partes.push('\u00b7 ' + FILTROS_USUARIOS[_filtroUsuarios].texto);
+        resumen.textContent = partes.join(' ');
+    }
+}
+
+function alternarFiltrosUsuarios(forzarAbierto) {
+    const cuerpo = document.getElementById('usuarios-filtros-cuerpo');
+    const boton = document.getElementById('usuarios-filtros-boton');
+    const flecha = document.getElementById('usuarios-filtros-flecha');
+    if (!cuerpo) return;
+    const abrir = typeof forzarAbierto === 'boolean' ? forzarAbierto : cuerpo.classList.contains('hidden');
+    cuerpo.classList.toggle('hidden', !abrir);
+    boton?.setAttribute('aria-expanded', String(abrir));
+    flecha?.classList.toggle('rotate-180', abrir);
+    if (abrir) _pintarChipsFiltros();
+}
+
+function elegirOrdenUsuarios(clave) {
+    if (!ORDENES_USUARIOS[clave]) return;
+    _ordenUsuarios = clave;
+    _guardarFiltrosUsuarios();
+    renderizarListaUsuarios();
+}
+
+function elegirFiltroUsuarios(clave) {
+    if (!FILTROS_USUARIOS[clave]) return;
+    _filtroUsuarios = clave;
+    _guardarFiltrosUsuarios();
+    renderizarListaUsuarios();
+}
+
+function restablecerFiltrosUsuarios() {
+    _ordenUsuarios = _ORDEN_POR_DEFECTO;
+    _filtroUsuarios = _FILTRO_POR_DEFECTO;
+    _guardarFiltrosUsuarios();
+    renderizarListaUsuarios();
+}
+
 function renderizarListaUsuarios() {
     const cont = document.getElementById('lista-usuarios');
     const busqueda = (document.getElementById('usuarios-buscador')?.value || '').toLowerCase().trim();
+    const filtro = (FILTROS_USUARIOS[_filtroUsuarios] || FILTROS_USUARIOS.todos).fn;
+    const orden = (ORDENES_USUARIOS[_ordenUsuarios] || ORDENES_USUARIOS[_ORDEN_POR_DEFECTO]).fn;
 
     const usuariosFiltrados = todosLosUsuarios.filter(u => {
+        if (!filtro(u)) return false;
         if (!busqueda) return true;
         return (u.email || '').toLowerCase().includes(busqueda)
             || (u.username || '').toLowerCase().includes(busqueda)
             || (u.pais || '').toLowerCase() === busqueda
             || nombrePais(u.pais).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(busqueda.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
-    });
+    }).sort((a, b) => orden(a, b) || (_tiempo(b.created_at) || 0) - (_tiempo(a.created_at) || 0));
+
+    _pintarChipsFiltros();
+    const conteo = document.getElementById('usuarios-filtros-conteo');
+    if (conteo) conteo.textContent = `Mostrando ${usuariosFiltrados.length.toLocaleString('es-MX')} de ${todosLosUsuarios.length.toLocaleString('es-MX')} usuario(s)`;
 
     if (usuariosFiltrados.length === 0) {
-        cont.innerHTML = '<p class="text-center text-slate-500 text-sm py-8">No se encontraron usuarios.</p>';
+        cont.innerHTML = '<p class="text-center text-slate-500 text-sm py-8">No se encontraron usuarios' + (_filtroUsuarios !== 'todos' ? ' con este filtro.' : '.') + '</p>';
         return;
     }
 
