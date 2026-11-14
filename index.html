@@ -2468,7 +2468,7 @@
                             <div id="vidas-display" class="text-xl leading-none mt-1">❤️❤️❤️</div>
                         </div>
                         <button id="btn-recargar-vidas" onclick="abrirRecargarVidas()" class="hidden text-xs font-bold bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 rounded-lg px-3 py-2 transition active:scale-95 items-center gap-1.5">
-                            <i class="fa-solid fa-heart-circle-plus"></i> Recargar
+                            <i class="fa-solid fa-clock"></i> ¿Cuándo vuelven?
                         </button>
                     </div>
                     <div class="torre-tarjeta relative overflow-hidden rounded-2xl border border-purple-500/30 p-5 sm:p-7">
@@ -2597,7 +2597,7 @@
                             <ul class="space-y-3">
                                 <li class="flex items-center gap-3 text-sm text-slate-200">
                                     <span class="w-7 h-7 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-rose-400 text-xs"></i></span>
-                                    <span><strong class="text-white">Vidas ilimitadas</strong> <span class="text-slate-400 text-xs">para jugar sin límite</span></span>
+                                    <span><strong class="text-white">6 vidas al día</strong> <span class="text-slate-400 text-xs">en la Torre (el doble que sin Premium)</span></span>
                                 </li>
 
                                 <li class="flex items-center gap-3 text-sm text-slate-200">
@@ -2637,7 +2637,7 @@
                             <ul class="space-y-3 mb-6">
                                 <li class="flex items-center gap-3 text-sm text-slate-200">
                                     <i class="fa-solid fa-circle-check text-emerald-400 shrink-0"></i>
-                                    <span><strong class="text-white">Vidas ilimitadas</strong> <span class="text-slate-400">para jugar sin límite</span></span>
+                                    <span><strong class="text-white">6 vidas al día</strong> <span class="text-slate-400">en la Torre (el doble que sin Premium)</span></span>
                                 </li>
                                 <li class="flex items-center gap-3 text-sm text-slate-200">
                                     <i class="fa-solid fa-circle-check text-emerald-400 shrink-0"></i> Badge <span class="text-amber-400 font-bold">👑 Premium</span> en tu perfil
@@ -2743,7 +2743,7 @@
                                 <span class="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center shrink-0"><i class="fa-solid fa-crown text-amber-400 text-sm"></i></span>
                                 <div class="text-left">
                                     <p class="text-sm font-extrabold text-amber-300">Obtener Premium</p>
-                                    <p class="text-[11px] text-slate-400">Vidas ilimitadas · badge · más</p>
+                                    <p class="text-[11px] text-slate-400">6 vidas al día · badge · más</p>
                                 </div>
                             </div>
                             <i class="fa-solid fa-chevron-right text-amber-500/60 text-xs group-hover:text-amber-400 transition"></i>
@@ -2752,8 +2752,8 @@
                             <div class="flex items-center gap-3">
                                 <span class="w-8 h-8 rounded-lg bg-rose-500/15 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart-circle-plus text-rose-400 text-sm"></i></span>
                                 <div class="text-left">
-                                    <p class="text-sm font-bold text-white">Recargar vidas</p>
-                                    <p class="text-[11px] text-slate-400">Consigue más vidas para seguir jugando</p>
+                                    <p class="text-sm font-bold text-white">Sin vidas por hoy</p>
+                                    <p class="text-[11px] text-slate-400">Mira cuándo se recargan tus vidas</p>
                                 </div>
                             </div>
                             <i class="fa-solid fa-chevron-right text-slate-600 text-xs group-hover:text-rose-400 transition"></i>
@@ -2857,34 +2857,26 @@
             <div class="p-5">
                 <div class="flex items-center justify-between mb-5">
                     <div>
-                        <h3 class="text-lg font-black text-white">♾️ Vidas Ilimitadas</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">Juega sin límite, sin preocuparte por las vidas</p>
+                        <h3 class="text-lg font-black text-white">💔 Sin vidas por hoy</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Usaste todas tus vidas de la Torre</p>
                     </div>
                     <button onclick="cerrarRecargarVidas()" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition">
                         <i class="fa-solid fa-xmark text-sm"></i>
                     </button>
                 </div>
 
-                <button onclick="comprarVidasIlimitadas()" class="w-full flex items-center justify-between bg-gradient-to-r from-rose-950/60 to-slate-800 hover:from-rose-900/60 border border-rose-500/40 hover:border-rose-500/70 rounded-xl px-4 py-4 transition active:scale-95 group mb-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-xl">♾️</div>
-                        <div class="text-left">
-                            <div class="flex items-center gap-2">
-                                <p class="text-sm font-extrabold text-white">Vidas Ilimitadas</p>
-                                <span class="text-[10px] bg-rose-500/20 border border-rose-500/30 text-rose-300 rounded-full px-2 py-0.5 font-bold">PARA SIEMPRE</span>
-                            </div>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Pago único · Nunca se te acaban las vidas</p>
-                        </div>
+                <div class="flex items-center gap-3 bg-slate-800 border border-slate-700 rounded-xl px-4 py-4 mb-3">
+                    <div class="w-11 h-11 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-xl shrink-0">⏰</div>
+                    <div class="text-left min-w-0">
+                        <p class="text-sm font-extrabold text-white">Tus vidas se recargan solas</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Cada día a medianoche (hora del centro de México)<span id="vidas-recarga-local"></span>. Gratis, sin hacer nada.</p>
                     </div>
-                    <div class="text-right shrink-0">
-                        <p class="text-lg font-black text-rose-400 group-hover:text-rose-300">$29 MXN</p>
-                        <p class="text-[10px] text-slate-500">pago único</p>
-                    </div>
-                </button>
+                </div>
 
+                <div id="vidas-bloque-premium">
                 <div class="flex items-center gap-3 my-3">
                     <div class="flex-1 h-px bg-slate-700"></div>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">o también incluido en</p>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">¿Quieres jugar más?</p>
                     <div class="flex-1 h-px bg-slate-700"></div>
                 </div>
 
@@ -2896,7 +2888,7 @@
                                 <p class="text-sm font-extrabold text-white">NetGamer Premium</p>
                                 <span class="text-[10px] bg-amber-500/20 border border-amber-500/30 text-amber-300 rounded-full px-2 py-0.5 font-bold">+BENEFICIOS</span>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Vidas ilimitadas + badge + más</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">6 vidas al día + badge + más</p>
                         </div>
                     </div>
                     <div class="text-right shrink-0">
@@ -2904,8 +2896,9 @@
                         <p class="text-[10px] text-slate-500">por mes</p>
                     </div>
                 </button>
+                </div>
 
-                <p id="vidas-texto-pago" class="text-[10px] text-slate-600 text-center">Pago seguro vía MercadoPago · Se acredita al instante</p>
+                <button onclick="cerrarRecargarVidas()" class="w-full text-sm font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl py-3 transition active:scale-95">Entendido</button>
             </div>
         </div>
     </div>
@@ -5817,23 +5810,18 @@
                 .single()).data;
 
             if (data) {
-                const hoy      = new Date().toISOString().split('T')[0];
-                const tieneVidasIlim = data.vidas_ilimitadas_permanente ||
-                    data.vidas_ilimitadas ||
-                    (data.is_premium && data.premium_hasta && new Date(data.premium_hasta) >= new Date());
-                const maxVidas = tieneVidasIlim ? null : 3;
-                const vidasHoy = tieneVidasIlim ? null : (data.vidas_reset_fecha !== hoy ? 3 : (data.vidas_hoy ?? 3));
+                const { vidas: vidasHoy, max: maxVidas } = estadoVidas(data);
                 const isPremium = !!data.is_premium;
 
                 document.getElementById('perfil-stat-nc').textContent        = (data.netcoins || 0).toLocaleString('es-MX');
                 document.getElementById('perfil-stat-referidos').textContent = data.total_referidos || 0;
-                document.getElementById('perfil-stat-vidas').textContent = tieneVidasIlim ? '♾️' : `${vidasHoy}/${maxVidas}`;
+                document.getElementById('perfil-stat-vidas').textContent = `${vidasHoy}/${maxVidas}`;
                 document.getElementById('perfil-info-plan').textContent      = isPremium ? '👑 Premium' : 'Gratuito';
                 document.getElementById('perfil-info-plan').className        = `text-xs font-bold ${isPremium ? 'text-amber-400' : 'text-slate-300'}`;
                 document.getElementById('perfil-badge-premium').classList.toggle('hidden', !isPremium);
                 document.getElementById('perfil-btn-premium').classList.toggle('hidden', isPremium);
                 const btnRecPerfil = document.getElementById('btn-recargar-vidas-perfil');
-                if (btnRecPerfil) btnRecPerfil.classList.toggle('hidden', tieneVidasIlim || vidasHoy > 0);
+                if (btnRecPerfil) btnRecPerfil.classList.toggle('hidden', vidasHoy > 0);
             }
         }
 
@@ -5914,7 +5902,7 @@
             <p>Para evitar abusos, NetGamer verifica la dirección IP de cada cuenta: <strong>solo se otorga un bono de bienvenida y un bono de referido por dirección IP</strong>. Los montos de los bonos pueden cambiar; el monto aplicable es el vigente al momento de reclamarlo.</p>
             <p><strong>Una cuenta por conexión:</strong> si creas una cuenta nueva desde una dirección IP que ya pertenece a otra cuenta que recibió el bono de bienvenida, la cuenta nueva <strong>quedará bloqueada automáticamente</strong> y no podrá usarse ni generar NetCoins, ya que los proveedores de encuestas y ofertas pueden cancelar los pagos cuando detectan varias cuentas en la misma conexión. Debes usar tu cuenta original. Si compartes internet con otras personas (familia, escuela o trabajo) y nunca habías creado una cuenta, escríbenos a soporte con el correo de la cuenta bloqueada para revisar tu caso.</p>
             <h3 class="font-bold text-white mb-2 mt-4">6. Vidas, Premium y compras</h3>
-            <p>Los juegos usan "vidas" que se consumen al iniciar cada partida y se recargan diariamente. Puedes comprar <strong>Vidas Ilimitadas</strong> (pago único) o la suscripción <strong>Premium</strong> (vidas ilimitadas, distintivo Premium y soporte prioritario durante el periodo pagado; no incluye giros adicionales en la Ruleta Diaria). Premium <strong>no se renueva automáticamente</strong>: al terminar el periodo, puedes renovarlo si lo deseas. Las Vidas Ilimitadas se mantienen mientras tu cuenta y la Plataforma estén activas.</p>
+            <p>Los juegos usan "vidas" que se consumen al iniciar cada partida. Sin Premium tienes 3 vidas al día; se recargan solas a medianoche (hora del centro de México) y las que no uses no se acumulan. La suscripción <strong>Premium</strong> da 6 vidas al día, distintivo Premium y soporte prioritario durante el periodo pagado (no incluye giros adicionales en la Ruleta Diaria). Premium <strong>no se renueva automáticamente</strong>: al terminar el periodo, puedes renovarlo si lo deseas. Las vidas ilimitadas ya no están disponibles.</p>
             <p>El precio que se muestra antes de pagar es el total a pagar, en pesos mexicanos o, si pagas desde fuera de México con PayPal, en dólares estadounidenses. Los pagos se procesan en MercadoPago o PayPal. Al ser contenido digital que se activa de inmediato, las compras no son reembolsables una vez activado el beneficio, salvo cobro duplicado, cobro sin que se active el beneficio o falla atribuible a NetGamer, casos en que lo corregiremos o te reembolsaremos. Esto no limita los derechos que te otorga la Ley Federal de Protección al Consumidor. Comprar vidas o Premium no otorga NetCoins.</p>
             <h3 class="font-bold text-white mb-2 mt-4">7. Canjes de recompensas</h3>
             <p>Puedes solicitar el canje de tus NetCoins por recompensas como transferencia bancaria (SPEI), PayPal, Robux o Diamantes de Free Fire, según los montos mínimos y equivalencias que se muestran en la sección de canjes al momento de solicitarlo. Debes contar con saldo suficiente y dar datos de destino correctos; NetGamer no se hace responsable de envíos hechos a datos incorrectos proporcionados por el usuario.</p>
@@ -6077,22 +6065,25 @@
             if (data) pintarVidas(data);
         }
 
+        // Vidas de la Torre: 3 al día (6 con Premium vigente). El día es el de
+        // México: se recargan a medianoche CDMX, igual que en Supabase (torre_iniciar).
+        function hoyCDMX() {
+            try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(new Date()); }
+            catch (e) { return new Date().toISOString().split('T')[0]; }
+        }
+        function estadoVidas(data) {
+            const premium = !!(data && data.is_premium && data.premium_hasta && new Date(data.premium_hasta) >= new Date());
+            const max = premium ? 6 : 3;
+            const guardadas = Number(data && data.vidas_hoy);
+            const vidas = (!data || data.vidas_reset_fecha !== hoyCDMX() || !Number.isFinite(guardadas)) ? max : Math.max(0, guardadas);
+            return { vidas, max, premium };
+        }
+
         function pintarVidas(data) {
-            const hoy = new Date().toISOString().split('T')[0];
-            const tieneVidasIlimitadas = data.vidas_ilimitadas_permanente ||
-                data.vidas_ilimitadas ||
-                (data.is_premium && data.premium_hasta && new Date(data.premium_hasta) >= new Date());
+            const { vidas, max } = estadoVidas(data);
             const el = document.getElementById('vidas-display');
             const btnRecargar = document.getElementById('btn-recargar-vidas');
-            if (tieneVidasIlimitadas) {
-                if (el) el.textContent = '♾️';
-                if (btnRecargar) { btnRecargar.classList.add('hidden'); btnRecargar.style.display = ''; }
-                return;
-            }
-            let vidas = data.vidas_hoy;
-            if (data.vidas_reset_fecha !== hoy) vidas = 3;
-            const max = 3;
-            if (el) el.textContent = '❤️'.repeat(vidas) + '🖤'.repeat(Math.max(0, max - vidas));
+            if (el) el.textContent = '❤️'.repeat(Math.min(vidas, max)) + '🖤'.repeat(Math.max(0, max - vidas)) + (vidas > max ? ` +${vidas - max}` : '');
             if (btnRecargar) { if (vidas <= 0) { btnRecargar.classList.remove('hidden'); btnRecargar.style.display='flex'; } else { btnRecargar.classList.add('hidden'); btnRecargar.style.display=''; } }
         }
 
@@ -6175,7 +6166,7 @@
                 if (error || !data || data.error) {
                     const codigo = data && data.error;
                     const mensajes = {
-                        sin_vidas: '💔 Ya no tienes vidas hoy. Vuelve mañana o recarga más vidas.',
+                        sin_vidas: `💔 Ya no tienes vidas hoy. Se recargan ${typeof textoHoraReinicio === 'function' ? textoHoraReinicio() : 'a medianoche'}.`,
                         sin_netcoins: `💰 Necesitas ${_torreFmt((data && data.costo) || _torreCfg.costo_entrada)} NetCoins para jugar una partida.`,
                         cuenta_suspendida: 'Tu cuenta está suspendida y no puede jugar.',
                         sin_sesion: 'Tu sesión expiró. Vuelve a iniciar sesión.'
@@ -6188,7 +6179,7 @@
                     return;
                 }
                 _torrePartidaId = data.partida_id;
-                _torreVidasRestantes = data.ilimitadas ? null : data.vidas_restantes;
+                _torreVidasRestantes = Number.isFinite(Number(data.vidas_restantes)) ? Number(data.vidas_restantes) : null;
                 if (data.costo != null) _torreCfg.costo_entrada = data.costo;
                 cargarVidas();
                 refrescarPerfilLigero();
@@ -6355,11 +6346,11 @@
             const textoOtra = otra.querySelector('.btn-torre-texto');
             const costoOtra = otra.querySelector('.btn-torre-costo');
             const sinVidas = _torreVidasRestantes === 0;
-            textoOtra.textContent = textoOtra.dataset.original = sinVidas ? 'Recargar vidas' : 'Otra vez';
+            textoOtra.textContent = textoOtra.dataset.original = sinVidas ? 'Sin vidas por hoy' : 'Otra vez';
             costoOtra.classList.toggle('torre-oculto', sinVidas);
             costoOtra.innerHTML = _torreFmt(_torreCfg.costo_entrada) + ' NC' + (_torreVidasRestantes === null ? '' : ' + 1 ❤️');
             document.getElementById('torre-res-vidas').textContent = _torreVidasRestantes === null
-                ? 'Vidas ilimitadas ♾️'
+                ? ''
                 : `Te ${_torreVidasRestantes === 1 ? 'queda 1 vida' : 'quedan ' + _torreVidasRestantes + ' vidas'} hoy`;
 
             _torreCapa('torre-capa-resultado');
@@ -6796,25 +6787,14 @@
             }
         };
 
-        async function comprarVidasIlimitadas() {
-            cerrarRecargarVidas();
-            try {
-                const { data: { session } } = await _supabase.auth.getSession();
-                const res = await fetch('https://meiwuluwrdjszxeyoqtt.supabase.co/functions/v1/comprar-vidas', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
-                    body: JSON.stringify({ tipo: 'vidas_ilimitadas' })
-                });
-                const resData = await res.json();
-                const url = resData.url || resData.init_point;
-                if (url) window.location.href = url;
-                else mostrarNotificacion('No se pudo generar el link de pago. Intenta de nuevo.', 'error');
-            } catch(e) {
-                mostrarNotificacion('Error al procesar el pago. Intenta de nuevo.', 'error');
-            }
-        }
-
         function abrirRecargarVidas() {
+            const local = document.getElementById('vidas-recarga-local');
+            if (local) {
+                const t = typeof textoHoraReinicio === 'function' ? textoHoraReinicio() : 'a medianoche';
+                local.textContent = t === 'a medianoche' ? '' : `, o sea ${t}`;
+            }
+            const yaPremium = !!(isPremium && _premiumFechas && _premiumFechas.premium_hasta && new Date(_premiumFechas.premium_hasta) >= new Date());
+            document.getElementById('vidas-bloque-premium')?.classList.toggle('hidden', yaPremium);
             document.getElementById('modal-recargar-vidas').classList.remove('hidden');
         }
 
@@ -6981,7 +6961,7 @@
                                 items: [{
                                     name: 'Premium Mensual',
                                     category: 'DIGITAL_GOODS',
-                                    description: 'Vidas ilimitadas y badge Premium',
+                                    description: '6 vidas diarias y badge Premium',
                                     unit_amount: {
                                         currency_code: 'USD',
                                         value: '3.00',
