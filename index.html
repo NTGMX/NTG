@@ -6199,6 +6199,29 @@
         window.addEventListener('hashchange', abrirEncuestasPorLink);
         document.addEventListener('DOMContentLoaded', abrirEncuestasPorLink);
 
+        // Links de los correos: netgamermx.com/#canjear, #historial, #juegos, #referidos, #premium, #inicio
+        // abren esa sección en cuanto el usuario tenga sesión (espera hasta 3 minutos por si inicia sesión).
+        function abrirSeccionPorLink() {
+            const secciones = { '#canjear': 'tab-canjear', '#historial': 'tab-historial', '#juegos': 'tab-juegos',
+                                '#referidos': 'tab-referidos', '#premium': 'tab-premium', '#inicio': 'tab-inicio' };
+            const tab = secciones[(location.hash || '').toLowerCase()];
+            if (!tab) return;
+            let intentos = 0;
+            const reloj = setInterval(() => {
+                intentos++;
+                const app = document.getElementById('app-container');
+                if (currentUser && app && !app.classList.contains('hidden')) {
+                    clearInterval(reloj);
+                    history.replaceState(null, '', location.pathname + location.search);
+                    switchTab(tab, null);
+                } else if (intentos >= 360) {
+                    clearInterval(reloj);
+                }
+            }, 500);
+        }
+        window.addEventListener('hashchange', abrirSeccionPorLink);
+        document.addEventListener('DOMContentLoaded', abrirSeccionPorLink);
+
         function irANoticias() {
             if (!currentUser) {
                 mostrarNotificacion("Debes iniciar sesión para ganar monedas leyendo noticias.", "error");
@@ -8845,7 +8868,7 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token })
         }).then(r => r.json()).then(d => {
-            if (d.ok) mostrarNotificacion('Listo, ya no recibirás estos recordatorios.', 'success');
+            if (d.ok) mostrarNotificacion('Listo, ya no recibirás correos de novedades ni recordatorios. Los avisos de tus canjes te seguirán llegando.', 'success');
             else mostrarNotificacion('Ese enlace no es válido.', 'error');
         }).catch(() => mostrarNotificacion('No se pudo procesar tu baja. Intenta de nuevo.', 'error'));
     })();
