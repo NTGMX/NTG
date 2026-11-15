@@ -1352,8 +1352,8 @@
                     <div class="tarjeta-landing">
                         <span class="icono-caja bg-amber-500/10 text-amber-400"><i class="fa-solid fa-rotate"></i></span>
                         <h4 class="text-lg font-black mt-5 mb-2">Ruleta diaria</h4>
-                        <p class="text-sm text-slate-400 leading-relaxed mb-5">Gira gratis una vez al día y llévate NetCoins al instante.</p>
-                        <span class="tarjeta-premio">1 giro gratis al día</span>
+                        <p class="text-sm text-slate-400 leading-relaxed mb-5">Gira gratis una vez al día y gana giros extra con cada encuesta que completes.</p>
+                        <span class="tarjeta-premio">1 giro gratis al día + giros extra</span>
                     </div>
                     <div class="tarjeta-landing">
                         <span class="icono-caja bg-purple-500/10 text-purple-400"><i class="fa-solid fa-gamepad"></i></span>
@@ -1926,6 +1926,25 @@
                             box-shadow: 0 6px 0 #92400e, 0 10px 25px rgba(245,158,11,.45); transition: transform .1s, box-shadow .1s, filter .2s; }
                         .rl-btn-girar:hover { filter: brightness(1.08); }
                         .rl-btn-girar:active { transform: translateY(4px); box-shadow: 0 2px 0 #92400e, 0 4px 12px rgba(245,158,11,.4); }
+                        .rl-btn-extra { background: linear-gradient(180deg,#5eead4 0%,#14b8a6 50%,#0f766e 100%); box-shadow: 0 6px 0 #134e4a, 0 10px 25px rgba(20,184,166,.4); border-color: rgba(153,246,228,.7); }
+                        .rl-btn-extra:active { box-shadow: 0 2px 0 #134e4a, 0 4px 12px rgba(20,184,166,.35); }
+                        .rl-extra { width:100%; max-width:22rem; display:flex; flex-direction:column; align-items:center; gap:.6rem; margin-top:-.4rem; }
+                        .rl-extra[hidden], .rl-extra-saldo[hidden] { display:none; }
+                        .rl-extra-saldo { display:inline-flex; align-items:center; gap:.45rem; padding:.35rem .8rem; border-radius:9999px; font-size:.8rem; color:#ccfbf1;
+                            background: rgba(20,184,166,.14); border:1px solid rgba(45,212,191,.4); }
+                        .rl-extra-saldo b { color:#5eead4; font-weight:900; font-size:.95rem; }
+                        .rl-extra-ticket { font-size:1rem; line-height:1; }
+                        .rl-extra-btn { width:100%; display:flex; align-items:center; gap:.75rem; text-align:left; cursor:pointer; color:#e2e8f0;
+                            padding:.7rem .85rem; border-radius:.9rem; border:1px dashed rgba(45,212,191,.55);
+                            background: linear-gradient(120deg, rgba(13,148,136,.22), rgba(15,23,42,.6)); transition: transform .12s, border-color .2s, background .2s; }
+                        .rl-extra-btn:hover { border-color: rgba(94,234,212,.9); background: linear-gradient(120deg, rgba(13,148,136,.32), rgba(15,23,42,.6)); }
+                        .rl-extra-btn:active { transform: scale(.98); }
+                        .rl-extra-btn-ico { width:2.1rem; height:2.1rem; border-radius:.65rem; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+                            background: linear-gradient(135deg,#2dd4bf,#0d9488); color:#042f2e; font-size:.9rem; box-shadow: 0 0 14px rgba(45,212,191,.45); }
+                        .rl-extra-btn-txt { flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.25; }
+                        .rl-extra-btn-txt b { font-size:.88rem; font-weight:900; color:#fff; }
+                        .rl-extra-btn-txt small { font-size:.72rem; color:#99f6e4; margin-top:1px; }
+                        .rl-extra-btn-flecha { color:#5eead4; font-size:.75rem; }
                         @media (prefers-reduced-motion: reduce) { .ruleta-jackpot::after, .ruleta-escenario.girando .ruleta-halo { animation:none; } }
                     </style>
                     <div class="ruleta-card relative overflow-hidden border border-amber-500/30 rounded-2xl p-5 sm:p-6">
@@ -1965,6 +1984,17 @@
                                 ⏳ Verificando...
                             </button>
                             <p id="ruleta-resultado" class="text-sm font-bold text-center min-h-[20px]"></p>
+                            <div id="rl-extra" class="rl-extra" hidden>
+                                <div id="rl-extra-saldo" class="rl-extra-saldo" hidden>
+                                    <span class="rl-extra-ticket">🎟️</span>
+                                    <span>Tienes <b id="rl-extra-num">0</b> <span id="rl-extra-palabra">giros extra</span></span>
+                                </div>
+                                <button type="button" class="rl-extra-btn" onclick="abrirGirosExtra()">
+                                    <span class="rl-extra-btn-ico"><i class="fa-solid fa-plus"></i></span>
+                                    <span class="rl-extra-btn-txt"><b>Obtener giros extra gratis</b><small>+1 giro por cada encuesta completada</small></span>
+                                    <i class="fa-solid fa-chevron-right rl-extra-btn-flecha"></i>
+                                </button>
+                            </div>
                         </div>
                         <p class="rl-kicker" style="margin:1.25rem 0 0;text-align:center;position:relative">✦ Posibles premios ✦</p>
                         <div class="rl-premios" style="margin-top:.6rem">
@@ -2851,7 +2881,124 @@
         </nav>
     </div>
 
-    <div id="modal-recargar-vidas" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[6001] p-0 sm:p-4">
+    <!-- Giros extra de la Ruleta: instrucciones (Supabase: ruleta_estado / ruleta_girar). -->
+    <style>
+        #gx-modal { position:fixed; inset:0; z-index:6500; display:flex; align-items:flex-end; justify-content:center; background:rgba(2,6,23,.82); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
+        #gx-modal[hidden] { display:none; }
+        @media (min-width:640px) { #gx-modal { align-items:center; padding:1rem; } }
+        .gx-caja { position:relative; width:100%; max-width:30rem; max-height:92vh; overflow-y:auto; overscroll-behavior:contain; color:#cbd5e1;
+            background: radial-gradient(120% 50% at 50% 0%, rgba(20,184,166,.18), transparent 60%), #0b1120;
+            border:1px solid rgba(45,212,191,.3); border-radius:1.5rem 1.5rem 0 0; box-shadow:0 -10px 40px rgba(0,0,0,.5);
+            padding: 0 1.15rem calc(1.15rem + env(safe-area-inset-bottom)); animation: gxSube .28s ease-out; }
+        @media (min-width:640px) { .gx-caja { border-radius:1.5rem; padding-bottom:1.25rem; } }
+        @keyframes gxSube { from { transform:translateY(24px); opacity:0; } to { transform:none; opacity:1; } }
+        .gx-barra { height:4px; margin:0 -1.15rem 1rem; background: linear-gradient(90deg,#2dd4bf,#fbbf24,#2dd4bf); }
+        .gx-cab { display:flex; align-items:flex-start; justify-content:space-between; gap:.75rem; }
+        .gx-cab h3 { font-size:1.2rem; font-weight:900; color:#fff; line-height:1.2; }
+        .gx-cab p { font-size:.8rem; color:#94a3b8; margin-top:.2rem; line-height:1.4; }
+        .gx-cerrar { width:2rem; height:2rem; flex-shrink:0; border-radius:9999px; background:#1e293b; border:1px solid #334155; color:#94a3b8; cursor:pointer; }
+        .gx-cerrar:hover { color:#fff; background:#334155; }
+        .gx-saldo { margin-top:1rem; display:flex; align-items:center; gap:.85rem; padding:.9rem 1rem; border-radius:1rem;
+            background: linear-gradient(120deg, rgba(13,148,136,.28), rgba(15,23,42,.7)); border:1px solid rgba(45,212,191,.4); }
+        .gx-saldo-ico { font-size:2rem; line-height:1; filter: drop-shadow(0 0 10px rgba(45,212,191,.5)); }
+        .gx-saldo-num { font-size:1.6rem; font-weight:900; color:#5eead4; line-height:1; }
+        .gx-saldo-txt { font-size:.78rem; color:#99f6e4; margin-top:.2rem; }
+        .gx-saldo-sub { font-size:.7rem; color:#64748b; margin-top:.15rem; }
+        .gx-h { font-size:.7rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#5eead4; margin:1.2rem 0 .6rem; }
+        .gx-pasos { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.55rem; counter-reset:gx; }
+        .gx-pasos li { counter-increment:gx; position:relative; padding:.7rem .8rem .7rem 3rem; border-radius:.85rem; background:rgba(30,41,59,.6); border:1px solid rgba(51,65,85,.8); font-size:.83rem; line-height:1.45; }
+        .gx-pasos li::before { content:counter(gx); position:absolute; left:.75rem; top:.7rem; width:1.6rem; height:1.6rem; border-radius:9999px;
+            display:flex; align-items:center; justify-content:center; font-weight:900; font-size:.8rem; color:#042f2e; background:linear-gradient(135deg,#5eead4,#14b8a6); }
+        .gx-pasos b, .gx-reglas b, .gx-ejemplo b { color:#fff; }
+        .gx-ejemplo { padding:.8rem .9rem; border-radius:.85rem; background:rgba(251,191,36,.08); border:1px solid rgba(251,191,36,.3); font-size:.8rem; line-height:1.5; color:#fde68a; }
+        .gx-fila { display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; margin-top:.45rem; }
+        .gx-chip { display:inline-flex; align-items:center; gap:.3rem; padding:.2rem .55rem; border-radius:9999px; font-size:.72rem; font-weight:800; background:rgba(15,23,42,.7); border:1px solid rgba(251,191,36,.35); color:#fde68a; }
+        .gx-flecha { color:#a16207; font-size:.7rem; }
+        .gx-reglas { display:grid; grid-template-columns:1fr; gap:.5rem; }
+        @media (min-width:420px) { .gx-reglas { grid-template-columns:1fr 1fr; } }
+        .gx-regla { display:flex; gap:.6rem; padding:.7rem .75rem; border-radius:.85rem; background:rgba(30,41,59,.55); border:1px solid rgba(51,65,85,.8); font-size:.76rem; line-height:1.4; }
+        .gx-regla > span { font-size:1.15rem; line-height:1.1; flex-shrink:0; }
+        .gx-regla.no { border-color:rgba(244,63,94,.3); background:rgba(244,63,94,.06); }
+        .gx-faq details { border-radius:.8rem; background:rgba(30,41,59,.5); border:1px solid rgba(51,65,85,.8); margin-bottom:.45rem; }
+        .gx-faq summary { cursor:pointer; list-style:none; padding:.7rem .85rem; font-size:.8rem; font-weight:700; color:#e2e8f0; display:flex; justify-content:space-between; gap:.5rem; }
+        .gx-faq summary::-webkit-details-marker { display:none; }
+        .gx-faq summary::after { content:'+'; color:#5eead4; font-weight:900; }
+        .gx-faq details[open] summary::after { content:'–'; }
+        .gx-faq details p { padding:0 .85rem .75rem; font-size:.78rem; line-height:1.5; color:#94a3b8; }
+        .gx-acciones { display:flex; flex-direction:column; gap:.5rem; margin-top:1.1rem; }
+        .gx-btn { width:100%; display:flex; align-items:center; justify-content:center; gap:.5rem; padding:.85rem; border-radius:.9rem; font-weight:900; font-size:.92rem; cursor:pointer; transition:transform .1s, filter .2s; }
+        .gx-btn:active { transform:scale(.98); }
+        .gx-btn.prim { color:#042f2e; border:1px solid rgba(153,246,228,.7); background:linear-gradient(180deg,#5eead4,#14b8a6); box-shadow:0 8px 22px rgba(20,184,166,.35); }
+        .gx-btn.prim:hover { filter:brightness(1.06); }
+        .gx-btn.sec { color:#cbd5e1; background:#1e293b; border:1px solid #334155; font-weight:700; }
+        .gx-btn.sec:hover { color:#fff; background:#334155; }
+    </style>
+    <div id="gx-modal" hidden role="dialog" aria-modal="true" aria-labelledby="gx-titulo" onclick="if (event.target === this) cerrarGirosExtra()">
+        <div class="gx-caja">
+            <div class="gx-barra"></div>
+            <div class="gx-cab">
+                <div>
+                    <h3 id="gx-titulo">🎟️ Giros extra gratis</h3>
+                    <p>Gira la Ruleta de la Fortuna más veces al día contestando encuestas. Sin pagar nada.</p>
+                </div>
+                <button type="button" class="gx-cerrar" onclick="cerrarGirosExtra()" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="gx-saldo">
+                <span class="gx-saldo-ico">🎟️</span>
+                <div>
+                    <p class="gx-saldo-num" id="gx-saldo-num">0</p>
+                    <p class="gx-saldo-txt" id="gx-saldo-txt">giros extra disponibles</p>
+                    <p class="gx-saldo-sub" id="gx-saldo-sub">Completa una encuesta para ganar tu primer giro extra.</p>
+                </div>
+            </div>
+
+            <p class="gx-h">Cómo conseguirlos, paso a paso</p>
+            <ol class="gx-pasos">
+                <li>Entra a <b>Ofertas → Encuestas</b>. Ahí verás las encuestas disponibles para ti en tarjetas (o toca el botón <b>“Ir a encuestas”</b> de abajo).</li>
+                <li>Elige una y <b>contéstala completa, hasta la última pantalla</b>. Responde con calma y con la verdad: si respondes al azar o muy rápido, la encuesta se cancela.</li>
+                <li>Cuando CPX confirme que la terminaste (normalmente al instante, a veces tarda unos minutos), recibes <b>las NetCoins de la encuesta + 1 giro extra</b>. Las dos cosas son automáticas.</li>
+                <li>Regresa a la <b>Ruleta de la Fortuna</b> en Inicio y toca el botón <b>“Usar giro extra”</b>. El premio se suma solo a tu saldo, igual que el giro diario.</li>
+            </ol>
+
+            <p class="gx-h">Ejemplo</p>
+            <div class="gx-ejemplo">
+                Hoy completas <b>3 encuestas</b>, así que tienes <b>3 giros extra</b>. Usas 1 y te quedan 2. Mañana completas otra y ya tienes 3 otra vez.
+                <div class="gx-fila">
+                    <span class="gx-chip">📋 3 encuestas</span><i class="fa-solid fa-arrow-right gx-flecha"></i>
+                    <span class="gx-chip">🎟️ 3 giros</span><i class="fa-solid fa-arrow-right gx-flecha"></i>
+                    <span class="gx-chip">🎰 usas 1</span><i class="fa-solid fa-arrow-right gx-flecha"></i>
+                    <span class="gx-chip">🎟️ quedan 2</span>
+                </div>
+            </div>
+
+            <p class="gx-h">Reglas importantes</p>
+            <div class="gx-reglas">
+                <div class="gx-regla"><span>➕</span><p><b>1 encuesta = 1 giro.</b> Cada encuesta completada suma +1 giro extra.</p></div>
+                <div class="gx-regla"><span>📦</span><p><b>Se acumulan.</b> No hay límite: puedes juntar todos los que quieras.</p></div>
+                <div class="gx-regla"><span>♾️</span><p><b>No caducan.</b> No se pierden a medianoche; los usas cuando quieras.</p></div>
+                <div class="gx-regla"><span>🎰</span><p><b>Primero va el gratis.</b> Se usa tu giro gratis del día y después los extra.</p></div>
+                <div class="gx-regla no"><span>🚫</span><p><b>“No calificaste” no cuenta.</b> Si la encuesta te saca porque no eres el perfil que buscan, no da giro extra.</p></div>
+                <div class="gx-regla no"><span>↩️</span><p><b>Encuesta cancelada = giro descontado.</b> Si CPX cancela una encuesta, se quita el giro que te dio.</p></div>
+            </div>
+
+            <p class="gx-h">Preguntas frecuentes</p>
+            <div class="gx-faq">
+                <details><summary>Terminé una encuesta y no me llegó el giro</summary><p>CPX a veces tarda unos minutos en confirmarla. Vuelve a abrir esta ventana o recarga la página en un rato. Si salió “no calificaste”, esa encuesta no cuenta como completada.</p></details>
+                <details><summary>¿Los premios de los giros extra son diferentes?</summary><p>No. Son exactamente los mismos premios de la ruleta (500, 1,000, 2,500 NC y el premio mayor de 200,000 NC), y los elige el servidor al azar.</p></details>
+                <details><summary>¿Puedo comprar giros extra?</summary><p>No. Los giros no se venden: la única forma de conseguirlos es completando encuestas. Es gratis e igual para todos.</p></details>
+                <details><summary>¿Cuentan las encuestas que hice antes?</summary><p>Cuentan las encuestas completadas a partir del 14 de noviembre de 2026, que es cuando empezaron los giros extra.</p></details>
+                <details><summary>¿Y si no hay encuestas disponibles?</summary><p>Las encuestas dependen de tu perfil, tu país y el momento del día. Si hoy no hay, revisa más tarde: aparecen nuevas seguido. Tu giro gratis del día lo tienes siempre.</p></details>
+            </div>
+
+            <div class="gx-acciones">
+                <button type="button" class="gx-btn prim" onclick="irAEncuestasGirosExtra()"><i class="fa-solid fa-clipboard-list"></i> Ir a encuestas</button>
+                <button type="button" class="gx-btn sec" onclick="cerrarGirosExtra()">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-recargar-vidas"class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[6001] p-0 sm:p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-sm shadow-2xl overflow-hidden">
             <div class="h-1 w-full bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500"></div>
             <div class="p-5">
@@ -5447,21 +5594,77 @@
             verificarEstadoRuleta();
         }
 
+        // Estado de la ruleta: giro gratis del día + giros extra por encuesta (Supabase: ruleta_estado).
+        let _ruletaEstado = { diario: false, extra: 0, ganados: 0, usados: 0 };
         async function verificarEstadoRuleta() {
             if (!currentUser) return;
-            const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
-            const { data } = await _supabase.from('perfiles')
-                .select('ultimo_giro_ruleta, giros_ruleta_hoy')
-                .eq('id', currentUser.id)
-                .single();
-
-            const limiteGiros = 1;
-            const ultimoGiro = (data?.ultimo_giro_ruleta || '').slice(0, 10);
-            const girosUsadosHoy = (ultimoGiro === hoy) ? (data?.giros_ruleta_hoy || 0) : 0;
-            const girosRestantes = limiteGiros - girosUsadosHoy;
-
-            actualizarBotonRuleta(girosRestantes, limiteGiros);
+            let estado = null;
+            try {
+                const { data, error } = await _supabase.rpc('ruleta_estado');
+                if (!error && data && !data.error) {
+                    estado = { diario: !!data.giro_diario_disponible, extra: Number(data.giros_extra) || 0,
+                               ganados: Number(data.giros_extra_ganados) || 0, usados: Number(data.giros_extra_usados) || 0 };
+                }
+            } catch (e) {}
+            if (!estado) {
+                // Respaldo: solo el giro del día.
+                const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+                const { data } = await _supabase.from('perfiles')
+                    .select('ultimo_giro_ruleta, giros_ruleta_hoy')
+                    .eq('id', currentUser.id)
+                    .single();
+                const ultimoGiro = (data?.ultimo_giro_ruleta || '').slice(0, 10);
+                const usados = (ultimoGiro === hoy) ? (data?.giros_ruleta_hoy || 0) : 0;
+                estado = { diario: usados < 1, extra: 0, ganados: 0, usados: 0 };
+            }
+            _ruletaEstado = estado;
+            actualizarBotonRuleta(estado.diario ? 1 : 0, 1, estado.extra);
+            pintarGirosExtra();
         }
+
+        function pintarGirosExtra() {
+            const e = _ruletaEstado;
+            const caja = document.getElementById('rl-extra');
+            const saldo = document.getElementById('rl-extra-saldo');
+            if (caja) caja.hidden = e.diario && e.extra <= 0;
+            if (saldo) saldo.hidden = e.extra <= 0;
+            const num = document.getElementById('rl-extra-num');
+            if (num) num.textContent = e.extra.toLocaleString('es-MX');
+            const pal = document.getElementById('rl-extra-palabra');
+            if (pal) pal.textContent = e.extra === 1 ? 'giro extra' : 'giros extra';
+            const gNum = document.getElementById('gx-saldo-num');
+            if (gNum) gNum.textContent = e.extra.toLocaleString('es-MX');
+            const gTxt = document.getElementById('gx-saldo-txt');
+            if (gTxt) gTxt.textContent = e.extra === 1 ? 'giro extra disponible' : 'giros extra disponibles';
+            const gSub = document.getElementById('gx-saldo-sub');
+            if (gSub) gSub.textContent = e.ganados > 0
+                ? `Has ganado ${e.ganados.toLocaleString('es-MX')} en total · ${e.usados.toLocaleString('es-MX')} usado${e.usados === 1 ? '' : 's'}`
+                : 'Completa una encuesta para ganar tu primer giro extra.';
+        }
+
+        function abrirGirosExtra() {
+            pintarGirosExtra();
+            const m = document.getElementById('gx-modal');
+            if (!m) return;
+            m.hidden = false;
+            document.body.style.overflow = 'hidden';
+            m.querySelector('.gx-caja')?.scrollTo(0, 0);
+            verificarEstadoRuleta();
+        }
+        function cerrarGirosExtra() {
+            const m = document.getElementById('gx-modal');
+            if (m) m.hidden = true;
+            document.body.style.overflow = '';
+        }
+        function irAEncuestasGirosExtra() {
+            cerrarGirosExtra();
+            if (typeof window.ppIr === 'function') { window.ppIr('encuesta'); return; }
+            switchTab('tab-ofertas', null);
+            if (typeof cambiarMuroTab === 'function') cambiarMuroTab('cpx');
+        }
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape' && !document.getElementById('gx-modal')?.hidden) cerrarGirosExtra();
+        });
 
         function actualizarTextosRuleta() {
             const subtitulo = document.getElementById('ruleta-subtitulo');
@@ -5470,12 +5673,20 @@
             if (countdownLabel) countdownLabel.innerText = 'Próximo giro en:';
         }
 
-        function actualizarBotonRuleta(girosRestantes, limiteGiros) {
+        function actualizarBotonRuleta(girosRestantes, limiteGiros, girosExtra = 0) {
             actualizarTextosRuleta();
             const btn = document.getElementById('btn-girar');
             if (!btn) return;
 
-            if (girosRestantes <= 0) {
+            if (girosRestantes <= 0 && girosExtra > 0) {
+                // Ya usó el gratis del día pero tiene giros extra por encuestas.
+                btn.disabled = false;
+                btn.innerText = `🎟️ Usar giro extra (${girosExtra.toLocaleString('es-MX')})`;
+                btn.className = 'rl-btn-girar rl-btn-extra text-sm sm:text-base';
+                const label = document.getElementById('ruleta-countdown-label');
+                if (label) label.innerText = 'Giro gratis en:';
+                iniciarCuentaRegresiva();
+            } else if (girosRestantes <= 0) {
                 btn.disabled = true;
                 btn.innerText = '✅ Ya giraste hoy';
                 btn.className = 'bg-gradient-to-r from-slate-700 to-slate-600 text-slate-400 cursor-not-allowed font-extrabold px-8 py-3 rounded-2xl shadow-lg transition text-sm sm:text-base';
@@ -5555,10 +5766,12 @@
                 btn.disabled = true;
                 btn.innerText = '✅ Ya giraste hoy';
                 btn.className = 'bg-gradient-to-r from-slate-700 to-slate-600 text-slate-400 cursor-not-allowed font-extrabold px-8 py-3 rounded-2xl shadow-lg transition text-sm sm:text-base';
-                document.getElementById('ruleta-resultado').innerText = '⚠️ Ya usaste tu giro de hoy.';
+                document.getElementById('ruleta-resultado').innerText = '⚠️ Ya usaste tu giro de hoy y no tienes giros extra.';
                 iniciarCuentaRegresiva();
+                verificarEstadoRuleta();
                 return;
             }
+            const fueExtra = _ruletaEstado && !_ruletaEstado.diario;
 
             const idxGanador = data.idx;
             const ncGanadas = data.nc;
@@ -5618,7 +5831,7 @@
                     const esJackpot = RULETA_PREMIOS[idxGanador]?.jackpot;
                     document.getElementById('ruleta-resultado').innerHTML = esJackpot
                         ? `👑 <span style="color:#fde047;font-weight:900;font-size:1rem">¡PREMIO MAYOR! +${ncTexto} NetCoins</span>`
-                        : `🎉 <span class="text-amber-400 font-extrabold">+${ncTexto} NetCoins</span> acreditados`;
+                        : `${fueExtra ? '🎟️' : '🎉'} <span class="text-amber-400 font-extrabold">+${ncTexto} NetCoins</span> acreditados${fueExtra ? ' · giro extra' : ''}`;
 
                     mostrarNotificacion(`¡Ganaste ${ncTexto} NetCoins en la ruleta!`, "success");
                     if (typeof ppTrasAccion === 'function') ppTrasAccion('ruleta');
@@ -5888,7 +6101,7 @@
             <p>a) Completar ofertas, encuestas y tareas en los muros de ofertas de proveedores asociados (por ejemplo, CPX Research, AdGem y BitLabs). La acreditación depende de que el proveedor confirme que completaste la oferta.</p>
             <p>En las encuestas debes responder con información verdadera y con atención. El proveedor decide si calificas para cada encuesta: puede terminarla antes si no cumples el perfil buscado, en cuyo caso puede no haber recompensa o solo un premio menor. Si el proveedor revierte o cancela después una encuesta u oferta ya acreditada (por ejemplo, por respuestas inconsistentes, apresuradas o fraudulentas), NetGamer descontará de tu saldo las NetCoins correspondientes.</p>
             <p>b) Leer noticias en la sección correspondiente, con un límite de 100 noticias con recompensa por día. Si al momento de entrar a las noticias tienes encuestas disponibles en la Plataforma, para recibir recompensa por noticias primero debes completar en su totalidad al menos una encuesta ese día; las encuestas en las que el proveedor te descalifica, aunque otorguen un premio de consolación, no cuentan como completadas, y una encuesta que después sea revertida o cancelada por el proveedor deja de contar. Una vez completada, las noticias con recompensa quedan desbloqueadas hasta el final de ese día (hora del centro de México). Si no tienes encuestas disponibles, puedes recibir recompensa por noticias sin este requisito. Siempre puedes leer noticias sin recompensa.</p>
-            <p>c) Girar la Ruleta Diaria: 1 giro gratis por día natural (hora del centro de México), igual para todos los usuarios; ninguna compra ni suscripción da giros adicionales. El premio de cada giro es aleatorio entre los montos mostrados en la ruleta y lo determina el servidor.</p>
+            <p>c) Girar la Ruleta Diaria: 1 giro gratis por día natural (hora del centro de México), igual para todos los usuarios. Además, cada encuesta de CPX Research completada correctamente a partir del 14 de noviembre de 2026 da 1 giro extra gratis; los giros extra se acumulan, no caducan y se usan después del giro gratis del día. Las encuestas en las que el usuario no califica no dan giro extra, y si CPX Research cancela una encuesta, se descuenta el giro extra que otorgó. Ninguna compra ni suscripción da giros: los giros no se venden. El premio de cada giro es aleatorio entre los montos mostrados en la ruleta y lo determina el servidor.</p>
             <p>d) Jugar los juegos de la Plataforma, en los que el premio depende de la habilidad del jugador conforme a las reglas publicadas en cada juego. Algunos juegos cobran una entrada en NetCoins y/o vidas al iniciar cada partida; la entrada no es reembolsable una vez iniciada la partida, aunque la abandones. Las partidas que no se terminan dentro del tiempo límite del juego se dan por finalizadas.</p>
             <p>e) Invitar amigos con tu enlace de referido.</p>
             <p>f) Reclamar el bono de bienvenida al registrarte por primera vez.</p>
@@ -7571,6 +7784,7 @@
                 <h5>¿Cómo funciona?</h5>
                 <ul class="pp-pasos">
                     <li><b>Todos los usuarios</b> tienen <b>1 giro gratis cada día</b>. No se compran giros: es igual para todos.</li>
+                    <li>¿Quieres más? <b>Cada encuesta que completes te da +1 giro extra</b>, y se van acumulando.</li>
                     <li>El giro se renueva <b>a medianoche (hora del centro de México)</b>${(() => { const t = typeof textoHoraReinicio === 'function' ? textoHoraReinicio() : 'a medianoche'; return t === 'a medianoche' ? '' : `, o sea <b>${t}</b>`; })()}. El reloj de la ruleta te dice cuánto falta para el siguiente.</li>
                     <li>Toca el botón dorado <b>“¡Girar gratis!”</b> (o la rueda) y espera a que se detenga.</li>
                     <li>El premio lo elige nuestro servidor al azar y <b>se suma solo a tu saldo</b> en ese momento.</li>
