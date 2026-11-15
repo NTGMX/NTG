@@ -156,6 +156,9 @@
                 <button id="modulo-btn-opiniones" onclick="cambiarModulo('opiniones')" class="modulo-btn text-xs font-bold px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">
                     <i class="fa-solid fa-comment-dots mr-1.5"></i>Opiniones <span id="badge-opiniones" class="hidden ml-1 bg-emerald-500 text-slate-950 rounded-full px-1.5 text-[10px]"></span>
                 </button>
+                <button id="modulo-btn-correos" onclick="cambiarModulo('correos')" class="modulo-btn text-xs font-bold px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-envelope mr-1.5"></i>Correos
+                </button>
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -204,6 +207,9 @@
         </button>
         <button id="modulo-btn-opiniones-mobile" onclick="cambiarModulo('opiniones')" class="modulo-btn flex-1 text-xs font-bold py-2 rounded-lg bg-slate-800 text-slate-400 transition">
             <i class="fa-solid fa-comment-dots mr-1.5"></i>Opiniones
+        </button>
+        <button id="modulo-btn-correos-mobile" onclick="cambiarModulo('correos')" class="modulo-btn flex-1 text-xs font-bold py-2 rounded-lg bg-slate-800 text-slate-400 transition">
+            <i class="fa-solid fa-envelope mr-1.5"></i>Correos
         </button>
     </div>
 
@@ -650,6 +656,110 @@
                 <p class="text-center text-slate-500 py-8">Cargando...</p>
             </div>
         </div>
+    </div>
+
+    <!-- ── Correos automáticos ── -->
+    <div id="modulo-correos" class="hidden flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="max-w-4xl mx-auto w-full space-y-5">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                    <h2 class="text-lg font-black text-white flex items-center gap-2"><i class="fa-solid fa-envelope-open-text text-indigo-400"></i> Correos automáticos</h2>
+                    <p class="text-sm text-slate-400 mt-1">Se envían solos con Brevo. Máximo 1 correo promocional por usuario cada 20 h, y solo de 9 am a 9 pm (hora CDMX).</p>
+                </div>
+                <button onclick="cargarCorreos()" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                    <i class="fa-solid fa-rotate-right mr-1"></i>Actualizar
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+                    <p class="text-[11px] text-slate-400 font-semibold">Enviados (24 h)</p>
+                    <p class="text-2xl font-black text-white mt-1"><span id="co-hoy">0</span><span class="text-sm text-slate-500"> / <span id="co-limite">0</span></span></p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+                    <p class="text-[11px] text-slate-400 font-semibold">Reciben correos</p>
+                    <p id="co-aptos" class="text-2xl font-black text-indigo-300 mt-1">0</p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+                    <p class="text-[11px] text-slate-400 font-semibold">Se dieron de baja</p>
+                    <p id="co-bajas" class="text-2xl font-black text-slate-300 mt-1">0</p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+                    <p class="text-[11px] text-slate-400 font-semibold">Estado</p>
+                    <p id="co-estado" class="text-2xl font-black text-emerald-400 mt-1">—</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex flex-wrap items-end gap-3">
+                <label class="text-xs text-slate-400 font-semibold">Límite de correos por día
+                    <input id="co-input-limite" type="number" min="0" max="5000" class="mt-1 block w-36 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                </label>
+                <label class="flex items-center gap-2 text-sm text-slate-300 pb-2">
+                    <input id="co-input-pausado" type="checkbox" class="w-4 h-4 accent-red-500"> Pausar todos los envíos
+                </label>
+                <button onclick="guardarConfigCorreos()" class="text-xs font-bold px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition">Guardar</button>
+                <p class="text-[11px] text-slate-500 w-full">El plan gratis de Brevo permite 300 correos al día en total; deja margen para los correos de verificación.</p>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-black text-white mb-2">Correos que salen solos</h3>
+                <div id="co-tipos" class="grid sm:grid-cols-2 gap-3"></div>
+            </div>
+
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 sm:p-5">
+                <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+                    <h3 class="text-sm font-black text-white"><i class="fa-solid fa-bullhorn text-purple-400 mr-1.5"></i><span id="co-form-titulo">Nueva novedad</span></h3>
+                    <button onclick="limpiarFormNovedad()" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-700 text-slate-300">Limpiar</button>
+                </div>
+                <p class="text-xs text-slate-400 mb-4">Escribe la novedad, guárdala, revisa la vista previa y luego "Publicar y enviar". Se envía sola a todos los usuarios poco a poco, respetando el límite diario.</p>
+                <input type="hidden" id="co-nov-id">
+                <div class="grid gap-3">
+                    <label class="text-xs text-slate-400 font-semibold">Título (aparece en el asunto)
+                        <input id="co-nov-titulo" maxlength="90" placeholder="Ej. Misiones diarias y giros extra en la ruleta" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                    </label>
+                    <label class="text-xs text-slate-400 font-semibold">Subtítulo
+                        <input id="co-nov-subtitulo" maxlength="200" placeholder="Una frase corta que resuma la novedad" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                    </label>
+                    <label class="text-xs text-slate-400 font-semibold">Texto (deja una línea en blanco para separar párrafos)
+                        <textarea id="co-nov-cuerpo" maxlength="1500" rows="4" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"></textarea>
+                    </label>
+                    <label class="text-xs text-slate-400 font-semibold">Puntos clave (uno por línea, máximo 6)
+                        <textarea id="co-nov-puntos" rows="4" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"></textarea>
+                    </label>
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        <label class="text-xs text-slate-400 font-semibold">Frase destacada (opcional)
+                            <input id="co-nov-destacado" maxlength="80" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                        </label>
+                        <label class="text-xs text-slate-400 font-semibold">Texto del botón
+                            <input id="co-nov-boton" maxlength="40" placeholder="Probarlo ahora" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                        </label>
+                    </div>
+                    <div class="flex justify-end">
+                        <button onclick="guardarNovedad()" class="text-xs font-bold px-4 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition"><i class="fa-solid fa-floppy-disk mr-1.5"></i>Guardar borrador</button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-black text-white mb-2">Novedades</h3>
+                <div id="co-novedades" class="space-y-3"></div>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-black text-white mb-2">Últimos envíos</h3>
+                <div id="co-ultimos" class="bg-slate-800 border border-slate-700 rounded-2xl divide-y divide-slate-700/60"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="co-modal-vista" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[9998] p-3 sm:p-6 flex items-center justify-center">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl h-full max-h-[92vh] flex flex-col overflow-hidden">
+        <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-700">
+            <p id="co-vista-asunto" class="text-sm font-bold text-white truncate"></p>
+            <button onclick="document.getElementById('co-modal-vista').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 shrink-0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <iframe id="co-vista-frame" class="flex-1 w-full bg-white" sandbox=""></iframe>
     </div>
 </div>
 
@@ -1487,6 +1597,7 @@ function cambiarModulo(modulo) {
     const esBanners = modulo === 'banners';
     const esJuegos = modulo === 'juegos';
     const esOpiniones = modulo === 'opiniones';
+    const esCorreos = modulo === 'correos';
 
     document.getElementById('main-body').classList.toggle('hidden', !esSoporte);
     document.getElementById('modulo-canjes').classList.toggle('hidden', !esCanjes);
@@ -1503,14 +1614,16 @@ function cambiarModulo(modulo) {
     document.getElementById('modulo-juegos').classList.toggle('flex', esJuegos);
     document.getElementById('modulo-opiniones').classList.toggle('hidden', !esOpiniones);
     document.getElementById('modulo-opiniones').classList.toggle('flex', esOpiniones);
+    document.getElementById('modulo-correos').classList.toggle('hidden', !esCorreos);
+    document.getElementById('modulo-correos').classList.toggle('flex', esCorreos);
 
-    ['modulo-btn-soporte', 'modulo-btn-canjes', 'modulo-btn-anuncios', 'modulo-btn-banners', 'modulo-btn-sitio', 'modulo-btn-usuarios', 'modulo-btn-soporte-mobile', 'modulo-btn-canjes-mobile', 'modulo-btn-anuncios-mobile', 'modulo-btn-banners-mobile','modulo-btn-sitio-mobile', 'modulo-btn-usuarios-mobile', 'modulo-btn-juegos', 'modulo-btn-juegos-mobile', 'modulo-btn-opiniones', 'modulo-btn-opiniones-mobile'].forEach(id => {
+    ['modulo-btn-soporte', 'modulo-btn-canjes', 'modulo-btn-anuncios', 'modulo-btn-banners', 'modulo-btn-sitio', 'modulo-btn-usuarios', 'modulo-btn-soporte-mobile', 'modulo-btn-canjes-mobile', 'modulo-btn-anuncios-mobile', 'modulo-btn-banners-mobile','modulo-btn-sitio-mobile', 'modulo-btn-usuarios-mobile', 'modulo-btn-juegos', 'modulo-btn-juegos-mobile', 'modulo-btn-opiniones', 'modulo-btn-opiniones-mobile', 'modulo-btn-correos', 'modulo-btn-correos-mobile'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         const esEsteBtn = id.includes(modulo);
         el.classList.toggle('bg-purple-600', esEsteBtn);
         el.classList.toggle('text-white', esEsteBtn);
-        el.classList.toggle('bg-slate-800', !esEsteBtn && (id.includes('mobile') || id.includes('canjes') || id.includes('anuncios') || id.includes('banners') || id.includes('sitio') || id.includes('usuarios') || id.includes('juegos') || id.includes('opiniones')));
+        el.classList.toggle('bg-slate-800', !esEsteBtn && (id.includes('mobile') || id.includes('canjes') || id.includes('anuncios') || id.includes('banners') || id.includes('sitio') || id.includes('usuarios') || id.includes('juegos') || id.includes('opiniones') || id.includes('correos')));
         el.classList.toggle('text-slate-400', !esEsteBtn);
     });
 
@@ -1521,6 +1634,7 @@ function cambiarModulo(modulo) {
     if (modulo === 'usuarios') cargarUsuarios();
     if (modulo === 'juegos') cargarRevisionTorre();
     if (modulo === 'opiniones') cargarOpiniones();
+    if (modulo === 'correos') cargarCorreos();
 }
 
 // ---------- Opiniones de usuarios (después de un canje entregado) ----------
@@ -2812,6 +2926,183 @@ async function confirmarSuspenderUsuarioPermanente() {
         btn.innerText = 'Confirmar suspensión permanente';
     }
 }
+
+// ════════════════ Correos automáticos ════════════════
+const CO_FUNCION = 'https://meiwuluwrdjszxeyoqtt.supabase.co/functions/v1/correos-automaticos';
+const CO_TIPOS = [
+    { id: 'bienvenida', icono: 'fa-hand', nombre: 'Bienvenida', cuando: '15 min después de registrarse. Guía de primeros pasos, formas de ganar y premios.' },
+    { id: 'canje_disponible', icono: 'fa-trophy', nombre: '¡Ya puedes canjear!', cuando: 'Cuando su saldo llega a 100,000 NC. Muestra lo que ya alcanza y cómo canjear.' },
+    { id: 'canje_recibido', icono: 'fa-inbox', nombre: 'Canje recibido', cuando: 'Al pedir un canje. Detalle, estado y plazo de 24 a 72 horas hábiles.' },
+    { id: 'canje_entregado', icono: 'fa-circle-check', nombre: 'Premio entregado', cuando: 'Cuando marcas el canje como Procesado. Dónde revisarlo y pide su opinión.' },
+    { id: 'te_extranamos', icono: 'fa-heart', nombre: 'Te extrañamos', cuando: '3 días sin entrar. Su saldo, lo nuevo y qué hacer hoy. Máximo 3 por ausencia.' },
+    { id: 'novedad', icono: 'fa-bullhorn', nombre: 'Novedades', cuando: 'Cuando publicas una novedad abajo. Llega a todos los usuarios.' },
+];
+let _coDatos = null;
+
+async function _coLlamarFuncion(cuerpo) {
+    const token = await obtenerTokenSesionValido();
+    const res = await fetch(CO_FUNCION, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(cuerpo)
+    });
+    return res.json().catch(() => ({ error: 'respuesta_invalida' }));
+}
+
+async function cargarCorreos() {
+    const { data, error } = await _supabase.rpc('admin_correos_resumen');
+    if (error || data?.error) {
+        document.getElementById('co-tipos').innerHTML = `<p class="text-sm text-red-300">No se pudo cargar: ${escapeHtml(error?.message || data?.error)}</p>`;
+        return;
+    }
+    _coDatos = data;
+    const cfg = data.config || {};
+    document.getElementById('co-hoy').textContent = data.hoy ?? 0;
+    document.getElementById('co-limite').textContent = cfg.limite_diario ?? 0;
+    document.getElementById('co-aptos').textContent = data.aptos ?? 0;
+    document.getElementById('co-bajas').textContent = data.bajas ?? 0;
+    const est = document.getElementById('co-estado');
+    est.textContent = cfg.pausado ? 'Pausado' : 'Activo';
+    est.className = 'text-2xl font-black mt-1 ' + (cfg.pausado ? 'text-red-400' : 'text-emerald-400');
+    document.getElementById('co-input-limite').value = cfg.limite_diario ?? 200;
+    document.getElementById('co-input-pausado').checked = !!cfg.pausado;
+
+    const pt = data.por_tipo || {};
+    document.getElementById('co-tipos').innerHTML = CO_TIPOS.map(t => {
+        const c = pt[t.id] || { total: 0, hoy: 0 };
+        return `<div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-300 flex items-center justify-center shrink-0"><i class="fa-solid ${t.icono}"></i></div>
+                <div class="min-w-0">
+                    <p class="text-sm font-black text-white">${t.nombre}</p>
+                    <p class="text-xs text-slate-400 mt-0.5">${t.cuando}</p>
+                    <p class="text-[11px] text-slate-500 mt-1.5">Enviados: <b class="text-slate-300">${c.total}</b> · últimas 24 h: <b class="text-slate-300">${c.hoy}</b></p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="vistaCorreo('${t.id}')" class="flex-1 text-xs font-bold px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200"><i class="fa-solid fa-eye mr-1"></i>Vista previa</button>
+                <button onclick="pruebaCorreo('${t.id}')" class="flex-1 text-xs font-bold px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200"><i class="fa-solid fa-paper-plane mr-1"></i>Enviarme prueba</button>
+            </div>
+        </div>`;
+    }).join('');
+
+    const etiquetas = {
+        borrador: ['Borrador', 'bg-slate-600/40 text-slate-300'], enviando: ['Enviando', 'bg-amber-500/20 text-amber-300'],
+        enviada: ['Enviada', 'bg-emerald-500/20 text-emerald-300'], cancelada: ['Cancelada', 'bg-red-500/20 text-red-300'],
+    };
+    const novs = data.novedades || [];
+    document.getElementById('co-novedades').innerHTML = novs.length ? novs.map(n => {
+        const [txt, cls] = etiquetas[n.estado] || etiquetas.borrador;
+        const total = n.estado === 'enviada' ? n.enviados : Math.max(n.enviados, data.aptos || 0);
+        const pct = total ? Math.min(100, Math.round(n.enviados / total * 100)) : 0;
+        const b = (accion, texto, clase) => `<button onclick="accionNovedad(${n.id}, '${accion}')" class="text-xs font-bold px-3 py-1.5 rounded-lg ${clase}">${texto}</button>`;
+        return `<div class="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-sm font-black text-white">${escapeHtml(n.titulo)}</p>
+                    <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(n.subtitulo || '')}</p>
+                </div>
+                <span class="text-[11px] font-bold px-2 py-1 rounded-full shrink-0 ${cls}">${txt}</span>
+            </div>
+            ${n.estado !== 'borrador' ? `<div class="mt-3"><div class="h-2 rounded-full bg-slate-700 overflow-hidden"><div class="h-full bg-indigo-500" style="width:${pct}%"></div></div>
+                <p class="text-[11px] text-slate-400 mt-1">${n.enviados} de ${total} usuarios${n.estado === 'enviando' ? ' · se envía poco a poco según el límite diario' : ''}</p></div>` : ''}
+            <div class="flex flex-wrap gap-2 mt-3">
+                <button onclick="vistaCorreo('novedad', ${n.id})" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 text-slate-200"><i class="fa-solid fa-eye mr-1"></i>Vista previa</button>
+                <button onclick="pruebaCorreo('novedad', ${n.id})" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 text-slate-200"><i class="fa-solid fa-paper-plane mr-1"></i>Enviarme prueba</button>
+                ${n.estado === 'borrador' ? `<button onclick="editarNovedad(${n.id})" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-700 text-slate-200"><i class="fa-solid fa-pen mr-1"></i>Editar</button>
+                    ${b('enviar', '<i class="fa-solid fa-rocket mr-1"></i>Publicar y enviar', 'bg-indigo-600 hover:bg-indigo-500 text-white')}` : ''}
+                ${n.estado === 'enviando' ? b('pausar', '<i class="fa-solid fa-pause mr-1"></i>Pausar', 'bg-amber-600/80 text-white') : ''}
+                ${['borrador', 'enviando'].includes(n.estado) ? b('cancelar', 'Cancelar', 'bg-red-600/30 text-red-200') : ''}
+                ${['borrador', 'cancelada'].includes(n.estado) && !n.enviados ? b('eliminar', '<i class="fa-solid fa-trash mr-1"></i>Eliminar', 'bg-red-600/30 text-red-200') : ''}
+            </div>
+        </div>`;
+    }).join('') : '<p class="text-sm text-slate-500">Aún no hay novedades.</p>';
+
+    const nombres = Object.fromEntries(CO_TIPOS.map(t => [t.id, t.nombre]));
+    const ult = data.ultimos || [];
+    document.getElementById('co-ultimos').innerHTML = ult.length ? ult.map(u => `
+        <div class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+            <span class="text-slate-200 truncate">${escapeHtml(u.usuario || '—')}</span>
+            <span class="text-xs text-slate-400 shrink-0">${escapeHtml(nombres[u.tipo] || u.tipo)} · ${formatFecha(u.enviado_en)}</span>
+        </div>`).join('') : '<p class="text-sm text-slate-500 px-4 py-4">Todavía no se ha enviado ningún correo automático.</p>';
+}
+
+async function guardarConfigCorreos() {
+    const limite = parseInt(document.getElementById('co-input-limite').value, 10);
+    const pausado = document.getElementById('co-input-pausado').checked;
+    const { data, error } = await _supabase.rpc('admin_correos_config', { p_limite: limite, p_pausado: pausado });
+    if (error || data?.error) return avisoPanel('No se pudo guardar: ' + (error?.message || data?.error));
+    mostrarToast('Configuración guardada', 'success');
+    cargarCorreos();
+}
+
+async function vistaCorreo(tipo, novedadId) {
+    mostrarToast('Generando vista previa...', 'info');
+    const r = await _coLlamarFuncion({ accion: 'vista', tipo, novedad_id: novedadId || null });
+    if (!r?.ok) return avisoPanel('No se pudo generar la vista previa: ' + (r?.error || 'error'));
+    document.getElementById('co-vista-asunto').textContent = 'Asunto: ' + r.asunto;
+    document.getElementById('co-vista-frame').srcdoc = r.html;
+    document.getElementById('co-modal-vista').classList.remove('hidden');
+}
+
+async function pruebaCorreo(tipo, novedadId) {
+    const r = await _coLlamarFuncion({ accion: 'prueba', tipo, novedad_id: novedadId || null });
+    if (!r?.ok) return avisoPanel('No se pudo enviar la prueba: ' + (r?.error || 'error'));
+    mostrarToast('Prueba enviada a ' + r.enviado_a, 'success');
+}
+
+function limpiarFormNovedad() {
+    ['co-nov-id', 'co-nov-titulo', 'co-nov-subtitulo', 'co-nov-cuerpo', 'co-nov-puntos', 'co-nov-destacado', 'co-nov-boton']
+        .forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('co-form-titulo').textContent = 'Nueva novedad';
+}
+
+function editarNovedad(id) {
+    const n = (_coDatos?.novedades || []).find(x => x.id === id);
+    if (!n) return;
+    document.getElementById('co-nov-id').value = n.id;
+    document.getElementById('co-nov-titulo').value = n.titulo || '';
+    document.getElementById('co-nov-subtitulo').value = n.subtitulo || '';
+    document.getElementById('co-nov-cuerpo').value = n.cuerpo || '';
+    document.getElementById('co-nov-puntos').value = (n.puntos || []).join('\n');
+    document.getElementById('co-nov-destacado').value = n.destacado || '';
+    document.getElementById('co-nov-boton').value = n.boton_texto || '';
+    document.getElementById('co-form-titulo').textContent = 'Editar novedad';
+    document.getElementById('co-nov-titulo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function guardarNovedad() {
+    const v = id => document.getElementById(id).value.trim();
+    const puntos = v('co-nov-puntos').split('\n').map(s => s.trim()).filter(Boolean);
+    if (v('co-nov-titulo').length < 3) return avisoPanel('Escribe un título de al menos 3 letras.');
+    if (puntos.length > 6) return avisoPanel('Máximo 6 puntos clave.');
+    const { data, error } = await _supabase.rpc('admin_novedad_guardar', {
+        p_id: v('co-nov-id') ? parseInt(v('co-nov-id'), 10) : null,
+        p_titulo: v('co-nov-titulo'), p_subtitulo: v('co-nov-subtitulo'), p_cuerpo: v('co-nov-cuerpo'),
+        p_puntos: puntos, p_destacado: v('co-nov-destacado'), p_boton: v('co-nov-boton')
+    });
+    if (error || data?.error) return avisoPanel('No se pudo guardar: ' + (error?.message || data?.error));
+    mostrarToast('Novedad guardada como borrador', 'success');
+    limpiarFormNovedad();
+    cargarCorreos();
+}
+
+async function accionNovedad(id, accion) {
+    const n = (_coDatos?.novedades || []).find(x => x.id === id);
+    const textos = {
+        enviar: [`¿Publicar "${n?.titulo}" y enviarla a ${_coDatos?.aptos ?? 'todos los'} usuarios? Se enviará poco a poco respetando el límite diario.`, 'Publicar y enviar'],
+        pausar: ['¿Pausar el envío? Al reanudar, nadie la recibe dos veces.', 'Pausar'],
+        cancelar: ['¿Cancelar esta novedad? Ya no se enviará a nadie más.', 'Cancelar novedad'],
+        eliminar: ['¿Eliminar este borrador?', 'Eliminar'],
+    };
+    const [msg, ok] = textos[accion];
+    if (!(await confirmarPanel(msg, ok))) return;
+    const { data, error } = await _supabase.rpc('admin_novedad_accion', { p_id: id, p_accion: accion });
+    if (error || data?.error) return avisoPanel('No se pudo: ' + (error?.message || data?.error));
+    mostrarToast('Listo', 'success');
+    cargarCorreos();
+}
+
 </script>
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- JAVASCRIPT: SISTEMA DE BANNERS PANTALLA COMPLETA -->
