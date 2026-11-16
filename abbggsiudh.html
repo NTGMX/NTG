@@ -803,9 +803,12 @@
             <button onclick="cambiarTabHistorial('retiros')" id="tab-retiros" class="flex-1 px-4 py-3 text-sm font-bold text-slate-400 hover:text-slate-300 transition">
                 <i class="fa-solid fa-arrow-up-from-bracket mr-1"></i>Retiros Pendientes
             </button>
+            <button onclick="cambiarTabHistorial('actividad')" id="tab-actividad" class="flex-1 px-4 py-3 text-sm font-bold text-slate-400 hover:text-slate-300 transition">
+                <i class="fa-solid fa-route mr-1"></i>Actividad
+            </button>
         </div>
 
-        <div class="px-5 py-4 max-h-96 overflow-y-auto">
+        <div class="px-5 py-4 max-h-[65vh] overflow-y-auto">
             <div id="tab-content-ganancias" class="space-y-3">
                 <div id="ganancias-loading" class="text-center text-slate-500 py-8">
                     <i class="fa-solid fa-spinner fa-spin mr-2"></i>Cargando ganancias...
@@ -818,6 +821,13 @@
                     <i class="fa-solid fa-spinner fa-spin mr-2"></i>Cargando retiros...
                 </div>
                 <div id="retiros-list" class="space-y-2"></div>
+            </div>
+
+            <div id="tab-content-actividad" class="hidden">
+                <div id="actividad-loading" class="text-center text-slate-500 py-8">
+                    <i class="fa-solid fa-spinner fa-spin mr-2"></i>Cargando actividad...
+                </div>
+                <div id="actividad-list"></div>
             </div>
         </div>
 
@@ -2732,7 +2742,6 @@ function abrirModalHistorialUsuario(userId, email) {
     document.getElementById('modal-historial-usuario').classList.remove('hidden');
     
     cambiarTabHistorial('ganancias');
-    cargarGananciasUsuario(userId);
 }
 
 function cerrarModalHistorialUsuario() {
@@ -2741,27 +2750,209 @@ function cerrarModalHistorialUsuario() {
 }
 
 function cambiarTabHistorial(tab) {
-    if (tab === 'ganancias') {
-        document.getElementById('tab-ganancias').classList.add('text-blue-400', 'border-b-2', 'border-blue-500', 'bg-blue-500/10');
-        document.getElementById('tab-ganancias').classList.remove('text-slate-400', 'hover:text-slate-300');
-        document.getElementById('tab-retiros').classList.remove('text-blue-400', 'border-b-2', 'border-blue-500', 'bg-blue-500/10');
-        document.getElementById('tab-retiros').classList.add('text-slate-400', 'hover:text-slate-300');
-        
-        document.getElementById('tab-content-ganancias').classList.remove('hidden');
-        document.getElementById('tab-content-retiros').classList.add('hidden');
-        
-        cargarGananciasUsuario(_usuarioHistorialActual.id);
-    } else {
-        document.getElementById('tab-retiros').classList.add('text-blue-400', 'border-b-2', 'border-blue-500', 'bg-blue-500/10');
-        document.getElementById('tab-retiros').classList.remove('text-slate-400', 'hover:text-slate-300');
-        document.getElementById('tab-ganancias').classList.remove('text-blue-400', 'border-b-2', 'border-blue-500', 'bg-blue-500/10');
-        document.getElementById('tab-ganancias').classList.add('text-slate-400', 'hover:text-slate-300');
-        
-        document.getElementById('tab-content-retiros').classList.remove('hidden');
-        document.getElementById('tab-content-ganancias').classList.add('hidden');
-        
-        cargarRetirosPendientes(_usuarioHistorialActual.id);
+    const cargas = {
+        ganancias: () => cargarGananciasUsuario(_usuarioHistorialActual.id),
+        retiros: () => cargarRetirosPendientes(_usuarioHistorialActual.id),
+        actividad: () => cargarActividadUsuario(_usuarioHistorialActual.id)
+    };
+    Object.keys(cargas).forEach(t => {
+        const btn = document.getElementById('tab-' + t);
+        const activo = t === tab;
+        btn.classList.toggle('text-blue-400', activo);
+        btn.classList.toggle('border-b-2', activo);
+        btn.classList.toggle('border-blue-500', activo);
+        btn.classList.toggle('bg-blue-500/10', activo);
+        btn.classList.toggle('text-slate-400', !activo);
+        btn.classList.toggle('hover:text-slate-300', !activo);
+        document.getElementById('tab-content-' + t).classList.toggle('hidden', !activo);
+    });
+    if (_usuarioHistorialActual) cargas[tab]();
+}
+
+// ===== Historial de usuario: pestaña "Actividad" (registro temporal de qué hace en cada sesión) =====
+const ACT_TIPOS = {
+    i: { icono: 'fa-door-open',            color: 'text-sky-400',     bg: 'bg-sky-500/10',     nombre: 'Entrada' },
+    s: { icono: 'fa-table-columns',        color: 'text-violet-300',  bg: 'bg-violet-500/15',  nombre: 'Sección' },
+    c: { icono: 'fa-hand-pointer',         color: 'text-slate-300',   bg: 'bg-slate-700/60',   nombre: 'Clic' },
+    l: { icono: 'fa-arrow-up-right-from-square', color: 'text-amber-300', bg: 'bg-amber-500/10', nombre: 'Link externo' },
+    o: { icono: 'fa-eye-slash',            color: 'text-rose-300',    bg: 'bg-rose-500/10',    nombre: 'Salió' },
+    r: { icono: 'fa-eye',                  color: 'text-emerald-300', bg: 'bg-emerald-500/10', nombre: 'Regresó' },
+    e: { icono: 'fa-triangle-exclamation', color: 'text-red-400',     bg: 'bg-red-500/10',     nombre: 'Error' }
+};
+let _actDatos = null;
+
+function actDuracion(seg) {
+    seg = Math.max(0, Math.round(seg || 0));
+    if (seg < 60) return seg + ' s';
+    const h = Math.floor(seg / 3600), m = Math.floor((seg % 3600) / 60), s = seg % 60;
+    return h ? `${h} h ${m} min` : `${m} min${s ? ' ' + s + ' s' : ''}`;
+}
+
+// Tiempo con la página abierta y visible (descuenta los ratos en que salió a otra app).
+function actTiempoActivo(ev) {
+    if (!ev.length) return 0;
+    let total = ev[ev.length - 1][0], fuera = null;
+    ev.forEach(e => {
+        if (e[1] === 'o' && fuera === null) fuera = e[0];
+        else if (e[1] !== 'o' && fuera !== null) { total -= e[0] - fuera; fuera = null; }
+    });
+    return Math.max(0, total);
+}
+
+async function cargarActividadUsuario(userId) {
+    const cont = document.getElementById('actividad-list');
+    const loading = document.getElementById('actividad-loading');
+    loading.classList.remove('hidden');
+    cont.innerHTML = '';
+    try {
+        const { data, error } = await _supabase.rpc('admin_actividad_usuario', { p_uid: userId, p_limite: 40 });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error === 'no_admin' ? 'Necesitas tu sesión de admin con verificación en 2 pasos.' : data.error);
+        if (!_usuarioHistorialActual || _usuarioHistorialActual.id !== userId) return;
+        _actDatos = data;
+        loading.classList.add('hidden');
+        renderActividad();
+    } catch (err) {
+        console.error('Error cargando actividad:', err);
+        loading.classList.add('hidden');
+        cont.innerHTML = `<p class="text-center text-red-400 text-sm py-6">No se pudo cargar la actividad: ${escapeHtml(err.message || String(err))}</p>`;
     }
+}
+
+function renderActividad() {
+    const cont = document.getElementById('actividad-list');
+    const d = _actDatos || { sesiones: [] };
+    const sesiones = d.sesiones || [];
+
+    // Resumen general
+    let totalSeg = 0, totalEv = 0, clics = 0;
+    const porSeccion = {};
+    sesiones.forEach(s => {
+        const ev = s.eventos || [];
+        totalEv += ev.length;
+        const fin = ev.length ? ev[ev.length - 1][0] : 0;
+        totalSeg += actTiempoActivo(ev);
+        ev.forEach((e, k) => {
+            if (e[1] === 'c' || e[1] === 'l') clics++;
+            if (e[1] === 's') {
+                // tiempo en la sección = hasta el siguiente cambio de sección o salida
+                let hasta = fin;
+                for (let j = k + 1; j < ev.length; j++) if (ev[j][1] === 's' || ev[j][1] === 'o') { hasta = ev[j][0]; break; }
+                porSeccion[e[2]] = porSeccion[e[2]] || { veces: 0, seg: 0 };
+                porSeccion[e[2]].veces++;
+                porSeccion[e[2]].seg += Math.max(0, hasta - e[0]);
+            }
+        });
+    });
+    const topSecciones = Object.entries(porSeccion).sort((a, b) => b[1].seg - a[1].seg).slice(0, 6);
+
+    const barra = `<div class="flex flex-wrap items-center justify-between gap-2 bg-slate-800/70 border border-slate-700 rounded-xl px-3 py-2.5">
+        <div class="flex items-center gap-2 text-xs">
+            <span class="w-2 h-2 rounded-full ${d.activo ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}"></span>
+            <span class="font-bold ${d.activo ? 'text-emerald-300' : 'text-slate-400'}">${d.activo ? 'Registro activo' : 'Registro apagado'}</span>
+            <span class="text-slate-500">· se guarda ${Number(d.dias) || 15} días y se borra solo</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="cargarActividadUsuario(_usuarioHistorialActual.id)" class="text-xs text-slate-300 bg-slate-700 hover:bg-slate-600 rounded-lg px-2.5 py-1.5"><i class="fa-solid fa-rotate mr-1"></i>Actualizar</button>
+            <button onclick="cambiarRegistroActividad(${d.activo ? 'false' : 'true'})" class="text-xs font-bold rounded-lg px-2.5 py-1.5 ${d.activo ? 'text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30' : 'text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30'}">
+                <i class="fa-solid ${d.activo ? 'fa-pause' : 'fa-play'} mr-1"></i>${d.activo ? 'Apagar para todos' : 'Encender'}</button>
+        </div>
+    </div>`;
+
+    if (!sesiones.length) {
+        cont.innerHTML = barra + `<div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center mt-3">
+            <i class="fa-solid fa-route text-slate-600 text-3xl mb-3"></i>
+            <p class="text-slate-400 text-sm font-semibold">Sin actividad registrada</p>
+            <p class="text-slate-500 text-xs mt-1">Aparecerá aquí la próxima vez que este usuario entre a NetGamer con su sesión iniciada.</p>
+        </div>`;
+        return;
+    }
+
+    const tarjeta = (titulo, valor, icono) => `<div class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5">
+        <p class="text-[11px] text-slate-500 flex items-center gap-1.5"><i class="fa-solid ${icono}"></i>${titulo}</p>
+        <p class="text-white font-extrabold text-base leading-tight mt-0.5">${valor}</p></div>`;
+    const maxSeg = topSecciones.length ? Math.max(1, topSecciones[0][1].seg) : 1;
+
+    const resumen = `<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+        ${tarjeta('Sesiones', sesiones.length, 'fa-layer-group')}
+        ${tarjeta('Tiempo activo', actDuracion(totalSeg), 'fa-clock')}
+        ${tarjeta('Promedio por sesión', actDuracion(totalSeg / sesiones.length), 'fa-stopwatch')}
+        ${tarjeta('Clics', clics.toLocaleString('en-US'), 'fa-hand-pointer')}
+    </div>
+    ${topSecciones.length ? `<div class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 mt-2">
+        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Dónde pasa más tiempo</p>
+        ${topSecciones.map(([n, v]) => `<div class="flex items-center gap-2 text-xs mb-1.5">
+            <span class="w-20 shrink-0 text-slate-200 font-semibold truncate">${escapeHtml(n)}</span>
+            <div class="flex-1 h-2 bg-slate-900 rounded-full overflow-hidden"><div class="h-full bg-violet-500 rounded-full" style="width:${Math.max(3, Math.round(v.seg / maxSeg * 100))}%"></div></div>
+            <span class="w-24 shrink-0 text-right text-slate-400">${actDuracion(v.seg)} · ${v.veces}×</span>
+        </div>`).join('')}
+    </div>` : ''}`;
+
+    const lista = sesiones.map((s, idx) => {
+        const ev = s.eventos || [];
+        const inicio = new Date(s.inicio);
+        const dur = actTiempoActivo(ev);
+        const fechaStr = inicio.toLocaleDateString('es-MX', { weekday: 'short', day: '2-digit', month: 'short' });
+        const horaStr = inicio.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        const secs = [...new Set(ev.filter(e => e[1] === 's').map(e => e[2]))];
+        const nClics = ev.filter(e => e[1] === 'c' || e[1] === 'l').length;
+        const errs = ev.filter(e => e[1] === 'e').length;
+        const ultimo = ev.length ? ev[ev.length - 1] : null;
+        const sinAccion = nClics === 0 && secs.length === 0;
+
+        let previo = null;
+        const linea = ev.map(e => {
+            const t = ACT_TIPOS[e[1]] || ACT_TIPOS.c;
+            const hora = new Date(inicio.getTime() + e[0] * 1000).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            let pausa = '';
+            if (previo !== null && e[0] - previo[0] >= 60) {
+                const fuera = previo[1] === 'o';
+                pausa = `<div class="flex items-center gap-2 pl-[3px] py-1 text-[11px] ${fuera ? 'text-rose-300/70' : 'text-slate-500'} italic"><i class="fa-solid ${fuera ? 'fa-moon' : 'fa-hourglass-half'} w-5 text-center"></i>${fuera ? 'Estuvo fuera ' : ''}${actDuracion(e[0] - previo[0])}${fuera ? '' : ' sin tocar nada'}</div>`;
+            }
+            previo = e;
+            return pausa + `<div class="flex items-start gap-2 py-1">
+                <span class="w-6 h-6 shrink-0 rounded-md ${t.bg} ${t.color} flex items-center justify-center text-[11px]" title="${t.nombre}"><i class="fa-solid ${t.icono}"></i></span>
+                <div class="min-w-0 flex-1 text-xs leading-6 ${e[1] === 's' ? 'font-bold text-violet-200' : e[1] === 'e' ? 'text-red-300' : 'text-slate-200'}">${e[1] === 's' ? 'Abrió ' : ''}${escapeHtml(e[2])}</div>
+                <span class="shrink-0 text-[10px] text-slate-500 font-mono leading-6">${hora}</span>
+            </div>`;
+        }).join('');
+
+        return `<div class="bg-slate-800 border ${sinAccion ? 'border-amber-500/30' : 'border-slate-700'} rounded-xl overflow-hidden">
+            <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.act-flecha').classList.toggle('rotate-180')" class="w-full text-left px-3 py-3 hover:bg-slate-700/40 transition">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-white">${fechaStr} · ${horaStr}</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5"><i class="fa-solid fa-mobile-screen mr-1"></i>${escapeHtml(s.dispositivo || 'Dispositivo desconocido')} · <i class="fa-solid fa-signs-post mx-1"></i>${escapeHtml(s.origen || 'Directo')}</p>
+                    </div>
+                    <div class="shrink-0 text-right">
+                        <p class="text-sm font-extrabold text-blue-300" title="Tiempo con la página abierta (sin contar cuando salió a otra app)">${actDuracion(dur)}</p>
+                        <p class="text-[11px] text-slate-500">${nClics} clics${errs ? ` · <span class="text-red-400">${errs} error${errs > 1 ? 'es' : ''}</span>` : ''}</p>
+                    </div>
+                    <i class="act-flecha fa-solid fa-chevron-down text-slate-500 text-xs transition ${idx === 0 ? 'rotate-180' : ''}"></i>
+                </div>
+                <div class="flex flex-wrap gap-1 mt-2">
+                    ${sinAccion ? '<span class="text-[10px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5">Entró y no hizo nada</span>' : ''}
+                    ${secs.map(n => `<span class="text-[10px] font-semibold text-violet-200 bg-violet-500/15 rounded-full px-2 py-0.5">${escapeHtml(n)}</span>`).join('')}
+                    ${ultimo ? `<span class="text-[10px] text-slate-400 bg-slate-900 rounded-full px-2 py-0.5">Último: ${escapeHtml(ultimo[2])}</span>` : ''}
+                </div>
+            </button>
+            <div class="${idx === 0 ? '' : 'hidden'} border-t border-slate-700 px-3 py-2 bg-slate-900/40">${linea || '<p class="text-xs text-slate-500 py-2">Sin eventos</p>'}
+                ${ev.length >= 500 ? '<p class="text-[11px] text-amber-400 py-1">Se alcanzó el máximo de 500 eventos en esta sesión.</p>' : ''}
+            </div>
+        </div>`;
+    }).join('');
+
+    cont.innerHTML = barra + resumen + `<p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mt-4 mb-2">Sesiones (más recientes primero)</p><div class="space-y-2">${lista}</div>`;
+}
+
+async function cambiarRegistroActividad(activo) {
+    if (!activo && !confirm('¿Apagar el registro de actividad para TODOS los usuarios? Lo ya guardado se conserva hasta que se borre solo.')) return;
+    const { data, error } = await _supabase.rpc('admin_actividad_config', { p_activo: activo, p_dias: null });
+    if (error || data?.error) {
+        alert('No se pudo cambiar: ' + (error?.message || data.error));
+        return;
+    }
+    if (_usuarioHistorialActual) cargarActividadUsuario(_usuarioHistorialActual.id);
 }
 
 async function cargarGananciasUsuario(userId) {
