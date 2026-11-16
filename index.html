@@ -4145,6 +4145,10 @@
 
                 const email = document.getElementById("register-email").value;
                 const password = document.getElementById("register-password").value;
+                if (password.length < 6) {
+                    mostrarNotificacion("La contraseña debe tener al menos 6 caracteres.", "error");
+                    return;
+                }
                 const refCodeGuardado = sessionStorage.getItem('ref_code');
                 const btn = document.getElementById("btn-registrarse");
                 btn.disabled = true; btn.innerText = "Creando cuenta...";
@@ -4157,7 +4161,7 @@
                 btn.disabled = false; btn.innerText = "Registrarse";
 
                 if (error) {
-                    mostrarNotificacion(`Error: ${error.message}`, "error");
+                    mostrarNotificacion(traducirErrorRegistro(error), "error");
                     return;
                 }
 
@@ -4174,6 +4178,36 @@
                 e.preventDefault();
                 procesarSolicitudRetiro();
             });
+        }
+
+        // Mensajes de error de Supabase al registrarse, en español.
+        function traducirErrorRegistro(error) {
+            const msg = String(error?.message || '');
+            const codigo = String(error?.code || '');
+            const m = msg.toLowerCase();
+            if (codigo === 'weak_password' || m.includes('password should') || m.includes('password is')) {
+                const min = (msg.match(/at least (\d+)/i) || [])[1];
+                if (m.includes('weak') || m.includes('pwned') || m.includes('known'))
+                    return "Esa contraseña es muy fácil de adivinar o ya apareció en filtraciones. Elige una más segura.";
+                if (m.includes('contain'))
+                    return "Tu contraseña debe combinar letras mayúsculas, minúsculas, números y símbolos.";
+                return `La contraseña debe tener al menos ${min || 6} caracteres.`;
+            }
+            if (codigo === 'user_already_exists' || m.includes('already registered') || m.includes('already exists'))
+                return "Este correo ya está registrado. Intenta iniciar sesión.";
+            if (codigo === 'email_address_invalid' || m.includes('invalid') && m.includes('email'))
+                return "Ese correo no es válido. Revisa que esté bien escrito.";
+            if (codigo === 'over_email_send_rate_limit' || codigo === 'over_request_rate_limit' || m.includes('rate limit') || m.includes('too many'))
+                return "Hiciste demasiados intentos. Espera unos minutos e inténtalo de nuevo.";
+            if (m.includes('security purposes'))
+                return "Por seguridad, espera unos segundos antes de intentarlo de nuevo.";
+            if (codigo === 'signup_disabled' || m.includes('signups not allowed'))
+                return "Por ahora no se pueden crear cuentas nuevas. Intenta más tarde.";
+            if (m.includes('failed to fetch') || m.includes('network'))
+                return "No hay conexión. Revisa tu internet e inténtalo de nuevo.";
+            if (m.includes('database error'))
+                return "No se pudo crear la cuenta en este momento. Intenta de nuevo en unos minutos.";
+            return "No se pudo crear tu cuenta. Revisa tus datos e inténtalo de nuevo.";
         }
 
         async function procesarBonoReferido(nuevoUserId, referidorId) {
