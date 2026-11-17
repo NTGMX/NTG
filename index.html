@@ -583,10 +583,19 @@
         .toast-enter { animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         .toast-exit { animation: fadeOutRight 0.3s ease-in forwards; }
 
+        /* Notificaciones: en celular ocupan el ancho de la pantalla con 12 px de margen
+           (antes medían 320 px fijos y en pantallas angostas se salían por la izquierda). */
+        #toast-container { top: 12px; left: 12px; right: 12px; width: auto; max-width: none; }
+        @media (min-width: 640px) {
+            #toast-container { top: 20px; left: auto; right: 20px; width: 100%; max-width: 24rem; }
+        }
+        #toast-container > div > span, #toast-sesion-inner > div { min-width: 0; overflow-wrap: anywhere; }
+        #toast-container > div > i { flex-shrink: 0; }
+
         #toast-sesion {
             position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-80px);
             z-index: 9999; transition: transform 0.45s cubic-bezier(.36,.07,.19,.97), opacity 0.3s;
-            opacity: 0; pointer-events: none; min-width: 300px; max-width: 90vw;
+            opacity: 0; pointer-events: none; min-width: min(300px, calc(100vw - 24px)); max-width: calc(100vw - 24px);
         }
         #toast-sesion.visible {
             transform: translateX(-50%) translateY(0);
