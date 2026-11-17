@@ -2914,6 +2914,9 @@
             border:1px solid rgba(45,212,191,.3); border-radius:1.5rem 1.5rem 0 0; box-shadow:0 -10px 40px rgba(0,0,0,.5);
             padding: 0 1.15rem calc(1.15rem + env(safe-area-inset-bottom)); animation: gxSube .28s ease-out; }
         @media (min-width:640px) { .gx-caja { border-radius:1.5rem; padding-bottom:1.25rem; } }
+        /* 92vh en muchos celulares es más alto que lo visible (cuenta la barra del navegador) y la
+           parte de arriba quedaba fuera de la pantalla. Se limita también al alto real visible. */
+        .gx-caja { max-height: min(92vh, calc(100% - 16px)); }
         @keyframes gxSube { from { transform:translateY(24px); opacity:0; } to { transform:none; opacity:1; } }
         .gx-barra { height:4px; margin:0 -1.15rem 1rem; background: linear-gradient(90deg,#2dd4bf,#fbbf24,#2dd4bf); }
         .gx-cab { display:flex; align-items:flex-start; justify-content:space-between; gap:.75rem; }
