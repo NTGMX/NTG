@@ -287,6 +287,20 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(8px); }
         }
+        /* Si el texto del aviso tapa botones o textos, se muestra solo la flechita. */
+        #landing-scroll-hint.solo-flecha span { display: none; }
+
+        /* Encabezado del landing en celulares angostos (≤380 px): todo más compacto
+           para que "Iniciar sesión" y "Registrarse" quepan sin cortarse. */
+        @media (max-width: 380px) {
+            #landing-container header > div { padding-left: 12px; padding-right: 12px; gap: 8px; }
+            #landing-container header a[aria-label="NetGamer"] { gap: 6px; }
+            #landing-container header a[aria-label="NetGamer"] svg { width: 32px; height: 32px; }
+            #landing-container header a[aria-label="NetGamer"] > span { font-size: 1.05rem; }
+            #landing-container header button { font-size: 0.78rem; padding-left: 8px; padding-right: 8px; }
+            #landing-container header > div > div { gap: 4px; }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             #landing-scroll-hint .scroll-hint-circulo, #ofertas-scroll-hint .scroll-hint-circulo { animation: none; }
         }
@@ -3763,6 +3777,18 @@
             mostrarHintScrollLanding();
         }
 
+        function hintTapaContenido(hint) {
+            const r = hint.getBoundingClientRect();
+            const margen = 6;
+            return [...document.querySelectorAll('#landing-container main section:first-of-type :is(button, a, li, p, h1, span)')]
+                .some(el => {
+                    const b = el.getBoundingClientRect();
+                    return b.width > 0 && b.height > 0 &&
+                        b.bottom > r.top - margen && b.top < r.bottom + margen &&
+                        b.right > r.left && b.left < r.right;
+                });
+        }
+
         function mostrarHintScrollLanding() {
             const hint = document.getElementById('landing-scroll-hint');
             const main = document.querySelector('#landing-container main');
@@ -3771,8 +3797,16 @@
             clearTimeout(window._landingHintTimer);
             clearTimeout(window._landingHintAutoHideTimer);
             
-            hint.classList.remove('visible');
-            window._landingHintTimer = setTimeout(() => hint.classList.add('visible'), 700);
+            hint.classList.remove('visible', 'solo-flecha');
+            window._landingHintTimer = setTimeout(() => {
+                // En pantallas bajitas el aviso queda encima de botones o textos:
+                // primero se quita el texto y, si la flechita también tapa algo, no se muestra.
+                if (hintTapaContenido(hint)) {
+                    hint.classList.add('solo-flecha');
+                    if (hintTapaContenido(hint)) return;
+                }
+                hint.classList.add('visible');
+            }, 700);
 
             if (!main.dataset.hintScrollBound) {
                 main.dataset.hintScrollBound = 'true';
